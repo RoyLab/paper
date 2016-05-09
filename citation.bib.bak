@@ -613,10 +613,3 @@ http://www.geom.at/fade2d/html/
   year={2013},
   publisher={Elsevier}
 }
-
-@phdthesis{douze2015quickcsg,
-  title={QuickCSG: Arbitrary and Faster Boolean Combinations of N Solids},
-  author={Douze, Matthijs and Franco, Jean-S{\'e}bastien and Raffin, Bruno},
-  year={2015},
-  school={Inria-Research Centre Grenoble--Rh{\^o}ne-Alpes}
-}

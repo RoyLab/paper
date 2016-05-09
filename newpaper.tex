@@ -1,0 +1,957 @@
+\documentclass[10pt,journal,compsoc]{IEEEtran}
+
+% Some very useful LaTeX packages include:
+% (uncomment the ones you want to load)
+
+
+% *** MISC UTILITY PACKAGES ***
+%
+%\usepackage{ifpdf}
+% Heiko Oberdiek's ifpdf.sty is very useful if you need conditional
+% compilation based on whether the output is pdf or dvi.
+% usage:
+% \ifpdf
+%   % pdf code
+% \else
+%   % dvi code
+% \fi
+% The latest version of ifpdf.sty can be obtained from:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/oberdiek/
+% Also, note that IEEEtran.cls V1.7 and later provides a builtin
+% \ifCLASSINFOpdf conditional that works the same way.
+% When switching from latex to pdflatex and vice-versa, the compiler may
+% have to be run twice to clear warning/error messages.
+
+
+
+
+
+
+% *** CITATION PACKAGES ***
+%
+\ifCLASSOPTIONcompsoc
+  % IEEE Computer Society needs nocompress option
+  % requires cite.sty v4.0 or later (November 2003)
+  \usepackage[nocompress]{cite}
+\else
+  % normal IEEE
+  \usepackage{cite}
+\fi
+% cite.sty was written by Donald Arseneau
+% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
+% \cite{} output to follow that of IEEE. Loading the cite package will
+% result in citation numbers being automatically sorted and properly
+% "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
+% cite.sty will become [1], [2], [5]--[7], [9] using cite.sty. cite.sty's
+% \cite will automatically add leading space, if needed. Use cite.sty's
+% noadjust option (cite.sty V3.8 and later) if you want to turn this off
+% such as if a citation ever needs to be enclosed in parenthesis.
+% cite.sty is already installed on most LaTeX systems. Be sure and use
+% version 5.0 (2009-03-20) and later if using hyperref.sty.
+% The latest version can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/cite/
+% The documentation is contained in the cite.sty file itself.
+%
+% Note that some packages require special options to format as the Computer
+% Society requires. In particular, Computer Society  papers do not use
+% compressed citation ranges as is done in typical IEEE papers
+% (e.g., [1]-[4]). Instead, they list every citation separately in order
+% (e.g., [1], [2], [3], [4]). To get the latter we need to load the cite
+% package with the nocompress option which is supported by cite.sty v4.0
+% and later. Note also the use of a CLASSOPTION conditional provided by
+% IEEEtran.cls V1.7 and later.
+
+
+
+
+
+% *** GRAPHICS RELATED PACKAGES ***
+%
+\ifCLASSINFOpdf
+    \usepackage[pdftex]{graphicx}
+  % declare the path(s) where your graphic files are
+    \graphicspath{{./pics/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  %  \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\else
+  % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
+  % will default to the driver specified in the system graphics.cfg if no
+  % driver is specified.
+  % \usepackage[dvips]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../eps/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.eps}
+\fi
+% graphicx was written by David Carlisle and Sebastian Rahtz. It is
+% required if you want graphics, photos, etc. graphicx.sty is already
+% installed on most LaTeX systems. The latest version and documentation
+% can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/required/graphics/
+% Another good source of documentation is "Using Imported Graphics in
+% LaTeX2e" by Keith Reckdahl which can be found at:
+% http://www.ctan.org/tex-archive/info/epslatex/
+%
+% latex, and pdflatex in dvi mode, support graphics in encapsulated
+% postscript (.eps) format. pdflatex in pdf mode supports graphics
+% in .pdf, .jpeg, .png and .mps (metapost) formats. Users should ensure
+% that all non-photo figures use a vector format (.eps, .pdf, .mps) and
+% not a bitmapped formats (.jpeg, .png). IEEE frowns on bitmapped formats
+% which can result in "jaggedy"/blurry rendering of lines and letters as
+% well as large increases in file sizes.
+%
+% You can find documentation about the pdfTeX application at:
+% http://www.tug.org/applications/pdftex
+
+
+
+
+
+
+% *** MATH PACKAGES ***
+%
+\usepackage[cmex10]{amsmath}
+% A popular package from the American Mathematical Society that provides
+% many useful and powerful commands for dealing with mathematics. If using
+% it, be sure to load this package with the cmex10 option to ensure that
+% only type 1 fonts will utilized at all point sizes. Without this option,
+% it is possible that some math symbols, particularly those within
+% footnotes, will be rendered in bitmap form which will result in a
+% document that can not be IEEE Xplore compliant!
+%
+% Also, note that the amsmath package sets \interdisplaylinepenalty to 10000
+% thus preventing page breaks from occurring within multiline equations. Use:
+\interdisplaylinepenalty=2500
+% after loading amsmath to restore such page breaks as IEEEtran.cls normally
+% does. amsmath.sty is already installed on most LaTeX systems. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/required/amslatex/math/
+
+
+
+
+
+% *** SPECIALIZED LIST PACKAGES ***
+%
+\usepackage{algorithmic}
+% algorithmic.sty was written by Peter Williams and Rogerio Brito.
+% This package provides an algorithmic environment fo describing algorithms.
+% You can use the algorithmic environment in-text or within a figure
+% environment to provide for a floating algorithm. Do NOT use the algorithm
+% floating environment provided by algorithm.sty (by the same authors) or
+% algorithm2e.sty (by Christophe Fiorio) as IEEE does not use dedicated
+% algorithm float types and packages that provide these will not provide
+% correct IEEE style captions. The latest version and documentation of
+% algorithmic.sty can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithms/
+% There is also a support site at:
+% http://algorithms.berlios.de/index.html
+% Also of interest may be the (relatively newer and more customizable)
+% algorithmicx.sty package by Szasz Janos:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/algorithmicx/
+
+
+
+
+% *** ALIGNMENT PACKAGES ***
+%
+\usepackage{array}
+% Frank Mittelbach's and David Carlisle's array.sty patches and improves
+% the standard LaTeX2e array and tabular environments to provide better
+% appearance and additional user controls. As the default LaTeX2e table
+% generation code is lacking to the point of almost being broken with
+% respect to the quality of the end results, all users are strongly
+% advised to use an enhanced (at the very least that provided by array.sty)
+% set of table tools. array.sty is already installed on most systems. The
+% latest version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/required/tools/
+
+
+% IEEEtran contains the IEEEeqnarray family of commands that can be used to
+% generate multiline equations as well as matrices, tables, etc., of high
+% quality.
+
+
+
+
+% *** SUBFIGURE PACKAGES ***
+\ifCLASSOPTIONcompsoc
+  \usepackage[caption=false,font=footnotesize,labelfont=sf,textfont=sf]{subfig}
+\else
+  \usepackage[caption=false,font=footnotesize]{subfig}
+\fi
+% subfig.sty, written by Steven Douglas Cochran, is the modern replacement
+% for subfigure.sty, the latter of which is no longer maintained and is
+% incompatible with some LaTeX packages including fixltx2e. However,
+% subfig.sty requires and automatically loads Axel Sommerfeldt's caption.sty
+% which will override IEEEtran.cls' handling of captions and this will result
+% in non-IEEE style figure/table captions. To prevent this problem, be sure
+% and invoke subfig.sty's "caption=false" package option (available since
+% subfig.sty version 1.3, 2005/06/28) as this is will preserve IEEEtran.cls
+% handling of captions.
+% Note that the Computer Society format requires a sans serif font rather
+% than the serif font used in traditional IEEE formatting and thus the need
+% to invoke different subfig.sty package options depending on whether
+% compsoc mode has been enabled.
+%
+% The latest version and documentation of subfig.sty can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/subfig/
+
+
+
+
+% *** FLOAT PACKAGES ***
+%
+\usepackage{fixltx2e}
+% fixltx2e, the successor to the earlier fix2col.sty, was written by
+% Frank Mittelbach and David Carlisle. This package corrects a few problems
+% in the LaTeX2e kernel, the most notable of which is that in current
+% LaTeX2e releases, the ordering of single and double column floats is not
+% guaranteed to be preserved. Thus, an unpatched LaTeX2e can allow a
+% single column figure to be placed prior to an earlier double column
+% figure. The latest version and documentation can be found at:
+% http://www.ctan.org/tex-archive/macros/latex/base/
+
+
+%\usepackage{stfloats}
+% stfloats.sty was written by Sigitas Tolusis. This package gives LaTeX2e
+% the ability to do double column floats at the bottom of the page as well
+% as the top. (e.g., "\begin{figure*}[!b]" is not normally possible in
+% LaTeX2e). It also provides a command:
+%\fnbelowfloat
+% to enable the placement of footnotes below bottom floats (the standard
+% LaTeX2e kernel puts them above bottom floats). This is an invasive package
+% which rewrites many portions of the LaTeX2e float routines. It may not work
+% with other packages that modify the LaTeX2e float routines. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/sttools/
+% Do not use the stfloats baselinefloat ability as IEEE does not allow
+% \baselineskip to stretch. Authors submitting work to the IEEE should note
+% that IEEE rarely uses double column equations and that authors should try
+% to avoid such use. Do not be tempted to use the cuted.sty or midfloat.sty
+% packages (also by Sigitas Tolusis) as IEEE does not format its papers in
+% such ways.
+% Do not attempt to use stfloats with fixltx2e as they are incompatible.
+% Instead, use Morten Hogholm'a dblfloatfix which combines the features
+% of both fixltx2e and stfloats:
+%
+% \usepackage{dblfloatfix}
+% The latest version can be found at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/dblfloatfix/
+
+
+
+
+%\ifCLASSOPTIONcaptionsoff
+%  \usepackage[nomarkers]{endfloat}
+% \let\MYoriglatexcaption\caption
+% \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
+%\fi
+% endfloat.sty was written by James Darrell McCauley, Jeff Goldberg and
+% Axel Sommerfeldt. This package may be useful when used in conjunction with
+% IEEEtran.cls'  captionsoff option. Some IEEE journals/societies require that
+% submissions have lists of figures/tables at the end of the paper and that
+% figures/tables without any captions are placed on a page by themselves at
+% the end of the document. If needed, the draftcls IEEEtran class option or
+% \CLASSINPUTbaselinestretch interface can be used to increase the line
+% spacing as well. Be sure and use the nomarkers option of endfloat to
+% prevent endfloat from "marking" where the figures would have been placed
+% in the text. The two hack lines of code above are a slight modification of
+% that suggested by in the endfloat docs (section 8.4.1) to ensure that
+% the full captions always appear in the list of figures/tables - even if
+% the user used the short optional argument of \caption[]{}.
+% IEEE papers do not typically make use of \caption[]'s optional argument,
+% so this should not be an issue. A similar trick can be used to disable
+% captions of packages such as subfig.sty that lack options to turn off
+% the subcaptions:
+% For subfig.sty:
+% \let\MYorigsubfloat\subfloat
+% \renewcommand{\subfloat}[2][\relax]{\MYorigsubfloat[]{#2}}
+% However, the above trick will not work if both optional arguments of
+% the \subfloat command are used. Furthermore, there needs to be a
+% description of each subfigure *somewhere* and endfloat does not add
+% subfigure captions to its list of figures. Thus, the best approach is to
+% avoid the use of subfigure captions (many IEEE journals avoid them anyway)
+% and instead reference/explain all the subfigures within the main caption.
+% The latest version of endfloat.sty and its documentation can obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/endfloat/
+%
+% The IEEEtran \ifCLASSOPTIONcaptionsoff conditional can also be used
+% later in the document, say, to conditionally put the References on a
+% page by themselves.
+
+
+
+
+% *** PDF, URL AND HYPERLINK PACKAGES ***
+%
+%\usepackage{url}
+% url.sty was written by Donald Arseneau. It provides better support for
+% handling and breaking URLs. url.sty is already installed on most LaTeX
+% systems. The latest version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/url/
+% Basically, \url{my_url_here}.
+
+
+
+
+
+% *** Do not adjust lengths that control margins, column widths, etc. ***
+% *** Do not use packages that alter fonts (such as pslatex).         ***
+% There should be no need to do such things with IEEEtran.cls V1.6 and later.
+% (Unless specifically asked to do so by the journal or conference you plan
+% to submit to, of course. )
+
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{slashbox}
+%\usepackage{ulem}
+%\usepackage[numbers,sort&compress]{natbib}
+\renewcommand{\arraystretch}{1.3}
+
+
+\usepackage{color}
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
+\floatname{algorithm}{Procedure}
+
+\begin{document}
+\title{Efficient Non-incremental Constructive Solid Geometry Evaluation for Triangular Meshes}
+\author{Rui~Wang,~
+        Xudong~Jiang,~
+        Hongbo~Fu,~
+        Bin~Sheng,~and
+        Enhua~Wu
+\IEEEcompsocitemizethanks{
+
+\IEEEcompsocthanksitem R. Wang and B. Sheng are with the Department of Computer Science and Engineering, Shanghai Jiao Tong University. Email:\{jhcz,shengbin\}@sjtu.edu.cn
+
+\IEEEcompsocthanksitem X. Jiang is with Autodesk China Research \& Development Center. Email: xudong.jiang@autodesk.com
+
+\IEEEcompsocthanksitem H. Fu is with the School of Creative Media, City University of Hong Kong. Email: hongbofu@cityu.edu.hk
+
+
+\IEEEcompsocthanksitem E. Wu is currently a research professor at State Key Lab. of Computer Science, Institute of Software, Chinese Academy of Sciences. Email: ehwu@umac.mo}
+}
+
+%\markboth{Journal of \LaTeX\ Class Files,~Vol.~13, No.~9, September~2014}%
+%{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Computer Society Journals}
+
+\IEEEtitleabstractindextext{
+\begin{abstract}
+\end{abstract}
+
+
+\begin{IEEEkeywords}
+Boolean operations, triangle mesh, CSG evaluation, plane-based geometry.
+\end{IEEEkeywords}
+
+}
+
+
+
+\maketitle
+
+
+\IEEEdisplaynontitleabstractindextext
+\IEEEpeerreviewmaketitle
+
+\IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
+\IEEEPARstart{C}{onstructive} solid geometry (CSG) has long been a popular modeling tool of computer-aided design and computer-aided manufacturing (CAD/CAM). It constructs complex models by combining primitives using a series of regularized Boolean operations \cite{requicha1977mathematical}: union, intersection and difference. CSG is often represented by a binary tree, called a CSG tree, whose leaves are primitives and whose internal nodes are Boolean operations.
+\newline
+
+{\color{red}{
+Main Contribution:
+
+1. We develop a united representation of intersection lines between CSG primitives. Under this representation, Face re-tessellation and classification can be done robustly in any degenerate cases by our pipeline, while keeping good performance.
+
+2. Unlike any of the previous method, during the algorithm, we conduct point-in-polyhedron tests only on single seed vertex. We develop a propagating to spread the classification information from the seed vertex into the whole CSG. In addition, because of this, we do not need to build a full space division to accelerate point-in-polyhedron tests, which is usually time-consuming.
+}}
+
+\section{Related Work}
+
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=7.1in]{flowchart}
+\caption{An overview of the proposed method for CSG evaluation. In this toy example, the CSG tree represents a solid constructed by (Cube $\cup$ Sphere - Cylinder). (d) shows how to classify faces step by step using a flood filling algorithm. Faces of the same primitive are grouped as the inter-primitive group. Then faces of the same inter-primitive group are further divided into intra-primitive groups according to their conditions of intersection (c). The unvisited faces are black. Different colors of other faces indicate that they are accepted and belong to different intra-primitive groups. Rejected faces are rendered with wire-frame. The seed face of flood filling in each primitive is highlighted in red.}
+\label{fig_overview}
+\end{figure*}
+
+
+CSG evaluation has had notorious problems with robustness since its inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. The non-robustness is inherited from the building blocks of CSG: Boolean operations on solids. Many researchers have attempted to solve such an issue using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. However, these methods are often too expensive in computation time and memory to be practical for evaluation of CSG with massive faces. For example, in the Computational Geometry Algorithms Library (CGAL) \cite{cgal:hk-bonp3-15a}, the state-of-the-art robust Boolean operation algorithm \cite{hachenberger2005boolean} (implemented with arbitrary precision arithmetic) is more than 20 times slower than its non-robust version.
+
+
+Sugihara and Iri \cite{sugihara1990solid} introduced a plane-based representation of polyhedra. They found that Boolean operations are fundamentally robust using the plane equation as the primary geometry representation. In this condition, the evaluation of Boolean operations can be performed with no `constructions' \cite{shewchuk1999lecture}, thereby avoiding the introduction of any numerical errors.
+
+
+Berstein and Fussell \cite{bernstein2009fast} noted that a binary space partitioning (BSP) merging algorithm in Boolean operations \cite{thibault1987set, naylor1990merging} is actually a plane-based technique. Therefore, they combined the two conceptions---plane-based geometry and BSP merging---to develop an unconditionally robust method for Boolean operations of polyhedra. Using Shewchuk's adaptive geometry predicate technique \cite{shewchuk1997adaptive}, this method can be only twice slower than non-robust methods. Our approach adopts this technique in the stage of face classification to ensure the robustness.
+
+
+Berstein and Fussell's method does not alleviate the problem of high memory consumption of BSP-based algorithms. Thus, it remains unprepared for polyhedra with massive faces. However, it inspired Campen and Kobbelt to develop a more delicate approach  \cite{campen2010exact}. This approach solves the problem of exact and efficient conversion of polyhedra between vertex-based and plane-based representations. Moreover, by leveraging the adaptive octree, BSP structures are nested into octree cells where the intersection between primitives occurs. For efficiency, face classification is performed using cells as the basic classification units. This localized scheme saves considerable computing resources and retains the topology of non-intersected areas.
+
+
+Such localized scheme is widely used in different methods of CSG boundary evaluation \cite{pavic2010hybrid, wang2011approximate, feito2013fast, campen2010exact}. These methods are usually based on intersection computation and face membership classification. The success of such localized scheme is enabled by two facts. First, the intersections between primitives are locally distributed. Second, space labels of a face are often coherent with those of its neighborhood. The former makes it possible to reduce the space that requires an intersection test. The latter enables sharing of space labels between adjacent faces to accelerate face classification.
+
+
+However, most of these methods use the cube (e.g., voxels, octree cells) as the unit of the face group, which is often the natural result of reusing space-division data structures constructed for intersection computation. In this way, connected faces that share the same labels might be distributed in different cubes. Thus, repetitive classifications may be required for each cube. Furthermore, faces of different classifications may coexist within a small space, forming a ‘mixed’ area (e.g., the red areas in Figs. \ref{fig:cluster}(a) and (b)). Because the size of the cubes cannot be illimitably small, special cubes that contain faces with different space labels typically must be constructed in these mixed areas. Processing these special cubes is often complex and time-consuming. To more efficiently share space labels, we therefore use faces, rather than cubes, as the basic grouping units. Grouping is efficiently performed by utilizing geometry connectivity with a flood-filling algorithm.
+
+
+Recently, Feito et al. \cite{feito2013fast} proposed a method for Boolean evaluation. This method also uses a face-based grouping scheme. To share classification results, faces that do not intersect with other primitives are grouped together according to geometry connectivity. This method and the proposed method have similar stages for single Boolean operation evaluation. One of the major differences is that our method supports non-incremental evaluation of CSG. For this purpose, we designed a series of dedicated stages. Additionally, our face grouping scheme is intended for both non-intersected faces and faces that intersect with other primitives. It thus provides a uniform treatment for all faces and further accelerates the face classification stage. Moreover, the similarity between adjacent groups is omitted by Feito et al.'s method. Although different groups have different space labels, we observe that they may still share some of these labels if they are neighboring. We utilize this kind of space label coherence between groups for better performance.
+
+
+On the other hand, with the development of general-purpose computing on graphics processing units (GPGPUs), many researchers  \cite{wang2011approximate, zhao2011parallel, museth2002level, chen1999volumetic, eisemann2008single} have tried to utilize the grand computation power of graphics hardware for Boolean operations. These methods often have good performance and are suitable for interactive applications, such as digital sculpting. However, owing to the paralleled features of graphics hardware, these methods are usually voxel-based and support only approximate evaluation that inevitably suffers from geometric detail loss, especially at the intersection areas of primitives.
+
+
+\section{Overview}
+
+\label{sec:overview}
+
+As in most previous works \cite{feito2013fast, bernstein2009fast}, we require the input primitives of the CSG tree to be watertight Nef polyhedra with manifold surfaces. We assume there is no self-intersection. Because we adopt a flood-filling strategy, we additionally assume that the connectivity of adjacent faces is available. Our current implementation is dedicated to primitives of triangular meshes for simplicity. Our approach efficiently and robustly computes the boundary of CSG solids in three steps, as illustrated in Fig. \ref{fig_overview}. Our main contributions exist in Steps 2 and 3.
+
+
+\subsection{Adaptive Octree Construction}
+
+As a typical routine of localization, our method uses the adaptive octree to frequently accelerate the used spatial query afterwards. Our octree construction implementation is akin to the implementation in Feito et al.'s method \cite{feito2013fast}. The major difference is that, because our method is for non-incremental CSG evaluation, the octree is constructed on the bounding box that contains all input primitives (Fig. \ref{fig_overview}(b)). To avoid presentation ambiguity between a CSG leaf and an octree leaf, the latter is called a cell. Intersection detection between triangle faces and cells can be efficiently performed by using the separating axis theorem \cite{gottschalk1996obbtree}. Cells are classified into two types: if all triangles that intersect a cell belong to the same primitive, we call it a \emph{non-critical} cell. Otherwise, it is a \emph{critical} cell. This classification is needed for intersection computation in the next step.
+
+
+\subsection{United Representation of Intersection Construction}
+\label{sec:overview:isect}
+
+
+
+\subsection{Multilevel Flood-filling Classification}
+
+
+\section{United Representation of Primitive Intersection}
+{\color{red}{
+Primitive intersects primitive, generating intersection line segments (Fig. \ref{fig_raw1}).
+
+\begin{figure}
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=3.5in]{raw1}\\
+  \caption{triangle contains intersection lines, two-primitive case}\label{fig_raw1}
+\end{figure}
+
+Considering degenerate cases in n-primitives CSG can be very complex (Fig. \ref{fig_raw2}).
+
+\begin{figure}
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=3.5in]{raw2}\\
+  \caption{triangle contains intersection lines, n-primitives degenerate cases}\label{fig_raw2}
+\end{figure}
+
+We converted it into a united representation, making it clear and easy to process by the following process (Fig. \ref{fig_raw3}).
+
+\begin{figure}
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=3.5in]{raw3}\\
+  \caption{triangle contains intersection lines, n-primitives degenerate cases, using united representation}\label{fig_raw3}
+\end{figure}
+}}
+
+\subsection{Plane-based Triangle Intersection}
+
+{\color{red}{why using triangle intersection, rather than edge-face based, etc. --- for coplanar test.}}
+\newline\newline
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.0in]{projection}
+\caption{$Seg_1$ is the intersection between $S_2$ and $F_1$. $Seg_2$ is the intersection between $S_1$ and $F_2$. The intersection between $F_1$ and $F_2$, which is the line segment in red, is the overlap of $Seg_1$ and $Seg_2$.}
+\label{fig_projection}
+\end{figure}
+
+
+M\"{o}ller's algorithm computes the intersection between two triangles $F_1$ and $F_2$ in three steps, as illustrated in Fig. \ref{fig_projection}. First, an early rejection is performed by testing whether $F_1$ intersects the plane where $F_2$ lies, which is denoted as $S_2$. This is a necessary condition of intersection between $F_1$ and $F_2$. If this test is passed, then the same is performed for $F_2$ and $S_1$, where $S_1$ is the plane of $F_1$. Second, the intersection between $F_1$ and $S_2$, denoted as $Seg_1$, and the intersection between $F_2$ and $S_1$, denoted as $Seg_2$, are separately computed . At last, the intersection between $F_1$ and $F_2$ is determined by computing the overlap area of $Seg_1$ and $Seg_2$ .
+
+
+
+\begin{figure}[t]
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=3.0in]{nonrobust}\\
+  \caption{The left edges of A and B (\emph{left}) are nearly but not exactly collinear. However, under usual float point arithmetic, they might be judged as collinear causing discontinuous edges in the final result (\emph{right}).}\label{fig:precision}
+\end{figure}
+
+
+Conventional implementations of M\"{o}ller's algorithm use vertex-based representation and usual float point arithmetic. However, this is neither exact nor robust. In Fig. \ref{fig:precision}, we illustrate a non-robust 2D case of the Boolean operation. Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. On the other hand, if the computation can be restricted to \emph{predicates}, which make a two or three-way decision based on known coordinates, we could quickly and robustly implement this algorithm.
+
+
+
+Fortunately, according to Sugihara and Iri \cite{sugihara1990solid}, geometry computation of Boolean operations can be restricted to predicates using plane-based representation of polyhedra. This motivated us to integrate plane-based representation into M\"{o}ller's algorithm. Exact and efficient predicate computation is performed using precise geometry predicate techniques \cite{shewchuk1997adaptive}. Details of our implementation are shown below.
+
+\begin{figure}
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=1.7in]{p-reps}\\
+  \caption{Plane-based representation of triangles. The yellow triangle is represented by three bounding planes (green) and the supporting plane where the triangle lies.}\label{fig:p-reps}
+\end{figure}
+
+We first convert $F_1$ and $F_2$ into their respective plane-based representations: a supporting plane surrounded by three bounding planes (Fig. \ref{fig:p-reps}). We implement this conversion using the exact conversion method by Campen and Kobbelt \cite{campen2010exact}. Then, in our implementation, the relative position of a point and a plane can be determined by computing the sign of the multiplication of determinants \cite{sugihara1990solid}. To avoid introducing errors, we represent the end points of $Seg_1$ and $Seg_2$  by intersections of plane triples, rather than by directly computing their coordinates. As illustrated in Fig. \ref{fig:isect}(a), these points are the intersection between an edge line of a face and the supporting plane of the other face. Because the edge line of $F_1$ can be represented as $[S_1, S_X]$ (or $[S_2, S_X]$ for an edge line of $F_2$), where $S_X$ is the corresponding bounding plane of the edge, the end points of $Seg_1$ or $Seg_2$ can be represented in the form of $[S_1,S_2,S_X]$. In Fig. \ref{fig:isect}, we list all intersection situations between a triangle and a plane, and the $S_X$  in each situation.
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{sign}
+\caption{We denote the signed distance from point $X$ to plane $S_2$ as $d_X$. All the four conditions of intersection between $F_1$ and $S_2$ (denoted as $Seg_1$) are:  (a) $d_A\cdot d_C<0$, $d_B\cdot d_C<0$; (b) $d_A=0$, $d_B=0$, $d_C\neq 0$; (c) $d_A=0$, $d_B\cdot d_C<0$; (d) $d_A=0$, $d_B\cdot d_C>0$. End points of $Seg_1$ are intersections between $S_2$ and related edge lines of $F_1$ (bold edges).}
+\label{fig:isect}
+\end{figure}
+
+
+The intersection between $F_1$ and $F_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by comparing the end points of $Seg_1$ and $Seg_2$ along $L$ (Fig. \ref{fig_projection}), where $L$ is the intersection between $S_1$ and $S_2$. Unlike M\"{o}ller's implementation, our approach uses no projection, which requires the exact point coordinates. We call the direction of vector $\vec{N}_1\times \vec{N}_2$ the positive direction, where $\vec{N}_1$ and $\vec{N}_2$ are normals of $S_1$ and $S_2$ respectively. Given two points $A$ and $B$ on $L$,  we compute the sign of the multiplication of determinants:
+\begin{equation}
+\label{eq:sign}
+  K(A, B)=
+  \left|
+  \begin{array}{c}   %该矩阵一共3列，每一列都居中放置
+  \vec{S}_1 \\ \vec{S}_2 \\ \vec{S}_A \\ \vec{S}_B
+  \end{array}
+  \right|
+  \left|                 %左括号
+  \begin{array}{c}   %该矩阵一共3列，每一列都居中放置
+  \vec{N}_1 \\\vec{N}_2 \\\vec{N}_A
+  \end{array}
+  \right|
+  \left|                 %左括号
+  \begin{array}{c}   %该矩阵一共3列，每一列都居中放置
+  \vec{N}_1 \\\vec{N}_2 \\\vec{N}_B
+  \end{array}
+  \right|,
+\end{equation}
+where $\vec{S}_X$ is the coefficient vector of plane equation $[a_X,b_X,c_X,d_X]$,  and $ \vec{N}_X$ is the normal vector $[a_X,b_X,c_X]$. If $K(A, B)$ is positive (negative), this means that $A$ lies in the positive (negative) direction of $B$. Otherwise, $A$ and $B$ are concident.
+
+
+
+If $F_1$ and $F_2$ are coplanar, we check whether they overlap within the common plane using the algorithm by M\"{o}ller\cite{moller1997fast}. The substrate of this algorithm is to verify on which side of an edge $E$ a point $V$ lies. We implement it using plane-based geometry by substituting $E$ with its corresponding bounding plane $S_E$ and then computing the sign of distance from $V$ to $S_E$.
+
+
+\subsection{Generating United Representation}
+
+{\color{red}{Mainly deal with intersection between intersection line segments.}}
+
+\section{Multi-level Flood-filling Classification}
+\label{section:floodfill}
+
+
+{\color{red}{Flood-filling is all about giving a seed and propagation. In this chapter, from down to top, we introduce this process and explain how it can save computation time.}}
+
+
+In this step, we classify faces one by one to generate the final mesh. The intersection information computed in the previous section is used for re-tessellation and space label computation. To better explain our approach, we firstly introduce the background knowledge. Then the framework of this step is outlined. Afterwards, several important techniques in this step are detailed.
+
+\subsection{Background}
+\label{sec:intuitive}
+
+
+We firstly introduce the space labels, which comprise the basis of face membership classification. The space label of face $F$ with respect to primitive $M$, denoted as $L_F(M)$, is the relative location of $F$ with respect to $M$. Also, we use $L(M)$ to denote the space label with respect to $M$ which does not specify a face. In general, space label has four conditions: completely inside (\emph{In}), completely outside (\emph{Out}), on the boundary (\emph{On}) or not available (\emph{N/A}). In the last condition, $F$  crosses the boundary of $M$. Accordingly, it does not have a uniform label. In addition, if the normal direction of $F$ is considered, there are two derived conditions of \emph{On}: the normal points to the outside (\emph{Same}) and those to the inside (\emph{Oppo}) of $M$.
+
+
+The evaluation of Boolean operations between B-reps primitives $A$ and $B$ can be converted to the problem of surface selection according to the labels \cite{kuratowski1968set}:
+\begin{equation}
+\label{eq:select}
+\begin{split}
+&A\cup^*B:\{F_A~Out~B\}\cup\{F_B~Out~A\}\cup\{F_A~Same~B\},\\
+&A\cap^*B:\{F_A~In~B\}\cup\{F_B~In~A\}\cup\{F_A~Same~B\},\\
+&A-^*B:\{F_A~Out~B\}\cup\{(F_B~In~A)'\}\cup\{F_A~Oppo~B\},
+\end{split}
+\end{equation}
+
+\noindent where $F_X$ is the faces of $X$, and $F'$ means $F$ with an inverted normal. The stars ($^*$) after the operation notations ($\cup, \cap, -$) mean that the Boolean operations are regularized.
+
+
+Now, consider computing $L_F(T)$, where $T$ is a CSG solid $T$ with $n$ primitives $\{M_i~| ~i = 1,2,3,...,n\}$.  Then there are a total of $n$ space labels for $F$: \{$L_F(M_i)~|~i = 1,2,3,...,n\}$ (or in vector form $\vec{L}_F$). If all elements in $\vec{L}_F$ are known and none of them is \emph{N/A}, $L_F(T)$ can be easily computed by traversing the whole CSG tree from bottom to top and progressively combining the space labels of the CSG nodes according to combination rules \cite{requicha1985boolean}:
+\begin{equation}
+\label{eq:comb}
+\begin{split}
+X\cup Out\Rightarrow X, ~~&X\cap Out\Rightarrow Out, \\
+X\cap In~~\Rightarrow X, ~~&X\cup In\Rightarrow In, \\
+X \cup X \Rightarrow X, ~~&X \cap X \Rightarrow X,\\
+Same \cup Oppo\Rightarrow In, ~~&Same \cap Oppo\Rightarrow Out,
+\end{split}
+\end{equation}
+where $X$ is an arbitrary label value. Note that the combination rules for difference operation are not shown here, because the difference operation can be converted into the intersection operation using De Morgan's transformations:
+\begin{equation}
+\label{eq:demo}
+\begin{split}
+A-B\Rightarrow A\cap B^c, ~~~~~~~&(A^c)^c\Rightarrow A,\\
+(A\cap B)^c\Rightarrow A^c\cup B^c, ~~&(A\cup B)^c\Rightarrow A^c\cap B^c,
+\end{split}
+\end{equation}
+where $X^c$ denotes the complement of $X$. If and only if $L_F(T) = Same$, $F$ lies on the boundary of the final model and has the correct normal; accordingly, $F$ belongs to the final result.
+
+
+If some elements in $\vec{L}_F$ are \emph{N/A} or cannot be computed, we may be unable to compute $L_F(T)$. However, the CSG tree $T$ can be trimmed into a smaller one with fewer primitives to reduce the complexity of further evaluation. For example, assume we have a CSG with its Boolean expression $M_1\cup (M_2\cap M_3-M_4)$. Given the values of two labels $L(M_1)=Out$, $L(M_2)=In$, the expression can be rewritten as $Out\cup (In\cap M_3-M_4)$. Using the combination rules we can simplify the expression as $M_3-M_4$. Thus, any face that shares the same two labels $L(M_1)$ and $L(M_2)$ can be classified based on the trimmed CSG tree $M_3-M_4$, which has only two primitives.
+
+
+
+\subsection{Face Classification Framework}
+\label{sec:framework}
+
+
+\begin{figure}
+\centering
+\includegraphics[width=3.5in]{multilvl}
+\caption{Illustration of multi-level face grouping framework. Faces are grouped into smaller groups in each level. The trimmed CSG tree of a specific group is obtained by trimming the tree of its parent according to common labels of this group. When the group is not further subdivided, faces in this group are respectively classified based on the trimmed CSG tree of this group.}
+\label{fig:hierachy}
+\end{figure}
+
+Space labels of neighboring faces are often coherent. That is, given two neighboring faces $F_1$ and $F_2$, $L_{F_1}(M)$ and $L_{F_2}(M)$ are often the same. Therefore, we can group together neighboring faces and evaluate them based on the smaller CSG tree, which is trimmed by the common labels. The trimmed tree contains fewer leaves, thus enabling faster computation. If face grouping can be efficiently performed, this strategy will greatly accelerate the process of face membership classification. Moreover, a multi-level grouping scheme (Fig. \ref{fig:hierachy}) may provide even greater capability to shared labels. By using such a scheme, faces are first grouped into first-level groups; then, faces of the same first-level groups are further divided into second-level groups, and so on. Labels are shared in each level and the original CSG tree is trimmed step by step according to common labels in each level. We developed this idea into a novel classification algorithm that uses a two-level grouping scheme. The first level is the \emph{inter-primitive} level; the second is the \emph{intra-primitive} level.
+
+
+Before we begin face classification, pre-computation is conducted to make the subsequent analysis easier. The original CSG tree is converted into a \emph{positive} tree using the method by Rossignac and Voelcker \cite{rossignac1988active}. `Positive' means that the CSG tree contains no difference (-) operation. According to Equation \ref{eq:demo}, there may be some primitives with complement notation. The benefit is that we are not required to consider the difference operations in the following computation.
+
+
+The classification starts from face grouping in the inter-primitive level. In this level, faces of the same primitives are simply grouped together. Then, we give a rough estimation of the common labels of the group. Suppose the group is primitive $M$. Its face labels with respect to primitives whose bounding boxes are totally outside of $M$'s bounding box must be $Out$ (for primitives with complement notations, $In$). The original CSG tree is trimmed into the first trimmed CSG tree (as short as the \emph{the first trimmed tree}) according to these common labels plus an extra label $L(M)$ whose value is obviously $Same$.
+
+
+After that, the inter-primitive groups are further divided into smaller intra-primitive groups. To explain how to perform intra-primitive grouping, we firstly introduce an essential concept---intersection primitive (IP). The IPs of a face $F$ is defined as the primitives that $F$ intersects, excluding the primitive to which $F$ belongs (denoted as $M$). Primitives (excluding $M$) that do not intersect $F$ are called non-IPs. The set that contains all IPs of $F$ is the IP-set of $F$. That set can be computed by enumerating all the primitives in the cross list and coplanar list of $F$.
+
+
+Now, we require that the faces of the same intra-primitive group meet two requirements: they should be connected together and have the same IP-set. These two requirements give these faces very good properties, as discussed in Proposition 1. The labels referenced in Proposition 1 are used to trim the first trimmed tree into the second trimmed CSG tree (as short as \emph{the second trimmed tree}). For a specific intra-primitive group, the primitives of its second trimmed tree is a subset of the common IP-set of that group. This is because all space labels with respect to non-IPs are shared within the intra-primitive group and all these labels are either $In$ or $Out$. Therefore, all non-IPs must have been trimmed from the CSG tree (to be explained in Section \ref{sec:trim}).
+
+
+\vspace{0.8em}
+\noindent \textbf{Proposition 1.}~~~~If a group of faces are connected together and they have the same IP-set, they must share the same labels with respect to all non-IPs. These labels are either \emph{In} or \emph{Out}.
+
+\vspace{0.6em}
+\noindent \textbf{Proof.}~~~~We only prove that the conclusion stands for adjacent faces, which is a special case of connected faces. Promoting the conclusion to the general situation is obvious. Assume $M$ is a non-IP and label $L(M)$ is different for the two adjacent faces $A$ and $B$ . Then there must be faces from $M$ between $A$ and $B$ to cause the different space labels. Additionally,  because $A$ and $B$ are adjacent, at least one of $A$ and $B$ intersects the faces from primitive $M$. This contradicts the assumption that $M$ is non-IP. Therefore, $L(M)$ must be the same for $A$ and $B$. Moreover, because $M$  is non-IP, $L(M)$ is either \emph{In} or \emph{Out}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=3.5in]{mesh}\\
+  \caption{A snapshot during flood filling (\emph{left}), and the final grouping result (\emph{right}). Different intra-primitive groups are distinguished by different colors. From the final grouping result, the whole mesh is divided into 9 intra-primitive groups.}\label{fig:mesh}
+\end{figure}
+
+
+\vspace{1.0em}
+Because faces of the same intra-primitive group are connected together, we can efficiently group them using a flood filling algorithm. When visiting a face, its space label vector is instantly computed and its classification is performed. Our intra-level grouping is performed as follows:
+\begin{itemize}[leftmargin=0.45cm]
+\item[1)]{\textbf{First seed generation.}}~A triangle face $F_{S0}$ is randomly chosen as the first seed (e.g., the red triangle in Fig. \ref{fig:mesh}). Labels of $F_{S0}$ with respect to non-IPs are determined by using $F_{S0}$'s barycenter as the sample point, through a ray-shooting algorithm \cite{havran1999summary} and by employing our octree as a spatial search structure \cite{frisken2002simple} to speed up. Note that because the original CSG tree is trimmed into the first trimmed tree, we only compute labels with respect to primitives within that first trimmed tree.
+\item[2)]{\textbf{Label propagation.}}~Once there is a seed $F_S$ with $L_{F_S}$ with respect to all non-IPs, we define the intra-primitive group $G_S$ as follows. All faces that belong to $G_S$ should have the same IP-set as $F_S$. The common labels of $G_S$ are $L_{F_S}$ with respect to all non-IPs. The first trimmed tree is trimmed into the second trimmed tree according to these common labels. Breadth-first flood filling is used to find all faces that belong to $G_S$. When visiting a face, we first check if it has the same IP-set as the seed. If so, set membership classification is performed based on the second trimmed tree of $G_S$ (detailed in Section \ref{section:setmemcls}). Otherwise, it is pushed into a candidate list for Step 3 (e.g., the black faces in Fig. \ref{fig:mesh} (left)).
+ \item[3)]{\textbf{Secondary seed generation.}}~When the flood filling ends, which means no more faces belong to the current face group, a new seed is picked from the candidate list (e.g., the stippled faces in Fig. \ref{fig:mesh}). Then a new group is defined by the new seed and the labels with respect to non-IPs of the new seed are computed (details in Section \ref{sec:secondseed}). After that, Step 2 is repeated according to the newly defined group, until that candidate list is empty, indicating all faces of $M$ are classified.
+ \end{itemize}
+
+The face membership classification of the whole CSG is accomplished by performing the above process for each primitive. Procedure \ref{code:floodfill} shows the framework as pseudo-code. To avoid repetitive visits during flood filling, we use an extra flag for each face to record its visiting status.
+
+
+\begin{algorithm}[!ht]
+\caption{FaceClassification(PrimitiveList, PosTree)}
+\label{code:floodfill}
+    \begin{algorithmic}[1]
+    \FOR {each $M_i$ in $PrimitiveList$}
+    \STATE Get common labels $CL^1$ of $M_i$;
+    \STATE Trim $PosTree$ into $TrimTree1$ by $CL^1$;
+    \STATE Select the first seed $F_0$ from $M_i$;
+    \STATE Put $F_0$ into $CandidateList$;
+    \WHILE {$CandidateList$ is not empty}
+    	\STATE Pick a seed $F_S$;
+        \STATE Define group $G_S$, where $F_S\in G_S$;
+        \STATE Compute the common labels of $F_S$, denoted as $CL^2$;
+        \STATE Trim $TrimTree1$ into $TrimTree2$ according to $CL^2$;
+    	\STATE Put $F_S$ into $FloodFillQueue$;
+    	\WHILE {$FloodFillQueue$ is not empty}
+    		\STATE Get the next face $F_i$ from $FloodFillQueue$;
+    		\STATE Do set membership classification of $F_i$ based on $TrimTree2$;
+    		\FOR {each adjacent face $F_{Neighbor}$}
+    			\IF {$F_{Neighbor}$ belongs to $G_s$}
+    				\STATE Put $F_{Neighbor}$ into $FloodFillQueue$;
+    			\ELSE
+                    \STATE Put $F_{Neighbor}$ into $CandidateList$;
+    			\ENDIF
+    		\ENDFOR
+    	\ENDWHILE
+    \ENDWHILE
+    \ENDFOR
+    \end{algorithmic}
+\end{algorithm}
+
+
+\subsection{Trimming CSG Tree}
+\label{sec:trim}
+
+
+Trimming a CSG (binary) tree with the $In$ or $Out$ label is relatively simple. According to the first two lines of Equation \ref{eq:comb}, given a primitive $M$, if $L(M)$ is $In$ ($Out$), the label of $M$'s parent node is either $In$ ($Out$) or the value of its sibling. In either condition, the node representing $M$ can be trimmed from the tree.
+
+However, when trimming the original tree into the first trimmed tree for a specific inter-primitive group, a special label, $Same$, exists. This label means that the faces of the group are on the boundary of the primitive to which they belong, which is absolutely correct. This label is not easy to process because we cannot determine the label of its parent node unless we know the label of its sibling. Unfortunately, during tree trimming, the labels we have are incomplete. We may have to leave the $Same$ label unprocessed and wait for further information. This incurs considerable computation burden to check this special condition and makes the trimming algorithm inefficient. To solve the problems, we developed a new representation of the CSG tree, called CSGlist, to minimize the side effect of the special $Same$ label and enable early rejection of face groups that do not belong to the final model of the CSG.
+
+
+Given a face group from primitive $M$, we construct the CSGlist as follows. We cut the original CSG tree into a set of subtrees along the \emph{critical path}, which is the path from $M$ to the root (e.g., when $M=D$, the construction of CSGlist is shown in Fig. \ref{fig_trim}). Obviously, none of the subtrees contains the primitive $M$. Each subtree of CSGlist is associated with `desired' label values. That is, if the labels with respect to all subtrees meet their corresponding desired values respectively, the labels with respect to the original CSG tree is $Same$. On the contrary, if the labels with respect to any subtree are not desired, the labels with respect to the whole CSG tree is not $Same$; thus the related face group should be dropped. The desired value of a subtree is determined based on how the subtree connects to the critical path. According to the face selection rules (Equation \ref{eq:select}), if the subtree connects to a Union ($\cup$) node, then the desired value is $In$; otherwise, the desired value is $Out$. In addition, suppose the primitive $A$ in Equation \ref{eq:select} is the left child. Then if the subtree is in the left child of its parent node, $Same$ is also desired.
+
+
+Conversion to CSGlist is performed before the first trimming. After that, all the labels we use for CSG tree trimming are either $In$ or $Out$. Both the first and the second trimmed trees are represented by CSGlists. The subtrees of the CSGlist can be easily trimmed (since there is only $In$ and $Out$ labels) and their desired values are used to enable early rejection.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=3.0in]{csgtree}
+\caption{Convert CSG tree into a CSGlist along the critical path (marked by the arrow) from primitive $D$ to the root. The CSGlist contain three subtrees. Each subtree has its desired label value. Subtree 1: $Out$ or $Same$. Subtree 2: $In$ or $Same$. Subtree 3: $Out$.}
+\label{fig_trim}
+\end{figure}
+
+\subsection{Classifying a Single Face}
+\label{section:setmemcls}
+
+If a face is non-intersected, the second trimmed tree will have single value, which can be used to determine whether the face is accepted. However, if it is an intersected face, further processing is needed.
+
+
+Intersected faces usually cannot be classified as a whole. They have to be tessellated into smaller non-intersected triangles, each of which is classified respectively. Robustness and efficiency are our main consideration. For these purposes, we nest the exact BSP structure \cite{bernstein2009fast, campen2010exact} into the intersected faces. We classify intersected face $F$ as follows.
+
+\vspace{0.5em}
+\noindent \textbf{Valid-IPs \& Pseudo-IPs}~~~~
+IPs of an intersected face are firstly divided into two types according to whether the IPs are in the second trimmed tree. The IP that is the primitive of the second trimmed tree is called the valid intersection primitive (valid-IP). Otherwise, it is called the pseudo-intersection primitive (pseudo-IP). Pseudo-IPs intersect the face; however, the labels with respect to pseudo-IPs do not affect the classification of $F$. In other words, the intersections of pseudo-IPs are not edges of the final models, as illustrated in Fig. \ref{fig:invalidcross}. Thus, we simply omit these pseudo-intersections during classification. This filtering stage saves computation time by avoiding unnecessary splitting of faces. An extreme instance is that there is no valid-IP. For this condition, the face is processed in the same way as a non-intersected face.
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=3.2in]{invalid-cross}
+\caption{2D illustration of pseudo-intersection. The vertices in red do not appear in the final model. They are so called pseudo-intersection vertices (line segments in the 3D case).}
+\label{fig:invalidcross}
+\end{figure}
+
+\vspace{0.5em}
+\noindent \textbf{Tessellation}~~~~
+In this step, $F$ is divided into a set of sub-triangles using the intersections recorded in Section \ref{section:isect}. Because constrained Delaunay triangulation (CDT) \cite{chew1989constrained} has good topology characteristics, we convert the tessellation into a problem of CDT. The zone of CDT is $F$, and the constraints are all the intersections by valid-IPs. The constraints ensure that no sub-triangles will cross these intersection lines. Because CDT in our method is a vertex-based 2D problem, the 3D coordinates computed by their plane-based representation are projected on a 2D space, which is the axis-aligned plane where the area of $F$ is maximized.
+
+
+It should be noted that intersections from different valid-IPs may intersect (Fig. \ref{fig:cdt}(c)). Omitting these intersection points may cause false results of CDT. To obtain the correct constraints, intersections from different valid-IPs are tested to determine whether they intersect. We implement this test again using plane-based geometry for robustness. As we know this kind of special intersection is actually the cross point of the three faces: $F$,  and the two associated intersected faces from the valid-IPs (Fig. \ref{fig:cdt}(d)). Therefore, such a point can be represented by the three supporting planes of the three faces. We determine whether the cross point exists by testing if the point is inside all three of these faces. By adopting the routine of the relative position of a point to a plane \cite{sugihara1990solid}, this test is robust and efficient. If the cross point of different intersection lines is detected, these lines are split by the cross point and the constrains of CDT are updated accordingly. Moreover, because the cross point is actually shared by the three faces, it is added to the point lists (Section \ref{sec:isecthandle}) of all three of these faces.
+
+
+\begin{figure}
+\centering
+\includegraphics[width=3.5in]{cdt}
+\caption{We classify the face $F$ from primitive $M$: (a) faces of $M_1$ (yellow) that intersect $F$. BSP of $M_1$ is constructed according to these. (b) Faces of $M_2$ (green) that intersect $F$. BSP of $M_2$ is constructed according to them. (c) If $M_1$ and $M_2$ are the only valid-IPs of $F$, then triangulation can be performed according to intersection lines recorded in the cross list. The red area shows a possible result of sub-triangle classification. Note that there are intersections between lines from different primitives (marked as red stars), which are (d) intersections of three faces each from different primitives.}
+\label{fig:cdt}
+\end{figure}
+
+
+\noindent \textbf{Classification of sub-triangles}~~~~
+An intersected face $F$ is divided by faces from each valid-IPs into $In$ cells, $Out$ cells and $On$ cells (Figs. \ref{fig:isect}(a) and (b)). The BSP tree \cite{naylor1990merging} is very suitable for describing such partitions. The labels of sub-triangles can be efficiently computed according to a BSP representation using the BSP-based point-in-polyhedra test \cite{gordon1991front, fuchs80visible, james1999binary}. Details are discussed as follows.
+
+
+
+Given a valid-IP, denoted as $M$, we firstly build a BSP tree nested within $F$ according to the intersections between $F$ and $M$. This is a 2D partition problem. Nevertheless, constructing BSP in 2D space of $F$ will introduce errors on account of the involved conversion from plane triples (plane-based representation) into 2D coordinates. Therefore, it is better to construct the BSP tree in 3D space. If we limit the space of the BSP construction zone within the face $F$ with tiny thickness, denoted as $P_F$, it is obvious that all faces from $M$ that intersect $P_F$ are recorded in the cross list and the coplanar list of $F$. These faces give the correct space partition on $P_F$. We construct the 3D BSP tree according to the intersected faces. The construction of the BSP tree is implemented using an exact plane-based algorithm proposed by Berstein and Fussell \cite{bernstein2009fast}. Now, given a sub-triangle $SF$, the label $L_{SF}(M)$ is then computed based on the classification results of the three corners of $SF$ according to the constructed BSP. If all three classification results are $On$, then $L_{SF}(M)$ is either $Same$ or $Oppo$. If any classification of the corners is not $On$, $L_{SF}(M)$  is the same as the non-$On$ classification .
+
+
+After all space labels of a sub-triangle are computed, we judge whether the sub-triangle belongs to the final model based on the second trimmed tree represented as CSGlist. The subtrees in CSGlist are evaluated using the combination rules of labels. The sub-triangle is accepted if and only if the evaluation results of all subtrees are desired. We might accelerate this step if the coplanar list of $F $is empty or the faces in the coplanar list are all from pseudo-IPs. In this case, the labels with respect to valid-IPs are either $In$ or $Out$, and each subtree of CSGlist can be efficiently evaluated using Blist, which was proposed by Hable and Rossignac \cite{hable2005blister}. For CSG models in which the coplanar cases are rare, this acceleration saves considerable computation time.
+
+
+\subsection{Secondary Seeds Generation}
+
+
+
+\begin{figure}
+  \centering
+  % Requires \usepackage{graphicx}
+  \includegraphics[width=2.0in]{sgen}\\
+  \caption{$F_x$ is the secondary seed, and $F_c$ is its associated face. The labels of $F_x$ with respect to primitives that intersect $F_c$ but do not intersect $F_x$ (e.g., the yellow intersection) can be computed using any point in $E_{x,c}$ as the sample. The labels of $F_x$ with respect to primitives that intersect neither $F_x$ nor $F_c$ are the same for both faces. Line segments of different colors are intersection lines by different primitives.}\label{fig:sgen}
+\end{figure}
+
+
+\label{sec:secondseed}
+
+As discussed in Section \ref{sec:framework}, during flood filling, faces belonging to the group of the current seed are classified according to the second trimmed tree of this group. The rest are added to a candidate list for generating secondary seeds when no more faces belong to the group of the current seed. The main task of secondary seed generation is to compute the space labels with respect to non-IPs of the new seeds.
+
+
+A straightforward scheme is to use the same approach as the first seed generation in Section \ref{sec:framework}. However, this scheme requires  recalculating all the space labels with respect to non-IPs using the time-consuming ray-shooting method. For complex CSG evaluation, in which secondary seed generation is frequently requested , we need a more efficient solution. Again, we use the information of neighboring faces to accelerate this process. When a face $F_x$ is added to the candidate list, we associate the following data with $F_x$: the face $F_c$ that is currently being visited (therefore $F_x$'s neighbor; see Fig. \ref{fig:sgen}) and the labels of $F_c$ with respect to $F_c$'s non-IPs. Note that the non-IP set of $F_x$, denoted as $C_x$, is different from that of $F_c$, denoted as $C_c$.
+
+
+Now, if $F_x$ is selected as a new secondary seed, we can compute the labels with respect to non-IPs of $F_x$ in two complementary ways: we can directly inherit from the labels of $F_c$, or represent $F_x$ with a point within $F_c$ and compute the label of this point using the BSP technique presented in Section \ref{section:setmemcls}. The former is used for the computation of the labels with respect to the primitives that are in $C_c\cap C_x$. The labels with respect to these primitives are the same for both $F_x$ and $F_c$. The latter is used for computing the labels with respect to the remaining of primitives (e.g., those in $C_c\setminus C_x$). According to Proposition 2, the sample point of $F_x$ can be chosen as any point in the common edge of $F_x$ and $F_c$, denoted as $E_{x,c}$. For robustness, we use one of the end points of $E_{x,c}$ as the sample point because we have its exact plane-based representation.
+
+
+\vspace{+1.0em}
+\noindent \textbf{Proposition 2.}~~~~Given two adjacent faces $F_c$ and $F_x$, the labels with respect to primitive $M$ for $F_x$ is the same as the classification result of any point on the common edge of $F_x$ and $F_c$ in the BSP tree of $M$ for $F_c$ (constructed in Section \ref{section:setmemcls}), if $M$ is in the IP-set of $F_c$ but not in the IP-set of $F_x$.
+\vspace{+0.5em}
+
+\noindent \textbf{Proof.}~~~~We know $M$ is not in the IP-set of $F_x$; therefore, it is obvious that all points on $F_x$ have the same labels with respect to $M$. Because the points on the common edge of $F_x$ and $F_c$ are in $F_x$, they have the same labels.
+\vspace{+1.0em}
+
+
+
+\section{Experiments and Discussion}
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=3.2in]{raster}
+\caption{\emph{Cube} $\cup$ \emph{Sphere1} $\cap$ \emph{Sphere2}: our method resulted in simpler mesh connectivity than the method by Campen and Kobbelt \cite{campen2010exact}.}
+\label{fig:raster}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{budda}
+\caption{Boolean operations on model \emph{Budda}: (a) two \emph{Buddas}, (b) results of \emph{Budda} $\cap$ \emph{Budda}, and (c) the incorrect result of \emph{Budda} $\cap$ \emph{Budda} generated by non-robust implementation of Feito et al.'s method \cite{feito2013fast}.}
+\label{fig:budda}
+\end{figure}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=7in]{models2}
+\caption{(a) Boolean operations between a \emph{Ring} and a set of \emph{Spheres}. $\langle 1\rangle$ after 200 operations. $\langle 2\rangle$ after 800 operations. (b) Union of \emph{Armadillo} and six \emph{Spoons}. (c) \emph{Head} - \emph{Cuboid} + \emph{LeftBrain} + \emph{RightBrain}. (d) Difference a \emph{BigCylinder} and 28 \emph{SmallCylinders}. (e) \emph{Man} $\cup$ \emph{Horse}. (f) \emph{Dragon} - \emph{Bunny}. (g) \emph{Palate} $\cup$ \emph{Mandible} $\cup$ (20 \emph{Teeth}).}
+\label{fig:models}
+\end{figure*}
+
+\begin{table*}[ht]
+\caption{Computation Time Statistics (Seconds)}
+\label{tab:performance}
+\centering
+\begin{tabular}{*{13}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\hline
+\multirow{2}{*}{No.} & \multirow{2}{*}{Figure} & \multicolumn{3}{c|}{Face Num.$^\nabla$} & \multirow{2}{*}{\tabincell{c}{Primitive\\Num.}} & \multirow{2}{*}{\tabincell{c}{CGAL \\ \cite{cgal:hk-bonp3-15a}}} & \multirow{2}{*}{\tabincell{c}{Maya \\ \cite{Maya2015}}} & \multirow{2}{*}{\tabincell{c}{Campen \\ \cite{campen2010exact}}} & \multirow{2}{*}{\tabincell{c}{Feito \\ \cite{feito2013fast}}}& \multicolumn{4}{c}{Our Approach}\\
+\cline{3-5} \cline{11-14}
+ & & Total & Min & Max &&&&&& Total$^\circ$ & Step 1 & Step 2 & Step 3\\
+\hline \hline
+1 & \ref{fig:models}(a) & 37.6K & 180 & 1.6K & 201 & 1350 & 49.9 & TLE$^{\dag}$ & 15.9 & \textbf{3.13}  & 0.328 & 1.69 & 0.922 \\
+2 & \ref{fig:models}(a) & 146K & 180 & 1.6K & 801  & TLE & 1400 & TLE & Fail* & \textbf{12.8}  & 1.36 & 6.41 & 4.00 \\
+3 & \ref{fig:models}(b) & 377K & 2.56K & 346K & 7 & TLE & 224.5 & 45.7 & 11.7 & \textbf{1.44} & 0.438 & 0.062 & 0.563 \\
+4 & \ref{fig:models}(c) & 79.2K & 12 & 38.2K & 4  & 97.6 & Fail & 3.58 & 1.69 & \textbf{0.563}  & 0.187 & 0.141 & 0.172 \\
+5 & \ref{fig:models}(d) & 36K & 800 & 2.4K & 29 & 34.1 & 7.03 & 18.7 & 4.05 & \textbf{0.313} & 0.094 & 0.094 & 0.081 \\
+6 & \ref{fig:models}(e) & 597K & 96.9K & 500K & 2 & TLE & 38.3 & 26.4 & 5.63 & \textbf{2.13} & 0.563 & 0.031 & 0.984 \\
+7 & \ref{fig:models}(f) & 170K & 69.7K & 100K & 2  & 218 & 7.45 & 13.8 & 2.39 & \textbf{0.891} & 0.328 & 0.125 & 0.266 \\
+8 & \ref{fig:models}(g) & 362K & 6.91K & 276K & 22 & TLE & 344 & 256 & 19.2 & \textbf{1.80} & 0.766 & 0.172 & 0.593 \\
+9 & \ref{fig:budda} & 2.16M & 1.08M & 1.08M & 2 & Fail & Fail & MLE$^\bullet$ & Fail & \textbf{11.3} & 5.55 & 1.36 & 3.01 \\
+\hline
+\end{tabular}
+\begin{flushleft}
+$^{\nabla}$~~\emph{Min} (\emph{Max}) means the minimum (maximum) number of faces of a single primitive.
+
+$^{\circ}$~~The total computation time of our method includes the construction of half-edge structure and the three steps in Section \ref{sec:overview}.
+
+* ~~\emph{Fail} means nothing was returned, or we received the wrong evaluation results from the programs.
+
+$^{\dag}$~~\emph{TLE} means the processing time was more than  2,000 s.
+
+$^\bullet$~~\emph{MLE} denotes that the program was out of memory. The memory limit for our implementation of Campen et al.'s approach was around 1.2GB.
+
+\end{flushleft}
+\end{table*}
+
+
+
+\begin{table}
+\caption{Number of Primitives and Computation Time (Seconds)}
+\label{tab:linear}
+\centering
+\begin{tabular}{*{4}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\hline
+Number of Spheres & ~~100~~ & ~~200~~ & ~~300~~ & ~~400~~ \\
+\hline
+\hline
+Our Approach & \textbf{1.38} & \textbf{2.89} & \textbf{4.39 }& \textbf{5.97} \\
+Maya \cite{Maya2015} & 17.4 & 53.4 & 124 & 241 \\
+CGAL \cite{cgal:hk-bonp3-15a} & 439 & 1350 & - & -\\
+Feito \cite{feito2013fast} & 5.20 & 15.9 & 30.4 & -\\
+\hline
+\hline
+Number of Spheres  & 500 & 600 & 700 & 800 \\
+\hline
+\hline
+Our Approach & \textbf{7.90} & \textbf{9.49} & \textbf{11.0} & \textbf{12.8}\\
+Maya \cite{Maya2015} & 407 & 628 & 966 & 1400\\
+CGAL \cite{cgal:hk-bonp3-15a}& - & - & - & -\\
+Feito \cite{feito2013fast}& - & - & - & -\\
+\hline
+\end{tabular}
+\begin{flushleft}
+*~~This table was the computation time of the evaluation for Fig. \ref{fig:models} (a).
+\end{flushleft}
+\end{table}
+
+\iffalse
+\begin{table}
+\caption{Relations between Number of Operations and Computation Time (Millie Second)}
+\label{tab:subdivide}
+\centering
+\begin{tabular}{*{4}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\hline
+~~Face Number~~ & Step 1 & Step 2 & Step 3 & ~Total~ \\
+\hline
+\hline
+~~1.7K~~ & 6 & 12 & 15 & 37\\
+~~16K~~ & 50 & 37 & 51 & 153\\
+~~140K~~ & 302 & 121 & 249 & 790\\
+~~1300K~~ & 2006 & 372& 1508 & 4902\\
+\hline
+\end{tabular}
+\begin{flushleft}
+\end{flushleft}
+\end{table}
+\fi
+
+We implemented the proposed method in C++ and tested a series of examples with numerous primitives and/or faces on a consumer laptop with an Intel i5-4200D processor at 1.5GHz and with 8 GB of RAM. The OpenMesh library \cite{OpenMesh} is used for storing triangle meshes and supporting the query of neighboring faces. Tessellation of critical triangles is performed by constrained Delaunay triangulation using the Fade2D library \cite{Fade2D}.
+
+
+We compared four state-of-the-art Boolean evaluation techniques, including CGAL \cite{cgal:hk-bonp3-15a}, Maya 2015 \cite{Maya2015}, the method proposed by Campen and Kobbelt \cite{campen2010exact}, and the approach proposed by Feito et al. \cite{feito2013fast}. The latter two methods used localized schemes. Table \ref{tab:performance} shows the comparison in terms of computing time. It can be easily to seen that our approach was efficient in all these examples. Feito et al.'s method had performance relatively similar to ours for the examples with a  single Boolean operation (Examples 6, 7). This is because both the approaches use a face-based grouping scheme to accelerate face membership classification; thus have similar pipelines for single Boolean operations. However, when the number of primitives grows, the advantage of our non-incremental CSG evaluation approach becomes more obvious. In the examples of more than two primitives, our method is much faster than any other methods. In particular, our method worked out example 2 which consisted of 801 primitives, in 15 s, which was more than 100 times faster than the Boolean evaluation in Maya.
+
+
+Among the three main steps of our approach, the first step of the octree construction is a typical $O(n~log~n)$ algorithm, where $n$ is the total number of faces in the CSG. The second step of intersection computation is only performed within critical octree cells. The number of critical cells is often linear to the number of intersected faces $k$ (often an $O(\sqrt{n})$ number) in the CSG. Therefore, the computation complexity of the second step is almost $O(k)$. The condition of the third step of face membership classification is more complex. Although the flood filling algorithm used for intra-primitive grouping is $O(n)$ complex, classifying an intersected faces could consume much more time than classifying a non-intersected faces. Therefore, if we assume classifying an intersected faces spends $\theta$ times of computation time to classify a non-intersected face, we may generalize the time complexity of this step as $O(n+\theta\cdot k)$. When $k/n$ is constant, the third step is $O(n)$ complex.
+
+
+To further validate that our approach is efficient for non-incremental CSG evaluation, we analyzed how the computation time changes with respect to the number of primitives. Table \ref{tab:linear} shows the evaluation time for Fig. \ref{fig:models} (a), which was a CSG consisting of a ring and hundreds of identical spheres. We changed the number of spheres from 100 to 800 and recorded the evaluation times. In this condition, the $k/n$ was relatively constant, and as there are many intersected faces, the bottleneck lies in Step 2 and Step 3. The result shows that the computation time of our algorithm had a linear behavior, which conforms to our previous discussion. The computation time of other incremental approaches rapidly increased when the number of primitives increased, sometimes showing an $O(n^2)$ behavior. This is because for those approaches, as more spheres were added to or subtracted from the ring, the mesh of the ring became more complex, which made it more difficult to perform subsequent Boolean operations.
+
+
+One possible problem of a non-incremental CSG evaluation approach is memory inefficiency. Unlike incremental ones, non-incremental approaches (including ours) often require loading all the primitives into the memory before the evaluation. Fortunately, our approach does not significantly suffer from such a problem. Our implementation only constructs an octree, which needs typically an $O(n~log~n)$ size data structure, and some auxiliary information of intersected faces, which is usually $O(k)$ size. According to our experiment, our approach performed full evaluations in Table \ref{tab:performance} with less than 600MB. On the contrary, some incremental approaches can be very memory inefficient. For instance, in the evaluation of Example 6, CGAL consumed more than 6 GB of memory. Furthermore, in the evaluation of Example 2, which contained only 146 K faces, Maya 2015 used at least 5 GB of memory.
+
+
+Our method is robust and could correctly evaluate all the examples in Table \ref{tab:performance}. On the other hand, it is evident that the commercial software Maya could not even correctly evaluate Example 4, which contained only 38.6 k faces and four primitives. CGAL gave warnings when evaluating Example 9 and finally terminated without offering a result. Our implementation of Feito et al's method gave an incorrect result for Example 9 (Fig. \ref{fig:budda}(c)) and a result rife with small holes for Example 2.
+
+
+Topology simplicity is another significant characteristic of the quality of CSG evaluation. As shown in Fig. \ref{fig:raster}, our method led to less triangles to represent the final model than Campen et al.'s method without stages for surface merging. A simpler topology is preferred because it is easier to process. In fact, we found that it was owing to such inefficient tessellation that Campen et al.'s method took so long time to evaluate Examples 1 and 2. After hundreds of Boolean operations, the resulting surface became so fragmented that it could take tens of seconds to perform a single Boolean operation.
+
+
+\noindent \textbf{Limitations \& Future work}~~~~
+The major limitation of our method is that it is not unconditionally robust. Because the tessellation of intersected faces is performed using vertex-based representation, the computed vertex coordinates may shift from their real location, which may lead to incorrect tessellation in theory. From our tests, we have not found the visible failures caused by this problem, because that the coordinate errors in most cases are small without visible incorrect tessellation,  we will investigate to integrate plane-based geometry computation into intersected face tessellation in the future work.
+
+
+\section{Conclusion}
+In this paper, we proposed a novel method to evaluate CSG with triangular mesh primitives. It is able to efficiently perform non-incremental evaluation of large CSG with massive faces. The key idea of our approach is to use the local coherence of face space labels to accelerate face membership classification. A two-level grouping framework is developed to group neighboring faces together and thus space labels can be shared within each group. This scheme saves much time for space label computation, which is often very time-consuming for conventional Boolean evaluation algorithms. Additionally, in order to be robust, plane-based geometry computation is introduced into the intersection computation step of our approach. Experiments have verified the proposed approach is more efficient than the state-of-the-art techniques while retaining robustness and stability. We will further investigate the robust tessellation in future.
+
+
+
+\appendices
+
+
+
+%\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,citation}
+
+
+%\newpage
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{rui}}]{Rui Wang}
+is currently a postgraduate student at the Department of Computer Science and Technology, the Shanghai Jiao Tong University. His main research interests include real-time computer graphics and virtual reality applications.
+\end{IEEEbiography}
+
+% if you will not have a photo at all:
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{xudong}}]{Xudong Jiang}
+received his Master degree in Computer Science from Shanghai Jiao Tong University in 2014. He is currently working in Autodesk China Research \& Development Center. His research interest includes computer-aided geometric design and solid modeling.
+\end{IEEEbiography}
+
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{hongbo}}]{Hongbu Fu}
+is an Associate Professor in the School of Creative Media, City University of Hong Kong. He received the PhD degree in computer science from the Hong Kong University of Science and Technology in 2007 and the BS degree in information sciences from Peking University, China, in 2002. His primary research interests fall in the fields of computer graphics and human computer interaction. He has served as an associate editor of The Visual Computer, Computers \& Graphics, and Computer Graphics Forum.
+\end{IEEEbiography}
+
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{sheng}}]{Bin Sheng}
+received his BS degree in computer science from Huazhong University of Science and Technology in 2004, MS degree in software engineering from University of Macau in 2007, and PhD Degree in computer science from The Chinese University of Hong Kong in 2011. He is currently an associate professor in the Department of Computer Science and Engineering at Shanghai Jiao Tong University. His research interests include virtual reality, computer graphics, and image-based techniques.
+\end{IEEEbiography}
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{wu}}]{Enhua Wu}
+received the BS degree from Tsinghua University in 1970, and the PhD degree from the University of Manchester (UK) in 1984. He is currently a research professor at the Institute of Software, Chinese Academy of Sciences, and Fellow of China Computer Federation. He has also been teaching at the University of Macau since 1997, where he is currently an Emeritus Professor. His research interests include realistic image synthesis, virtual reality, and scientific visualization. He has served as an associate editor of The Visual Computer, Computer Animation and Virtual Worlds.
+\end{IEEEbiography}
+
+
+
+
+\end{document}
+
+
