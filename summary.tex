@@ -322,7 +322,7 @@
 \floatname{algorithm}{Procedure}
 
 \begin{document}
-\title{Efficient Non-incremental Constructive Solid Geometry Evaluation for Triangular Meshes}
+\title{Efficient, Robust and Exact Boolean Operations on N Triangular Mesh Primitives}
 \author{Rui~Wang,~
         Xudong~Jiang,~
         Hongbo~Fu,~
@@ -345,6 +345,7 @@
 
 \IEEEtitleabstractindextext{
 \begin{abstract}
+  In this paper, we propose an efficient non-incremental approach to evaluate the boundary of constructive solid geometry (CSG). The face membership classification step is a bottleneck in many existing CSG evaluation approaches. The key idea of our approach is to use local coherence of space labels to accelerate this step. We employ a two-level grouping scheme to group faces that share the same space labels. Therefore, these common space labels can be shared within each group to avoid repetitive computation. Our method is optimized for a non-incremental evaluation. It generates the entire result model at once, rather than performing a step-by-step evaluation of Boolean operations. To achieve a robust evaluation, our approach introduces plane-based geometry into the intersection computation step. Comparison experiments with state-of-the-art techniques show that our method can more efficiently perform boundary evaluation of both trivial and complicated CSG with massive faces while maintaining robustness.
 \end{abstract}
 
 
@@ -363,100 +364,178 @@ Boolean operations, triangle mesh, CSG evaluation, plane-based geometry.
 \IEEEpeerreviewmaketitle
 
 \IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
+\IEEEPARstart{C}{onstructive} solid geometry (CSG) has long been a popular modeling tool of computer-aided design and computer-aided manufacturing (CAD/CAM). It constructs complex models by combining primitives using a series of regularized Boolean operations \cite{requicha1977mathematical}: union, intersection and difference. CSG is often represented by a binary tree, called a CSG tree, whose leaves are primitives and whose internal nodes are Boolean operations.
 
-Main Contribution:
+CSG can be converted into the widely-used  boundary representation (i.e., triangle mesh) through boundary evaluation. It is an classical topic with history of over three decades. However, one always have to make a bargain between robustness and efficiency of the boundary evaluation. One could use rational number arithmetic to avoid errors and thus ensure unconditional robustness, which could be over 20 times slower than a non-robust one [?]. On the other hand, using an approximate method for boundary evaluation can be very fast, but lack exactness.
 
-1. We develop a united representation of intersection lines between CSG primitives. Under this representation, Face re-tessellation and classification can be done robustly in any degenerate cases by our pipeline, while keeping good performance.
+Most recent methods [???] try to find a faster way to evaluate boundary of CSG, yet for robustness, the answers are often ambiguous workarounds, like setting a tolerance [?], using higher precision float point number [?] or rotating the primitive with small angle to avoid coplanar cases [?], etc. These tricks are often too vague to implement, heavily depend on the experiments, thus not reliable. Campen et. al. [?] gave a good paradigm of a unconditional robust and exact boundary evaluation methods. It proved to be fairly efficient, and never crashed with legal inputs. Since then, few exact evaluation methods declare themselves as an unconditional robust one.
 
-2. Unlike any of the previous method, during the algorithm, we conduct point-in-polyhedron tests only on single seed vertex. We develop a propagating to spread the classification information from the seed vertex into the whole CSG. In addition, because of this, we do not need to build a full space division to accelerate point-in-polyhedron tests, which is usually time-consuming.
+We prove that exact boundary evaluation of CSG can be even faster, while keeping unconditional robust. We adapt the plane-based techniques of Campen et. al.'s method for robustness, but use a framework very different from Campen et. al.'s, taking advantage of the recent popular idea of using geometry connectivity for face classification acceleration. In addition, unlike many other methods, our method can perform boundary evaluation directly for CSG with more than two primitives. That is, we do not incrementally generate the intermediate meshes of each Boolean operation. In opposite, we generate the final mesh directly. In this way, extra complexity of method is introduced, but we can save much computation time. The experiment shows that our method is much faster than Campen et. al.'s method, while only about twice slower than the state-of-art non-robust methods [??].
+
+
 
 \section{Related Work}
 
-\section{Background}
+\subsection{Plane-based geometry representation}
 
-\subsection{Plane-based geometry}
+The primary information of commonly used representation of solids are the vertex coordinates. In this way, edges and faces are implicitly represented by combination of vertices. In contrast, in plane-based representation, the primary elements are planes. Vertices and edges are all implicitly represented by plane intersections.
 
-\subsection{CSG evaluation}
 
-\section{Overview}
-费大幅度发
+
+The concept of plane-based representation of polygonal meshes was first described by Sugihara and Iri \cite{sugihara1990solid}. Plane-based representation provides one important advantage
+when it comes to tasks that involve changing the topology of solids represented by meshes like the evaluation of Boolean expressions: no new primary geometry information has to be constructed to obtain the resulting polyhedron – it is composed of a subset of the planes of the input polyhedra. Hence, opposed to the case of using vertex coordinates, that inevitably necessitates the construction of new geometry information, only geometric decision predicates are required to compose the output polyhedron from the face planes of the input. Since the input is usually given in a numerical representation with finite precision, we can determine an upper bound on the precision that is needed to make correct decisions. The a priori knowledge of this upper bound allows us to use fixed precision predicates that are specifically tailored to the precision required in the worst case, resulting in a vastly better performance compared to techniques for arbitrary numerical precision, that are usually required when
+constructions are part of the processing. Our processing is rigorously based on this paradigm of plane-based geometry representation that allows us to perform fully robust, exact computations using only fast fixed precision predicates. These predicates take planes as arguments and check coincidence and co-orientation of planes, orientation of a plane with respect to a point defined by the intersection of three planes, and whether three planes intersect in a unique point. The latter one can also be used in negated form to check if three planes, that are known to intersect in a common point, even intersect in a common line. We implement them using filtering techniques proposed by Shewchuk.
+
+\subsection{Exact evaluation methods}
+
+
+CSG evaluation has had notorious problems with robustness since its inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. The non-robustness is inherited from the building blocks of CSG: Boolean operations on solids. Many researchers have attempted to solve such an issue using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. However, these methods are often too expensive in computation time and memory to be practical for evaluation of CSG with massive faces. For example, in the Computational Geometry Algorithms Library (CGAL) \cite{cgal:hk-bonp3-15a}, the state-of-the-art robust Boolean operation algorithm \cite{hachenberger2005boolean} (implemented with arbitrary precision arithmetic) is more than 20 times slower than its non-robust version.
+
+
+\subsection{Approximative evaluation methods}
+
+With the development of general-purpose computing on graphics processing units (GPGPUs), many researchers  \cite{wang2011approximate, zhao2011parallel, museth2002level, chen1999volumetic, eisemann2008single} have tried to utilize the grand computation power of graphics hardware for Boolean operations. These methods often have good performance and are suitable for interactive applications, such as digital sculpting. However, owing to the paralleled features of graphics hardware, these methods are usually voxel-based and support only approximate evaluation that inevitably suffers from geometric detail loss, especially at the intersection areas of primitives.
+
+\section{Motivation and Overview}
+
 \label{sec:overview}
-
-\iffalse
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=7.1in]{flowchart}
-\caption{}
-\label{fig_overview}
-\end{figure*}
-\fi
-
-Our method follows the paradigm of two-step Boolean operation---intersection detection and facet classification, together with an extra step of pre-computation to accelerate the intersection detection. The main feature of our method is that we design a unified representation of intersection between primitives (U-rep) to control the complexity of intersection detection result and simplify the facet classification. Also, plane-based representation is applied throughout the methods to ensure no error introduced. For the same reason, we compute indicator vectors of vertices rather than of the barycenter of facets during classification and deduce the facets' indicator vectors from its vertices'.
-
-\subsection{Space division}
-
-This step is the mainly the preparation for intersection detection. As intersection detection is performed between each pair of faces, localization is necessary for acceleration by filtering invalid pairs. In general, any space division data structure can be applied in this stage. For simplicity, our method uses the adaptive octree. The implementation is akin to the implementation in ?? et al.'s method \cite{feito2015fast}. Intersection between triangle faces and octree leaves can be efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{non-critical cell}. Otherwise, it is a \emph{critical cell}. The big difference between our construction method and ??'s is the subdivision termination condition. In ??'s method,??. However, in our method, we do not need subdivide any non-critical cell no matter how many faces it contains. This is because subdividing non-critical cells benefits only the polyhedron inclusion test, which is frequently used in ??'s method but rarely in ours. This simplification can bring large performance advantage, especially for those cases whose intersection areas are small.
-
-\subsection{Intersection detection}
-
-The goal of this step isIntersection detection is performed between pairs of triangle faces within each critical cell. For the sake of robustness, all degenerated cases should be classified and well-handled.
+Our method is designed for boundary evaluation of Boolean operations on arbitrary number of primitives. Input primitives should be watertight and non-manifold  triangle meshes, represented by halfedge structures\cite{mcguire2000half}. Our method is unconditional robust, exact, while keeping good performance. In this section, we first introduce the motivation of our method, then describe where we start to design our boundary evaluation method. At last, we give the overview of the method.
 
 
-\subsection{United representation of intersection}
-\label{sec:overview:isect}
+\subsection{Motivation}
+\label{sec:paradigm}
 
-\subsection{Flood-Filling facet classification}
+The boundary evaluation is in essence a process of selection. In other words, given a Boolean function, it reserves those primitive faces that pass the function and drop the others to generate the final mesh. Unfortunately, for B-reps primitives such as triangle mesh, not all the facets from the input primitives can be classified in a whole, since some of them intersect other primitives. Therefore, we need an extra step aiming at detecting the intersection between primitives and performing the tessellation. In general, most of the boundary evaluation methods follow the two-step paradigm  \cite{wang2011approximate} above, which consists of intersection computation and face classification.
+
+During the intersection computation, primitive facets are tested in pairs to compute their intersection. Each input primitives are tessellated according to the intersection test results, making every face be either inside, outside or on the boundary of other primitives. They are what we called \emph{non-intersected meshes}. Every face of non-intersected meshes can be classified in a whole during classification. Unfortunately, under common float-point coordinate system, intersection test is error-prone. There are mainly two causes: first, there are a large amount of degenerate cases which are hard to be exactly detected; second, when there are intersections, new vertices are introduced into the geometry, whose coordinates usually can not be exactly represented by float-point number.
+
+Face classification is to evaluate whether a given face $x$ belongs to the final geometry according to the n-primitive Boolean function $\Phi$ :
+\begin{equation}
+\lambda_\Phi(x) = \Phi(\lambda_1(x), \lambda_2(x), \cdots, \lambda_n(x)).
+\end{equation}
+The parameter $\lambda_i(x)$ is space indicator with respect to primitive $P_i$. This means to classify a face, one has to know the space indicators with respect to all the primitives (or the whole indicator vector $\vec{\lambda}(x)$ for short). A space indicator has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normals (\emph{same}) or opposite normals (\emph{oppo}). The rules of Boolean function evaluation by these indicators are described in \cite{douze2015quickcsg}\cite{feito2013fast}.
+
+Face classification also suffers from robustness and exactness problems. Many methods classify face according to the indicators of its barycenter, and use point-in-polyhedron test to compute these indicators. However, coordinates of barycenters cannot be exactly represented and have the potential to generate false classification. In addition, to classify a single face, all the components of its space indicator vector must be figured out. Considering the large amount of faces, acceleration is usually necessary. Many algorithms take the benefits of the local coherence of indicators, classifying neighboring faces together. While this does improve the performance, it can make the exactness problem worse because the false classification can be propagated to neighboring faces.
+
+We want to develop a new boundary evaluation method based on the two-step paradigm, keeping unconditional robust, exact and as fast as possible. Combined with the analysis above, we think our method should includes the following features:
+\begin{itemize}
+    \item It has to avoid errors when introducing new vertices during intersection computation. All degenerate cases of intersection have to be well resolved.
+    \item Face classification has to be exact. On the other hand, acceleration using local coherence of indicators may be helpful.
+    \item The exactness and robustness should not rely on arbitrary precision arithmetic, because it is too slow. Instead, we choose the plane-based techniques from \cite{bernstein2009fast}\cite{campen2010exact} to ensure good performance.
+\end{itemize}
+
+\subsection{Linked halfedge}
+
+\label{sec:meshes}
+We make an essential observation that the non-intersected meshes, as intermediate result of intersection computation, plays a very important role of the method design. It is a bridge that controls the complexity of intersection computation and facilitates the face classification. After the non-intersected meshes is determined, all things left are how to construct such a data structure and how to classify according to it.
+
+Our non-intersected mesh, called linked halfedge, is a variance of halfedge, a well-known data structure to represent solids. Halfedge has two advantages: first, since halfedge is popular, using it as the intermediate data structure can avoid unnecessary conversion, which has the potential to create simpler algorithm and better performance and result topology; second, the geometry connectivity, by which we accelerate classification using local coherence of space indicators, can be easily retrieved through halfedge.
+
+However, naive halfedge is far from enough. The vertex coordinates in halfedge are usually represented by float point number, which cannot exactly represent the newly introduced intersection points. Therefore, we utilize plane-based representation to avoid computing new coordinates. In addition, we detect all coincident vertices among primitives and linked them together (that is why it is called linked halfedge). This information is used for avoiding repetitive vertices, reconstructing geometry connectivity, and ensuring the topology correctness.
+
+Enlightened by Feito et. al. \cite{feito2013fast}, we found that the the topology near intersection lines between faces can benefit point-in-polyhedron test by dramatically reducing the number of faces needing traversing. Therefore, we add extra information into the linked halfedge, called \emph{intersection context}, to facilitate afterwards face classification. Intersection context identifies where an intersection lies on the surface of the related primitives. An edge of linked halfedge has intersection context only if it is coincident with a certain intersection line segment between primitives. We will give the definition and usage of intersection context in details in the following sections.
+
+To give a overall impression of how we design linked halfedge, we summarize the above content and highlight the following features:
+
+\begin{itemize}
+  \item Each input primitive mesh is tessellated into a linked halfedge. Faces in a linked halfedge must not cross any other linked halfedges.
+  \item Coincident vertices between different linked halfedge should be linked, that is, coincident vertices are shared among linked halfedges.
+  \item If a certain edge of linked halfedge is coincident with intersection line segment(s), it should be associated with the corresponding intersection context(s).
+\end{itemize}
 
 
-\section{Construction of United Intersection Graph }
+\subsection{Method overview}
 
-The intersection of primitives can be very complex because of so many degenerate cases. In order to design a robust algorithm, one have to take into consideration of all the degenerated cases, which often makes the algorithm rather complex and error-prone to implement. We observe the important fact that the CSG evaluation is no more than splitting and selecting faces. Therefore, the only important thing during intersection test is to find out the potential edges and vertices of the result mesh. Therefore, we use a very concise graph model, with only a few extra data for classification on vertices, as the output of this stage.
+\subsubsection{Space division}
+
+This step is the preparation of intersection detection. As intersection detection is performed between each pair of faces, localization is necessary to filter invalid pairs beforehand. In general, any space division data structure can be applied in this step. We use the adaptive octree for its simplicity. Our implementation is akin to the implementation in \cite{ogayar2015deferred}. Intersection between triangle faces and octree leaves can be efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{non-critical cell}. Otherwise, it is a \emph{critical cell}.
+
+The difference between our space division and many others \cite{ogayar2015deferred}\cite{feito2013fast} is the octree node subdivision termination criterion. In our method, we do not need subdivide any non-critical cell no matter how many faces it contains. This is because subdividing non-critical cells benefits only the ray-casting point-in-polyhedron test, which rarely appears in our method. This simplification can bring large performance advantage, especially for those cases where intersections between primitives are not complex and limited in small regions.
+
+\subsubsection{Intersection detection}
+
+This step is to detect intersections between primitives in a robust and exact way. Our algorithm is largely based on vertex-based M\"{o}ller's algorithm \cite{moller1997fast}, which is very efficient to compute intersection between two triangles. However, naive implementation of M\"{o}ller's algorithm always incurs robustness issues when computing the coordinates of new vertices. To avoid an unexpected failure caused by numeric errors, we integrate plane-based representation of polyhedra \cite{sugihara1990solid} into the implementation of M\"{o}ller's algorithm. Adaptive precision predicate technique \cite{shewchuk1997adaptive} is applied for efficiency of plane-based geometry computation. Moreover, to make our method robust, we classify all the intersection cases into three major classes and respectively discuss how to each condition. Details are provided in Section \ref{section:isect}.
+
+\subsubsection{Tessellation}
+
+Once all intersections are detected, we need to tessellate the input primitives and construct the linked halfedges.. In many methods like \cite{ogayar2015deferred}, constraint Delaunay triangulation (CDT) is applied to perform tessellation, since the intersections are naturally the constraints of CDT. However, for a CSG with more than two primitives, the intersection vertices may be generated by intersections of three faces from different primitives, which cannot be computed during the previous step. Also, intersection line segments may overlap or intersect with each other, and cannot be used for constraints of CDT directly. Finally, as our intersection vertices are represented exactly by planes, implementation of CDT could be complex and inefficient, as most CDT methods were not designed to handle planes. Therefore, we design a simple structure, called tessellation graph, to guide the tessellation of each single face, and develop a very fast but exact method to construct linked halfedges from tessellation graphs, which is suitable for dealing with plane-based representation of intersections. Details are shown in section \ref{sec:tessellation}.
+
+\subsubsection{Face classification}
+
+This step is to choose faces from the linked halfedges to generate the final mesh. Literally compute all the space indicators of each face is unacceptable slow for large CSG trees. Enlightened by Feito et. al. \cite{feito2013fast}, we utilize the geometry connectivity to accelerate this process. In Feito et. al.'s method, the faces of tessellated meshes are first grouped according to whether they have the same indicator vector. After the grouping, each group is classified as a whole. This is based on the observation that indicators of faces are spatially coherent. That is, if a face $f$ is outside of primitive $M_0$, the neighbor of $f$ are likely to be out of $M_0$, too. Different from Feito et. al.'s method, we also consider the condition when the number of primitives is larger than two. In this condition, space vector of a face may be partly the same with its neighborhoods'. That is, we allow space indicators not only share within faces of the same group, but also among different groups and even primitives. This is useful when the number of primitives is large, or intersections between primitives is complex. Details will be shown in section \ref{sec:classification}.
 
 
-Another problem is that numerical error introduced by computing coordinates of intersection vertices often leads to fault topology construction in the later stage. Using high precision float point is the most common way to alleviate this issue. However, only the time-consuming rational number arithmetic can be absolutely precise.
+\section{Plane-based geometry}
 
-\begin{figure}
-  \centering
-  % Requires \usepackage{graphicx}
-  \includegraphics[width=1.5in]{p-reps}\\
-  \caption{Plane-based representation of triangles. The yellow triangle is represented by three bounding planes (green) and the supporting plane where the triangle lies. }\label{fig_p-reps}
-\end{figure}
+Vertex coordinates are commonly used in geometry computation. However, vertex coordinates suffer from inexact representation of intersection point between primitives. Therefore, we choose to use planes-based representation of polyhedrons and implicitly represent vertex by plane intersection. We start with a quick review of the basic conception of plane-based representation. After that, we introduce two substrates related to plane-based representation used in our method, since these two are rarely seen in related researches. Other substrates of plane-based representation can be seen in \cite{bernstein2009fast}.
 
- In order to be both robust and efficient, we choose not to compute the coordinates of intersection vertices until we finally construct the result topology. In the early stage, each new vertex is represented by intersection of three planes. This method is based on two facts: 1) Douze et al. [] observe that every intersected vertex is either the intersection between an edge and a plane, or the intersection of three planes. 2) Campen et al. [] give an efficient method to precisely convert b-reps mesh into its plane-based representation (Fig. \ref{fig_p-reps}). Details is explained in the following.
+\subsection{Conversion}
+
+\label{sec:convert}
+
+As we discussed in Section \ref{sec:paradigm}, one of the problem in Boolean evaluation under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using standard float-point number. On the other hand, if plane-based representation is used, no new geometry information needs to be constructed---the result mesh is composed of the planes of the input primitives. Therefore, we can use only geometric decision predicates to perform the Boolean operation.
+
+Using plane-based representation, each face of polyhedron is represented by a supporting plane $S$, where the face lies, and a list bounding planes $\{B_i\}$, each corresponding an edge of the face. Edge line is represented by intersection of $S$ and the related $B_i$. Corner point is then the intersection of $S$ and two consecutive bounding planes $B_i$ and $B_{i+1}$. Efficient and exact conversion from the vertex-based representation to plane-based representation is described in detail in \cite{campen2010exact}. If the input vertex coordinates precision is $L$, the maximum precision $P$ required to represent the plane coefficients is:
+\begin{equation}
+\label{eq:precision}
+P = (L-1)+2(K-1)+3+1,
+\end{equation}
+where $K$  is the maximum bits to represent edge vector coordinates. If the plane coefficient has $M$ bit precision, $M$ have to greater than $P$ for exact representation. We rigorously enforce the criterion to $M \ge P+1$, and we will explain it in section \ref{sec:embed}.
 
 
-\subsection{Definition}
+Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the
+longest edge in the mesh (relative to the bounding box). If we use IEEE 754 double precision ($M=53$) and assume $\delta \le 2^{-5.5}$, the maximum input precision $L$ can reach to 20, which is enough for most CAD application. As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates techniques to gain much performance while keeping exactness. We implement the predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
 
-Faces in a certain primitive can be classified into intersected faces and non-intersected ones according to whether they intersect other primitives. Our United Intersection Graph (UI-graph) is a graph data structure embedded in each intersected face. It is used to split these faces and guide the face classification.
 
-The nodes of UI-graph of an intersected face $F$ are the vertices, include the original three corners of $F$ and all the intersected vertices within $F$. Intersected vertices are shared between different UI-graphs. For example, the vertex $a$ is generated by intersection between face $F_1$ from primitive $P_i$ and edge $e(G_1, G_2)$ from primitive $P_j$, where $e(G_1, G_2)$  is the shared edge of face $G_1$ and face $G_2$. Then face $F_1$, $G_1$, $G_2$ are all intersected faces and each of them contains a UI-graph with one of its node is $a$.
+\subsection{Substrates}
+\label{sec:substrates}
+Our method rigorously follows the paradigm of plane-based geometry. All decision predicates are computed using planes as input. These predicates include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. We omit the discussion of the predicates which is already in prior work \cite{bernstein2009fast,banerjee1996topologically}, and focus on specific predicates in our method in the following.
 
-Douze et al. [] observed that vertices during a CSG evaluation can be divided into three types. The first order vertex is already contained in the input primitives. The second order vertex is the intersection between an edge and a face. The third vertex results from intersection of three faces from different primitives. Considering the degenerate cases, this classification is not complete because different types do overlap. But it does not matter because each vertex at least belong to one of these types. Then we can use the plane-based representation (Fig. \ref{fig_p-reps}) introduced by Campen et al.[], which treats each triangle face by a supporting plane surrounded by three bounding planes, to represent each vertex by intersection of three planes. This method has two advantages. First, it is universal for all kinds of vertices, thus is easy to handle. Second, we can avoid explicitly computing the coordinates of new introduced vertices to avoid introducing numerical error.
+Before we start the discussion, we first introduce several regulations frequently used in the rest of our paper. A plane $P_x$ can be represented by plane coefficients $(a_x, b_x, c_x, d_x)$. The normal of $P_x$ is denoted as $\vec{N}_x$. Under plane-based representation, a line $L$ can be represented by intersection of two planes $(P_m, P_n)$, or in short $L: (P_m, P_n)$. The positive direction of $L$ is defined by cross product of the normals of $P_a$ and $P_b$, that is, $\vec{L}=(a_m, b_m, c_m) \times (a_n, b_n, c_n)$. A point $p$ is represented by plane triples $(P_a, P_b, P_c)$, or in short $p: (P_a, P_b, P_c)$.
 
-Also, each node contains data structure called vertex context. It records on which primitives and on which part of primitive the node lies. A vertex can lies on the vertex, edge or within the face of a certain primitive. For example, the vertex context of $a$ is $\{(F_1, P_i), (e(G_1, G_2), P_j)\}$. This information is very important for the classification of the neighborhood. In particular, we notice that the vertex context of a certain vertex is invariant in different UI-graphs. So we only need to maintain one context for each vertex and shared among UI-graphs.
+Given two points $p$ and $q$ in the same edge line $L: (P_u, P_v)$, the two points can be represented by plane triples $(P_u, P_v, P_p)$ and $(P_u, P_v, P_q)$, sharing the same first two components. We want to determine if $q$ is in positive side of $p$ along the $\vec{L}$. We call this two-point comparison. This predicates can be converted to the problem of orientation of a plane $P_p$ with respect to a point $q$, except that there is an extra request---we have to guarantee cosine between $\vec{L}$ and the normal $\vec{N}_p$ be positive, that is:
+\begin{equation}
+\label{eq:pointcomp}
+   \left|
+  \begin{array}{ccc}   %该矩阵一共3列，每一列都居中放置
+  a_u  & b_u & c_u \\
+  a_v  & b_v & c_v \\
+  a_p  & b_p & c_p
+  \end{array}
+  \right| > 0,
+\end{equation}
+If not, we negate $P_p$ to be the test plane. The computation of this predicates is described in \cite{bernstein2009fast}.
 
-The edges of UI-graph are simply the intersection line segments between faces of different primitives. They are represented by two references of the nodes in the UI-graph. No further information is required.
+Another predicates is used when tessellating a face (further explanation of its application is shown in Section \ref{}). Given two lines $L_a: (P_s, P_a)$ and $L_b: (P_s, P_b)$, which are on the same plane $P_s$, we want decide whether the sign of cross product of $\vec{L}_a$ and $\vec{L}_b$ has the same orientation as the normal $\vec{N}_s$. Direct solution requires to explicitly compute the vector of $L_a$ and $L_b$ and then decide the sign by $\vec{N}_s \cdot (\vec{L}_a \times \vec{L}_b)$. However, explicit representation of $\vec{L}_a$ and $\vec{L}_b$ requires more bits than standard double precision float point number, bringing extra computation burden.
 
-As will explained below, we take two steps to construct UI-graphs for each intersected faces of the whole CSG. The first step is to build stand-alone UI-graphs for each pair of primitives, which is built upon our plane-based triangle-triangle intersection test, and the second step is to merge them into a single one for each intersected faces.
+To solve this, we decompose the normal vectors of $P_a$ and $P_b$: $\vec{N}_a = \vec{N}^\parallel_a + \vec{N}^\perp_a$ and $\vec{N}_b = \vec{N}^\parallel_b + \vec{N}^\perp_b$. Here superscript `$\parallel$` means the vector is in the plane $P_s$ and `$\perp$` means it is orthogonal to $P_s$. Then $\vec{N}_a \times \vec{N}_b = \vec{N}^\parallel_a \times \vec{N}^\parallel_b + \vec{N}^\perp_a \times \vec{N}^\parallel_b + \vec{N}^\parallel_a \times \vec{N}^\perp_b + \vec{N}^\perp_a \times \vec{N}^\perp_b$. As we know $\vec{N}^\perp_a$ and $\vec{N}^\perp_b$ is parallel, $\vec{N}^\perp_a \times \vec{N}^\perp_b = \textbf{0}$. Now, we evaluate the expression: $\vec{N}_s \cdot (\vec{N}_a \times \vec{N}_b)$. Since $\vec{N}_s$ is orthogonal to both $\vec{N}^\perp_a \times \vec{N}^\parallel_b $ and $\vec{N}^\parallel_a \times \vec{N}^\perp_b $, we deduce $\vec{N}_s \cdot (\vec{N}_a \times \vec{N}_b) = \vec{N}_s \cdot (\vec{N}^\parallel_a \times \vec{N}^\parallel_b)$. Here we make an essential observation that $\vec{N}^\parallel_a \times \vec{N}^\parallel_b$ has the same direction as $\vec{L}_a \times \vec{L}_b$, that is:
+\begin{equation}
+\label{eq:cosine}
+sign(\vec{N}_s \cdot (\vec{N}_a \times \vec{N}_b)) = sign(\vec{N}_s \cdot (\vec{L}_a \times \vec{L}_b)),
+\end{equation}
+which means we do not need to explicitly compute $\vec{L}_a$ or $\vec{L}_b$. Instead, we only have to evaluate the left expression of equation \ref{eq:cosine}.
 
-\begin{figure}
-  \centering
-  % Requires \usepackage{graphicx}
-  \includegraphics[width=1.7in]{raw3}\\
-  \caption{The UI-graph of a certain face. }\label{fig_raw3}
-\end{figure}
+\section{Exact Intersection Detection}
 
-\subsection{Plane-Based Triangle-Triangle Intersection}
+\label{section:isect}
+In this step, intersections between faces are computed through the triangle-triangle intersection test within each critical cell. We adopt M\"{o}ller's intersection detection algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, because collision detection algorithms are often accompanied by non-robustness problems, a conventional implementation of this algorithm may cause unpredictable results. Therefore, we integrate plane-based geometry representation \cite{sugihara1990solid} into M\"{o}ller's algorithm to make it unconditionally precise and robust. In the following, we first make a quick review of M\"{o}ller's algorithm, then discuss the way to make it unconditional robust. At last, we talk about how to deal with degenerate cases.
+
+\subsection{Vertex-based method review}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=3.0in]{projection}
+\includegraphics[width=2.5in]{projection}
 \caption{$Seg_1$ is the intersection between $S_2$ and $F_1$. $Seg_2$ is the intersection between $S_1$ and $F_2$. The intersection between $F_1$ and $F_2$, which is the line segment in red, is the overlap of $Seg_1$ and $Seg_2$.}
 \label{fig_projection}
 \end{figure}
 
 
-The plane-based triangle-triangle intersection (PTTI) test is largely the variant of M\"{o}ller's triangle intersection test []. M\"{o}ller's algorithm computes the intersection between two triangles $F_1$ and $F_2$ in three steps, as illustrated in Fig. \ref{fig_projection}. First, an early rejection is performed by testing whether $F_1$ intersects the plane where $F_2$ lies, which is denoted as $S_2$. This is a necessary condition of intersection between $F_1$ and $F_2$. If this test is passed, then the same is performed for $F_2$ and $S_1$, where $S_1$ is the plane of $F_1$. Second, the intersection between $F_1$ and $S_2$, denoted as $Seg_1$, and the intersection between $F_2$ and $S_1$, denoted as $Seg_2$, are separately computed . At last, the intersection between $F_1$ and $F_2$ is determined by computing the overlap area of $Seg_1$ and $Seg_2$ .
+M\"{o}ller's algorithm computes the intersection between two triangles $F_1$ and $F_2$ in three steps (Fig. \ref{fig_projection}).
+\begin{itemize}[leftmargin=0.45cm]
+\item[1)] An early rejection is performed by testing whether $F_1$ intersects the plane where $F_2$ lies, which is denoted as $S_2$. This is a necessary condition of intersection between $F_1$ and $F_2$. If this test is passed, then the same is performed for $F_2$ and $S_1$, where $S_1$ is the plane of $F_1$.
+\item[2)]The intersection between $F_1$ and $S_2$, denoted as $Seg_1$, and the intersection between $F_2$ and $S_1$, denoted as $Seg_2$, are separately computed .
+ \item[3)]The intersection between $F_1$ and $F_2$ is determined by computing the overlap area of $Seg_1$ and $Seg_2$ .
+\end{itemize}
 
 \begin{figure}[t]
   \centering
@@ -465,129 +544,167 @@ The plane-based triangle-triangle intersection (PTTI) test is largely the varian
   \caption{The left edges of A and B (\emph{left}) are nearly but not exactly collinear. However, under usual float point arithmetic, they might be judged as collinear causing discontinuous edges in the final result (\emph{right}).}\label{fig:precision}
 \end{figure}
 
-Conventional implementations of M\"{o}ller's algorithm use vertex-based representation and usual float point arithmetic. However, this is neither exact nor robust. In Fig. \ref{fig:precision}, we illustrate a non-robust 2D case of the Boolean operation. Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. On the other hand, if the computation can be restricted to \emph{predicates}, which make a two or three-way decision based on known coordinates, we could quickly and robustly implement this algorithm.
+
+Conventional implementations of M\"{o}ller's algorithm use vertex-based representation and common float point arithmetic, which is neither exact nor robust. In Fig. \ref{fig:precision}, we illustrate a non-robust 2D case of the Boolean operation. Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from geometry \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. On the other hand, if the computation can be restricted to \emph{predicates}, which make a two or three-way decision based on known coordinates, we could quickly and robustly implement this algorithm.
 
 
 
-Fortunately, according to Sugihara and Iri \cite{sugihara1990solid}, geometry computation of Boolean operations can be restricted to predicates using plane-based representation of polyhedra. This motivated us to integrate plane-based representation into M\"{o}ller's algorithm. Exact and efficient predicate computation is performed using precise geometry predicate techniques \cite{shewchuk1997adaptive}. Details of our implementation are shown below.
+\subsection{Plane-based technique embedding}
 
-\begin{figure}
-  \centering
-  % Requires \usepackage{graphicx}
-  \includegraphics[width=1.7in]{p-reps}\\
-  \caption{Plane-based representation of triangles. The yellow triangle is represented by three bounding planes (green) and the supporting plane where the triangle lies.}\label{fig:p-reps}
-\end{figure}
-
-We first convert $F_1$ and $F_2$ into their respective plane-based representations: a supporting plane surrounded by three bounding planes (Fig. \ref{fig:p-reps}). We implement this conversion using the exact conversion method by Campen and Kobbelt \cite{campen2010exact}. Then, in our implementation, the relative position of a point and a plane can be determined by computing the sign of the multiplication of determinants \cite{sugihara1990solid}. To avoid introducing errors, we represent the end points of $Seg_1$ and $Seg_2$  by intersections of plane triples, rather than by directly computing their coordinates. As illustrated in Fig. \ref{fig:isect}(a), these points are the intersection between an edge line of a face and the supporting plane of the other face. Because the edge line of $F_1$ can be represented as $[S_1, S_X]$ (or $[S_2, S_X]$ for an edge line of $F_2$), where $S_X$ is the corresponding bounding plane of the edge, the end points of $Seg_1$ or $Seg_2$ can be represented in the form of $[S_1,S_2,S_X]$. In Fig. \ref{fig:isect}, we list all non-coplanar intersection situations between a triangle and a plane, and the $S_X$  in each situation.
-
+\label{sec:embed}
+According to the method described in section \ref{sec:convert}, triangle faces $f$ are firstly converted to its plane-based representation: a supporting plane $P_{s,f}$ surrounded by three bounding planes $P^i_{b,f}, i = 1,2,3$. We introduce the plane-based implementation of M\"{o}ller's algorithm step by step in the following:
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{sign}
-\caption{We denote the signed distance from point $X$ to plane $S_2$ as $d_X$. All the four non-coplanar conditions of intersection between $F_1$ and $S_2$ (denoted as $Seg_1$) are:  (a) $d_A\cdot d_C<0$, $d_B\cdot d_C<0$; (b) $d_A=0$, $d_B=0$, $d_C\neq 0$; (c) $d_A=0$, $d_B\cdot d_C<0$; (d) $d_A=0$, $d_B\cdot d_C>0$. End points of $Seg_1$ are intersections between $S_2$ and related edge lines of $F_1$ (bold edges).}
+\caption{We denote the signed distance from point $X$ to plane $S_2$ as $d_X$. All the four conditions of intersection between $F_1$ and $S_2$ (denoted as $Seg_1$) are:  (a) $d_A\cdot d_C<0$, $d_B\cdot d_C<0$; (b) $d_A=0$, $d_B=0$, $d_C\neq 0$; (c) $d_A=0$, $d_B\cdot d_C<0$; (d) $d_A=0$, $d_B\cdot d_C>0$. End points of $Seg_1$ are intersections between $S_2$ and related edge lines of $F_1$ (bold edges).}
 \label{fig:isect}
 \end{figure}
 
 
-The intersection between $F_1$ and $F_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by comparing the end points of $Seg_1$ and $Seg_2$ along $L$ (Fig. \ref{fig_projection}), where $L$ is the intersection between $S_1$ and $S_2$. Unlike M\"{o}ller's implementation, our approach uses no projection, which requires the exact point coordinates. We call the direction of vector $\vec{N}_1\times \vec{N}_2$ the positive direction, where $\vec{N}_1$ and $\vec{N}_2$ are normals of $S_1$ and $S_2$ respectively. Given two points $A$ and $B$ on $L$,  we compute the sign of the multiplication of determinants:
+
+\begin{itemize}[leftmargin=0.45cm]
+\item[1)] In this step, we only need to compute the orientation of a plane $(a, b, c, d)$
+with respect to a point $(x, y, z)$, that is to compute:
 \begin{equation}
-\label{eq:sign}
-  K(A, B)=
-  \left|
-  \begin{array}{c}   %该矩阵一共3列，每一列都居中放置
-  \vec{S}_1 \\ \vec{S}_2 \\ \vec{S}_A \\ \vec{S}_B
-  \end{array}
-  \right|
-  \left|                 %左括号
-  \begin{array}{c}   %该矩阵一共3列，每一列都居中放置
-  \vec{N}_1 \\\vec{N}_2 \\\vec{N}_A
-  \end{array}
-  \right|
-  \left|                 %左括号
-  \begin{array}{c}   %该矩阵一共3列，每一列都居中放置
-  \vec{N}_1 \\\vec{N}_2 \\\vec{N}_B
-  \end{array}
-  \right|,
+sign(ax+by+cz+d).
 \end{equation}
-where $\vec{S}_X$ is the coefficient vector of plane equation $[a_X,b_X,c_X,d_X]$,  and $ \vec{N}_X$ is the normal vector $[a_X,b_X,c_X]$. If $K(A, B)$ is positive (negative), this means that $A$ lies in the positive (negative) direction of $B$. Otherwise, $A$ and $B$ are coincident.
+Using the notation in section \ref{sec:convert},  we know the coordinates of the points are precisely represented by $L$ bits. Also, after the conversion, the precisions of four coefficients of the supporting plane are $(P', P', P', P)$, where $P'=P-(L-1)-2$ and $P$ is defined in equation \ref{eq:precision}. Using the strengthened criterion $M \ge P+1$, we find that $M$ bits are enough to perform the predicates. This observation allow us to perform very efficient early discard on the triangle-triangle intersection test, which is the key idea to stay efficiency while perusing exactness.
+\item[2)]In step 2, constructions are avoid by explicitly represent the end points of $Seg_1$ and $Seg_2$ using plane triples. As illustrated in Fig. \ref{fig:isect}(a), these points are the intersection between an edge line of a face and the supporting plane of the other face. Because the edge line of $f_1$ ($f_2$) can be represented as $[P_{s, f_1}, P^i_{b, f_1}]$ ($[P_{s, f_2}, P^i_{b, f_2}]$), the end points of $Seg_1$ ($Seg_2$) can be represented in the form of $[P_{s, f_1}, P_{s, f_2}, P^i_{b, f_2}]$ ($[P_{s, f_1}, P_{s, f_2}, P^i_{b, f_1}]$). In Fig. \ref{fig:isect}, we list all intersection situations between a triangle and a plane, and the corresponding bounding plane in each situation. Note, coplanar situation will be discussed later in section \ref{sec:degenerate}.
+ \item[3)] The intersection between $f_1$ and $f_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by comparing the end points of $Seg_1$ and $Seg_2$ along $L$ (Fig. \ref{fig_projection}), where $L$ is the intersection between $P_{s, f_1}$ and $P_{s, f_2}$. Because end points are all represented using plane triples, we can use the technique discussed in section \ref{sec:substrates} to implement the comparison.
+\end{itemize}
 
-One may find that we do not give the solution of coplanar cases. This is deliberate because we find recording coplanar cases is not necessary for the following process. This will be discussed further in Section 5.
+\subsection{Intersection record}
+\label{sec:ir}
 
+The output of this stage, or what we call triangle-triangle intersection record (TTIR), is the data structure which organize the results of triangle-triangle intersection test. TTIR is also the input of tessellation, and is in deep couple with the tessellation method. It is hard to give full idea of how we design TTIR before we introduce our tessellation algorithm. We first give several requirements from tessellation stage, and then discuss the compositions of TTIR. To have a comprehensive understanding of TTIR, readers may need to review this section after finish reading section \ref{sec:tessellation}.
 
-\subsection{Generating Pairwise UI-Graphs}
+We recall our description of LHEC in section \ref{sec:meshes}, we need to transfer necessary information by TTIR to tessellation stage for LHEC construction. Necessary information includes:
+\begin{itemize}
+  \item The plane-based representation of intersection vertices.
+  \item Intersection line segments, each consisting of references of two end points.
+  \item Intersection context of the intersection line segments.
+\end{itemize}
 
-As a general case, an intersected face intersects with one or more primitives. This means there could be so many different types of degenerate cases, that it is not easy
+For example, assume two triangle faces $f_1$ and $f_2$, from primitive $A$ and $B$, intersect at line segment $(v_1, v_2)$, where $v_1$ and $v_2$ are references of two end points. First, $v_1$ and $v_2$ are introduced to $A$ and $B$, then intersection line segment $(v_1, v_2)$ is stored on both $f_1$ and $f_2$. At last, intersection context of $(v_1, v_2)$ is attached as an attribute. In this case, the intersection context of $(v_1, v_2)$  is $f_1$ for $A$ and $f_2$ for $B$.
 
-we choose divide and conquer \cite{ogayar2005point} \cite{douze2015quickcsg}
+In LHEC, there must not be any repetitive vertices within each LHEC or among LHECs in order to reconstruct the correct topology. Therefore, repetitive vertices elimination must be performed. Checking whether there are coincident points in a global scope can be quite inefficient. Fortunately, it is easy to figure out the location of an intersection vertex---whether it is inside, on a certain edge, or coincident with one of the three corners of intersection faces. Therefore, if we store the references of vertices on faces, edges, coincidence detection is localized and repetitive vertices elimination can be very fast.
 
-We first consider constructing UI-graph between each pair of primitives. The graph generated by two primitives is much simpler than a n-primitive one: since input primitives are not self-intersected, there is no cross or overlap between intersection line segments.
-
-When PTTI test detects a intersection, it outputs the two end points of intersection line segment, or, in a degenerate case, two coincident points.
-
-
-\subsection{Merging UI-Graphs}
-
-Mainly deal with intersection between intersection line segments. It is necessary when a face intersects with faces from more than one other primitives.
-
-
-Atom operation:
-
-1. add an vertex. no need outside a graph
-
-2. remove/add edges.
-
-3. sort along an edge.
-
-4. merge vertices.
-
-comparison:
-
- If coplanar (collinear), choose a direction as positive. 3-4-2
- If not, compute intersection, 4-2
-
-\section{Multi-level Flood-filling Classification}
-\label{section:floodfill}
-
-Flood-filling is all about giving a seed and propagation. In this chapter, from down to top, we introduce this process and explain how it can save computation time.
-
-\subsection{Background}
-\label{sec:intuitive}
-
-\subsection{Flood-filling Inside a Triangle}
-
-\subsubsection{Compute indicator vector}
-
-How to propagate the indicator vector from the seed vertex to all the vertex in a triangle.
-
-Start from a full indicator
-
-\subsubsection{Facet classification}
-
-How to generate new face and classify faces using indicator vector.
-
-\subsubsection{Acceleration}
-
-How to reuse the indicator vector of neighbouring vertex.
-
-\subsubsection{Coplanar degenerate case}
-
-Special case discussion, mainly for coplanar problem.
-
-\subsection{Flood-filling Through CSG Primitives}
-
-\subsubsection{Seed generation}
-
-\subsubsection{Flood-filling within primitives}
-
-\subsubsection{Flood-filling between primitives}
-
-\subsubsection{Acceleration}
+// 区分context and plane representation
 
 
-\section{Experiments and Discussion}
+\subsection{Degenerate cases}
+\label{sec:degenerate}
+
+Before we discuss the degenerate cases, we give three principles for handling them. First, we want our method be unconditional robust and exact, so all degenerate cases should be well handled (completeness). Second, to control the complexity of tessellation, we want degenerate cases to be invisible to tessellation, that is, degenerate cases have the same format of output as non-degenerate cases (invisibility). Third, we want the outcome of tessellation be as simple as possible. That is, intersection line segments that will not help tessellation, if recognized, are disposed (simplicity).
+
+To ensure the completeness, we classify all degenerate cases into three categories by the dimension of intersection:
+
+\subsubsection{Intersects on point}
+Point is degenerate case of line segment with zero length. The intersection point is potentially a vertex in the LHEC. There are two kinds of vertices, depending on whether the vertex is isolated. An isolated vertex does not need to participate tessellation. On the other side, if the intersection point is not isolated, it is end point of other intersection line segment and will be introduced when that intersection line segment is detected. Therefore, we treat the cases of intersection on point as non-intersection cases.
+
+\subsubsection{Intersects on line segment}
+This category is often not degenerate cases. However, when intersection line segment lies on a edge of one of the two triangle faces (Fig. \ref{fig:isect}b), error will occur if not careful. In this case, there will be another pair of triangle faces that will have exactly the same intersection line segment (Fig. \ref{fig:isect2}). This is what we called twin intersections. With twin intersections exist, one intersection line segment will be inserted twice, requiring extra effort to eliminate repetitions. To make things worse, the intersection will have different intersection contexts.
+
+Twin intersection can be treated as union to resolve this.
 
 
-\section{Conclusion}
+\subsubsection{Coplanar}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{degenerate}
+\caption{}
+\label{fig:isect2}
+\end{figure}
+
+Coplanar cases can also be seen as a special type of twin intersections. One is valid case, another is not.
+
+\section{Deferred Tessellation}
+
+\label{sec:tessellation}
+This is the step to process TTIR and output LHIC, where the tessellation happens. We called this process as deferred tessellation because we do not tessellate until we collect all intersection line segments. For this problem, Ogayar-Anguita et. al. \cite{ogayar2015deferred} try to use Constrained Delaunay Triangulation (CDT) to solve, as the recorded intersection is naturally the constraints. It works fine for Boolean operation of two primitives. However, when there are more than two primitives, simply using CDT covers the complexity of tessellation. In such case, the intersection line segments may cross, overlap and even coincident with each other, introducing new vertex, splitting original intersection line segments. Naive implementation of CDT may lead to holes, repetitive edges, and other topology errors.
+
+To solve these problems, we first refine the TTIR into an intermediate data structure---\emph{tessellation graph}. In this process, we resolve any intersection between intersection. After this, we tessellation each face according its corresponding tessellation graph. To make this process unconditional robust and exact, we utilize plane-based techniques and do not compute explicitly the coordinates of intersection points throughout this step.
+
+\subsection{Tessellation graph}
+
+TTIRs are only loose data that store the coordinates of intersection line segments. To perform tessellation and extract sub-faces, we need to organize TTIRs in a face scope. We use a graph-based data structure---tessellation graph---for this purpose. For each intersection face which needs tessellation, we construct tessellation graph. A tessellation graph is the graph-like description of the tessellated face topology. Nodes of tessellation graph represent vertices, and edges represent edges in LHIC. To avoid ambiguity, we call original three edges of the face as \emph{face boundaries} in the following. An important feature of tessellation graph is that it uses uniform representation for intersection vertices and line segments, and face boundaries and the original three corners. This dramatically reduces complexity of extracting sub-faces and allowing the following process simple and fast.
+
+
+\subsubsection{Definition and construction}
+
+Nodes of tessellation graph represent vertices and store the coordinates of them. Edges are nondirectional ones, and store the intersection context if exist. We classify graph edges into two types: we call edges on face boundaries as \emph{boundary edges} and edges inside face as \emph{inner edges}. They are different in at least two aspects: first, the boundary edges may not have a intersection context since it is not coincident with any TTIR; second, in the view of halfedge, inner edges represent two halfedges but boundary edges represent only one halfedge. The same classification is for intersection line segments: if the intersection are inside the face, it is an inner intersection, otherwise a boundary intersection. //可以提前到degenreate case
+
+Recall our definition of TTIR in section \ref{sec:ir}, we find most of the work has already been done. To construct inner edges, we only need to first collect all vertices on the face (including both inside vertices and boundary vertices) to be the nodes, and then connect nodes by inner intersections. However, boundary edge construction is not that easy. We cannot simply connect the three face corners to be the boundary edges, since there may be boundary intersections, and face edges have to be splitted.
+
+To construct boundary edges of graph, we first need to first sort vertices on each face edge along the edge line. This is done by two-point comparison in section \ref{sec:substrates}. After the sort, we connect the nodes by their sequence on the edge line to form the boundary edges. If any boundary edge is coincident with boundary intersection, we assign the intersection context of the boundary intersection to the boundary edge.
+
+\subsubsection{Intersection refinement}
+
+Since tessellation graph is a graph-like description of halfedge, it has extra constraints on its form. The most important one is that edges should not intersect each other. This can be guaranteed when there are only two primitives,  because the surface of primitives is all watertight, non-manifold, and without self-intersection. However, when there are more than two primitives, this constraint can be violated. In the view of intersection detection, it is not enough to find all intersection vertices by only triangle-triangle intersection test. This is because the new vertex can be formed not only by edge intersects plane, but also by three planes, which involves more than two triangles. Therefore, an extra processing--intersection refinement---is necessary to resolve these intersections before constructing tessellation graph.
+
+Intersection refinement is performed between every two intersection line segments from different primitives. Using plane-based representation, whether two intersection line segments intersect is determined by predicate of orientation of plane against a point. For example, we want determine whether $I_v$: $(v_b, v_e, P_v, f_0, C_v)$ and $I_u$: $(u_b, u_e, P_u, f_0, C_u)$ intersects.
+% 需要在IR那一章补充plane rep of intersection这一部分。intersection is describe with 四元组。
+It is done by checking whether $u_b, u_e$ is on different sides of $P_v$ and whether $v_b, v_e$ is on different sides of $P_u$. If yes, $I_v$ and $I_u$ intersects and introduced new intersection vertex, which is the intersection of $P_u, P_v$ and the supporting plane $f_0$.
+
+Degenerate cases will occur when $I_u$ and $I_v$ intersect on end point(s) or $I_v$ and $I_v$ are collinear.
+
+
+\subsection{Extracting sub-faces}
+The last step of tessellation is to really change the topology of input primitive to construct LHICs. We could apply CDT here since the intersection is refined and there is no intersection between the constraints. However, we choose to design a new method to extract sub-faces from intersection face for the efficiency:
+\begin{itemize}
+  \item lose topology information
+  \item may not need to triangulate, classify in a whole
+  \item hard to implement with planes
+\end{itemize}
+
+There is yet another problem on this method. Our method of extracting sub-faces assume that the tessellation graph is connected. However, this assumption can be false (Fig.).
+
+
+\section{Face Classification}
+
+\label{sec:classification}
+As the final stage, face classification classify all candidate faces in linked halfedges, and decides which faces belong to the final mesh. Classification is done by evaluating the indicator vector of each face. During this process, we take advantage of plane-based representation to ensure unconditional correct classification. Also, as we maintain the geometry intra-primitive connectivity (by halfedge structure) and inter-primitive (by denoting shared vertex), we can utilize the space coherence of indicator vectors to accelerate this process.
+
+In this section, we will first give a overall framework of face classification, then introduce how to classify each individual face. At last, we discuss how to accelerate this process by caching intermediate classification result.
+
+\subsection{Basic idea}
+
+The space coherence of indicator vectors means neighboring faces often have the same indicator vector, or share most components of indicator vectors. This means if we figure out the indicator vector of a face, we may know the indicator vectors of its neighboring faces instantly. In other cases, modification must be applied to the indicator vector. The necessary and sufficient condition of indicator change is that the two faces lie on different side of the primitive boundary. In our method, it means there will be intersection context on the shared edge of the two faces (section ??). Because the indicator change can be figured out  by the intersection context efficiently (section ??), we can classify all the faces of linked halfedges using flood-filling method.
+
+The indicator vector of the first face is special. We can guarantee that the whole vector can be figured out only by intersection context of the face edges. Thus, point-in-polyhedron test is used for compensation. This works well under the assumption that the indicator of the sample point is the same with the face. For the point inside the face, the answer is absolutely yes, because the whole face must be classified as a whole. However, the coordinates of the inner points cannot be exactly represented, thus may lead to wrong predicates. Therefore, we choose to the use the face corners for point-in-polyhedron test. The test must be guaranteed to be exact, and, on the other hand, efficiency is not so important as we won't need many such tests. If ray-trace algorithm is used for the point-in-polyhedron test, the octree built during space division might be useful [].
+
+However, use face corner instead of inner points has another problem. The indicator vector of the corner may not be the same as the of the indicator vector of the whole face. Figure ? shows such condition occurs when any of the face edge is on the boundary of other primitive. Nevertheless, we do not to worry about this. This is because when such case occurs, one of the edge adjacent to that corner will have intersection context to of that primitive, by which we can figure out the real indicator.
+
+Another thing needs to be noticed is that the neighborhood of a certain face $f$ from primitive $A$ in linked halfedges does not only contain the face in $A$, but also include faces from other primitives which share edges with $f$. It can be efficiently found because in linked halfedges, coincident vertices between primitives are shared. Therefore, the indicator vector can be transfer not only intra-primitive, but also inter-primitive.
+
+\subsection{Fast and exact face classification}
+
+During flood-filling, we propagate the indicator vector of the current face $f_0$ to its neighboring faces, which have shared edges with the current face. If one of shared edges has intersection context $C_{I_v \mapsto A}$, it means the indicator of primitive $A$, denoted as $i_A$, could be different for the corresponding neighboring face $f_i$. In this section, we will show that $C_{I_v \mapsto A}$ is enough to compute the new $i_A$ for $f_i$. We only discuss the condition that $f_i$ is a triangle in the following. However, $f_i$ may not be triangle, not even a convex polygon. In these conditions, we can select a triangle subset of $f_i$ to represent $f_i$, since $f_i$ is guaranteed to be classified as a whole.
+
+Feito et. al. had noticed that intersection neighborhood can be used for fast classification of faces around the intersection. According to their method, faces adjacent to intersection line segments must have neighbors from other primitive(s) that define the position and orientation for each other. Unfortunately, Feito et. al. did not give detail description of how to implement a exact classification, nor discuss about degenerate cases such as coplanar faces. As Feito et. al. use geometry connectivity for classification, any incorrect classification can be spread to neighborhoods, which may cause errors in a wide range.
+
+We develop an exact and robust classification method based on the idea of using intersection neighborhood information. The intersection neighborhood is abstracted into two situations of intersection context (section ??). To make a clear description, we denote the three corners of neighboring face $f$ as $v_0^I$, $v_1^I$, $v_2$, where the superscript means the vertex lies on the intersection line segment $I$ with intersection context $C_{I \mapsto A}$. In the first situation, the intersection $I$ lies on the face of primitive $A$. That is, $C_{I \mapsto A} = f_x^A$. To calculate indicator $i_A$ for $f$, we only need to decide on which side of $f_x^A$ the current  face $f$ lies. Any sample point on $f$ except those on $I$ can be used for this predicates. As we can get the exact coordinates of corners, we choose $v_2$ to compute $i_A(f)$.
+
+If $I$ lies on edge of primitive $A$,  the intersection context is face pair: $C_{I \mapsto A} = (f_p^A, f_q^A)$. This situation is a little more complex that we cannot decide $i_A$ until we check the orientations of both $f_p^A$ and $f_q^A$. To correctly classify $f$, we first build BSP structure using $f_p^A$ and $f_q^A$ [?], and then determine the space indicator $i_A(v_2)$ by the BSP. As coordinate of $v_2$ and all the planes can be exactly computed, the classification is exact. The indicator of the face $i_A(f)$ should be the same as $i_A (v_2)$. It is because under a BSP structure with only two division planes, any sample point on $f$ except those on $I$ has the same $\lambda_A$ (Fig. ??).
+
+
+\subsection{Caching evaluation results}
+
+If the CSG tree is large, with tens of, or even hundreds of nodes, computing $\lambda_\Phi(f) = \Phi(\vec{\lambda}(f))$ for every face can be costly. Considering the space coherence of indicator, we use cache techniques --- by storing the evaluation result of $\Phi$ --- to save the computation time.
+
+The most simple cache strategy is final result cache. We know indicator vector $\vec{\lambda}$ will not change if there is no intersection context during spreading. That means the final classification $\lambda_\Phi$ will not change, too. Thus, those faces sharing the same $\lambda$ can be classified as a whole.
+
+Also, we can also do intermediate result cache. It should be noticed that $\Phi(\vec{\lambda}(f))$ can be simplified if some components of $\vec{\lambda}$ is fixed. For example, assume we have a Boolean expression $M_1\cup (M_2\cap M_3-M_4)$. Given the values of two indicators $\lambda_1(x)=out$, $\lambda_2(x)=in$, the expression can be rewritten as $out\cup (in\cap M_3-M_4)$. Using the combination rules we can simplify the expression as $M_3-M_4$. This fact is important because for a large CSG tree, a certain primitive, denoted as $M_x$, often only intersects with a few other primitives $\Theta= \{M_{n_1}, M_{n_2}, \cdots, M_{n_k}\}$. That means all the faces in $M_x$ has the same indicators for the primitives not in $\Theta$. Therefore, we can first determine these fixed indicators and simplify the Boolean function $\Phi$ into a simpler one $\Phi_{M_x}$, and then use $\Phi_{M_x}$ to compute the final indicator for each faces.
+
+
+\section{Experiments}
+
+
+
+\section{Summary}
+
 In this paper, we proposed a novel method to evaluate CSG with triangular mesh primitives. It is able to efficiently perform non-incremental evaluation of large CSG with massive faces. The key idea of our approach is to use the local coherence of face space labels to accelerate face membership classification. A two-level grouping framework is developed to group neighboring faces together and thus space labels can be shared within each group. This scheme saves much time for space label computation, which is often very time-consuming for conventional Boolean evaluation algorithms. Additionally, in order to be robust, plane-based geometry computation is introduced into the intersection computation step of our approach. Experiments have verified the proposed approach is more efficient than the state-of-the-art techniques while retaining robustness and stability. We will further investigate the robust tessellation in future.
 
 
