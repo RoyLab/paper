@@ -491,50 +491,50 @@ longest edge in the mesh (relative to the bounding box). If we use IEEE 754 doub
 \label{sec:substrates}
 Our method rigorously follows the paradigm of plane-based geometry. Predicates are all computed using planes as input. These predicates include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. In the following, we only focus on two specific predicates. Other substrates may refer to \cite{bernstein2009fast}.
 
-Before we start the discussion, we first introduce several regulations frequently used in the rest of our paper. A plane $p_x$ can be represented by plane coefficients $(a_x, b_x, c_x, d_x)$. The normal of $p_x$ is denoted as $\vec{n}_x$. Under plane-based representation, a line $l$ can be represented by intersection of two planes $(p_m, p_n)$, or in short, $l: (p_m, p_n)$. The positive direction of $l$ is defined by cross product of the normals of $p_a$ and $p_b$, that is, $\vec{l} = \vec{n}_a \times \vec{n}_b$. A point $v$ is represented by plane triples $(p_a, p_b, p_c)$, or in short, $v: (p_a, p_b, p_c)$.
+Before we start the discussion, we first introduce several regulations frequently used in the rest of our paper. A plane $p_x$ can be represented by plane coefficients $(a_x, b_x, c_x, d_x)$. The normal of $p_x$ is denoted as $\vec{n}_x$. Under plane-based representation, a line $l$ can be represented by intersection of two planes $(p_m, p_n)$, or in short, $l\colon(p_m, p_n)$. The positive direction of $l$ is defined by cross product of the normals of $p_a$ and $p_b$, that is, $\vec{l} = \vec{n}_a \times \vec{n}_b$. A point $v$ is represented by plane triples $(p_a, p_b, p_c)$, or in short, $v\colon(p_a, p_b, p_c)$.
 
-Suppose there is an edge $e_i(f)$ of a face $f$, and the line of $e_i(f)$, denoted as $l_{i}(f)$, can represented as intersection of supporting plane $p^s(f)$ and bounding plane $p_i^b(f)$. Given two arbitrary points $v_p$ and $v_q$ on $l_{i}(f)$, they can be represented by plane triples $(p^s(f), p_i^b(f), p_p)$ and $(p^s(f), p_i^b(f), p_q)$, sharing the same first two components. We want to determine if $v_q$ is in positive side of $v_p$ along $\vec{l}_{i}(f)$. We call this predicate as \emph{two-point-one-line comparison}. This problem can be converted to the problem of orientation of a plane $p_p$ with respect to a point $v_q$, except that there is an extra request---we have to guarantee cosine between $\vec{l}_{i}(f)$ and the $\vec{n}_p$ (normal of plane $p_p$) be positive, that is:
+Suppose there is an edge $e_i(f)$ of a face $f$, and the line of $e_i(f)$, denoted as $l_{i}(f)$, can represented as intersection of supporting plane $p^s(f)$ and bounding plane $p_i^b(f)$. Given two arbitrary points $v_p$ and $v_q$ on $l_{i}(f)$, they can be represented by plane triples $(p^s(f), p_i^b(f), p_p)$ and $(p^s(f), p_i^b(f), p_q)$, sharing the same first two components. We want to determine if $v_q$ is in positive side of $v_p$ along $\vec{l}_{i}(f)$. We call this predicate as \emph{two-point-one-line comparison}. This problem can be converted to the problem of orientation of a plane $p_p$ with respect to a point $v_q$, except that there is an extra request---we have to guarantee cosine between $\vec{l}_{i}(f)$ and the $\vec{n}_p$ (normal of plane $p_p$) be positive. If not, we negate the normal of $p_p$, and the coordinate of  $v_p\colon(p^s(f), p_i^b(f), p_p)$ remains unchanged.
+
+Another predicates is used when tessellating a face (section \ref{sec:tessellation}). Given two coplanar lines $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$, we want decide whether the cross product of $\vec{l}_a$ and $\vec{l}_b$ has the same orientation as the normal $\vec{n}_0$ (the normal of $p_0$) (Fig. \ref{fig:substrates}). Direct solution requires to explicitly compute the vector of $l_a$ and $l_b$ and then decide the sign of $\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)$. However, explicit representation of $\vec{l}_a$ and $\vec{l}_b$ requires more bits than standard double precision float point number, bringing extra computation burden.
+
+To solve this, we decompose the normal vectors of $p_a$ and $p_b$: $\vec{n}_a = \vec{n}^\parallel_a + \vec{n}^\perp_a$ and $\vec{n}_b = \vec{n}^\parallel_b + \vec{n}^\perp_b$. Here superscript `$\parallel$` means the vector is in the plane $p_0$ and `$\perp$` means it is orthogonal to $p_0$. Then $\vec{n}_a \times \vec{n}_b = \vec{n}^\parallel_a \times \vec{n}^\parallel_b + \vec{n}^\perp_a \times \vec{n}^\parallel_b + \vec{n}^\parallel_a \times \vec{n}^\perp_b + \vec{n}^\perp_a \times \vec{n}^\perp_b$. As we know $\vec{n}^\perp_a$ and $\vec{n}^\perp_b$ is parallel, $\vec{n}^\perp_a \times \vec{n}^\perp_b = \textbf{0}$. Now, we evaluate the expression $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b)$. Since $\vec{n}_s$ is orthogonal to both $\vec{n}^\perp_a \times \vec{n}^\parallel_b $ and $\vec{n}^\parallel_a \times \vec{n}^\perp_b $, we deduce $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b) = \vec{n}_0 \cdot (\vec{n}^\parallel_a \times \vec{n}^\parallel_b)$. Here we make an essential observation that $\vec{n}^\parallel_a \times \vec{n}^\parallel_b$ has the same direction as $\vec{l}_a \times \vec{l}_b$, that is:
 \begin{equation}
-\label{eq:pointcomp}
-   \left|
-  \begin{array}{ccc}   %该矩阵一共3列，每一列都居中放置
-  a_u  & b_u & c_u \\
-  a_v  & b_v & c_v \\
-  a_p  & b_p & c_p
-  \end{array}
-  \right| > 0,
-\end{equation}
-If not, we negate $P_p$ to be the test plane.
-
-Another predicates is used when tessellating a face (further explanation of its application is shown in Section \ref{}). Given two lines $L_a: (P_s, P_a)$ and $L_b: (P_s, P_b)$, which are on the same plane $P_s$, we want decide whether the sign of cross product of $\vec{L}_a$ and $\vec{L}_b$ has the same orientation as the normal $\vec{N}_s$. Direct solution requires to explicitly compute the vector of $L_a$ and $L_b$ and then decide the sign by $\vec{N}_s \cdot (\vec{L}_a \times \vec{L}_b)$. However, explicit representation of $\vec{L}_a$ and $\vec{L}_b$ requires more bits than standard double precision float point number, bringing extra computation burden.
-
-To solve this, we decompose the normal vectors of $P_a$ and $P_b$: $\vec{N}_a = \vec{N}^\parallel_a + \vec{N}^\perp_a$ and $\vec{N}_b = \vec{N}^\parallel_b + \vec{N}^\perp_b$. Here superscript `$\parallel$` means the vector is in the plane $P_s$ and `$\perp$` means it is orthogonal to $P_s$. Then $\vec{N}_a \times \vec{N}_b = \vec{N}^\parallel_a \times \vec{N}^\parallel_b + \vec{N}^\perp_a \times \vec{N}^\parallel_b + \vec{N}^\parallel_a \times \vec{N}^\perp_b + \vec{N}^\perp_a \times \vec{N}^\perp_b$. As we know $\vec{N}^\perp_a$ and $\vec{N}^\perp_b$ is parallel, $\vec{N}^\perp_a \times \vec{N}^\perp_b = \textbf{0}$. Now, we evaluate the expression: $\vec{N}_s \cdot (\vec{N}_a \times \vec{N}_b)$. Since $\vec{N}_s$ is orthogonal to both $\vec{N}^\perp_a \times \vec{N}^\parallel_b $ and $\vec{N}^\parallel_a \times \vec{N}^\perp_b $, we deduce $\vec{N}_s \cdot (\vec{N}_a \times \vec{N}_b) = \vec{N}_s \cdot (\vec{N}^\parallel_a \times \vec{N}^\parallel_b)$. Here we make an essential observation that $\vec{N}^\parallel_a \times \vec{N}^\parallel_b$ has the same direction as $\vec{L}_a \times \vec{L}_b$, that is:
-\begin{equation}
+\begin{split}
 \label{eq:cosine}
-sign(\vec{N}_s \cdot (\vec{N}_a \times \vec{N}_b)) = sign(\vec{N}_s \cdot (\vec{L}_a \times \vec{L}_b)),
+sign(\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b)) &= sign(\vec{n}_0 \cdot (\vec{n}^\parallel_a \times \vec{n}^\parallel_b)) \\
+&=  sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)),
+\end{split}
 \end{equation}
-which means we do not need to explicitly compute $\vec{L}_a$ or $\vec{L}_b$. Instead, we only have to evaluate the left expression of equation \ref{eq:cosine}.
+which means we do not need to explicitly compute $\vec{l}_a$ or $\vec{l}_b$. Instead, we only have to evaluate the left expression of equation \ref{eq:cosine}, which is much easier to compute.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=2.5in]{substrates}
+\caption{The configuration of two-line-one-plane test. $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$ are coplanar in $p_0$. We want to compute $sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b))$.}
+\label{fig:substrates}
+\end{figure}
+
 
 \section{Exact Intersection Detection}
 
 \label{section:isect}
-In this step, intersections between faces are computed through the triangle-triangle intersection test within each critical cell. We adopt M\"{o}ller's intersection detection algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, because collision detection algorithms are often accompanied by non-robustness problems, a conventional implementation of this algorithm may cause unpredictable results. Therefore, we integrate plane-based geometry representation \cite{sugihara1990solid} into M\"{o}ller's algorithm to make it unconditionally precise and robust. In the following, we first make a quick review of M\"{o}ller's algorithm, then discuss the way to make it unconditional robust. At last, we talk about how to deal with degenerate cases.
+In this step, intersections between faces are computed through the triangle-triangle intersection test within each critical cell of octree. We adopt M\"{o}ller's intersection detection algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, because collision detection algorithms are often accompanied by non-robustness problems, a naive implementation may cause unpredictable results when there comes degenerate cases. Therefore, we integrate plane-based geometry representation into M\"{o}ller's algorithm to make it unconditionally robust and exact. In the following, we first make a quick review of M\"{o}ller's algorithm, then discuss the way to integrate plane-based geometry. At last, we talk about how to deal with degenerate case, such as intersecting on points and coplanar case.
 
 \subsection{Vertex-based method review}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{projection}
-\caption{$Seg_1$ is the intersection between $S_2$ and $F_1$. $Seg_2$ is the intersection between $S_1$ and $F_2$. The intersection between $F_1$ and $F_2$, which is the line segment in red, is the overlap of $Seg_1$ and $Seg_2$.}
+\caption{$Seg_1$ is the intersection between $p^s(f_2)$ and $f_1$. $Seg_2$ is the intersection between $p^s(f_1)$ and $f_2$. The intersection between $f_1$ and $f_2$, which is the line segment in red, is the overlap of $Seg_1$ and $Seg_2$.}
 \label{fig_projection}
 \end{figure}
 
 
-M\"{o}ller's algorithm computes the intersection between two triangles $F_1$ and $F_2$ in three steps (Fig. \ref{fig_projection}).
+M\"{o}ller's algorithm computes the intersection between two triangles $f_1$ and $f_2$ in three steps (Fig. \ref{fig_projection}).
 \begin{itemize}[leftmargin=0.45cm]
-\item[1)] An early rejection is performed by testing whether $F_1$ intersects the plane where $F_2$ lies, which is denoted as $S_2$. This is a necessary condition of intersection between $F_1$ and $F_2$. If this test is passed, then the same is performed for $F_2$ and $S_1$, where $S_1$ is the plane of $F_1$.
-\item[2)]The intersection between $F_1$ and $S_2$, denoted as $Seg_1$, and the intersection between $F_2$ and $S_1$, denoted as $Seg_2$, are separately computed .
- \item[3)]The intersection between $F_1$ and $F_2$ is determined by computing the overlap area of $Seg_1$ and $Seg_2$ .
+\item[1)] An early rejection is performed by testing whether $f_1$ intersects $p^s(f_2)$, the supporting plane of $f_2$. This is a necessary condition of intersection between $f_1$ and $f_2$. If this test is passed, then the same is performed for $f_2$ and $p^s(f_1)$.
+\item[2)]The intersection between $f_1$ and $p^s(f_2)$, denoted as $Seg_1$, and the intersection between $f_2$ and $p^s(f_1)$, denoted as $Seg_2$, are separately computed .
+ \item[3)]The intersection between $f_1$ and $f_2$ is determined by computing the overlap area of $Seg_1$ and $Seg_2$ .
 \end{itemize}
 
 \begin{figure}[t]
@@ -545,7 +545,7 @@ M\"{o}ller's algorithm computes the intersection between two triangles $F_1$ and
 \end{figure}
 
 
-Conventional implementations of M\"{o}ller's algorithm use vertex-based representation and common float point arithmetic, which is neither exact nor robust. In Fig. \ref{fig:precision}, we illustrate a non-robust 2D case of the Boolean operation. Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from geometry \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. On the other hand, if the computation can be restricted to \emph{predicates}, which make a two or three-way decision based on known coordinates, we could quickly and robustly implement this algorithm.
+Conventional implementations of M\"{o}ller's algorithm use vertex-based geometry, which is neither exact nor robust unless arbitrary precision arithmetic is used. In Fig. \ref{fig:precision}, we illustrate a non-robust 2D case of the Boolean operation. Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from geometry \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. On the other hand, if the computation can be restricted to \emph{predicates}, which make a two or three-way decision based on known coordinates, we could quickly and robustly implement this algorithm.
 
 
 
