@@ -429,18 +429,18 @@ We want to develop a new boundary evaluation method based on the two-step paradi
 \label{sec:meshes}
 We make an essential observation that the non-intersected meshes, as intermediate result of intersection computation, plays a very important role of the method design. It is a bridge that controls the complexity of intersection computation and facilitates the face classification. After the non-intersected meshes is determined, all things left are how to construct such a data structure and how to classify according to it.
 
-Our non-intersected mesh, called linked halfedge, is a variance of halfedge, a well-known data structure to represent solids. Halfedge has two advantages: first, since halfedge is popular, using it as the intermediate data structure can avoid unnecessary conversion, which has the potential to create simpler algorithm and better performance and result topology; second, the geometry connectivity, by which we accelerate classification using local coherence of space indicators, can be easily retrieved through halfedge.
+Our non-intersected mesh, called Linked Halfedge, is a variance of halfedge, a well-known data structure to represent solids. Halfedge has two advantages: first, since halfedge is popular, using it as the intermediate data structure can avoid unnecessary conversion, which has the potential to create simpler algorithm and better performance and result topology; second, the geometry connectivity, by which we accelerate classification using local coherence of space indicators, can be easily retrieved through halfedge.
 
-However, naive halfedge is far from enough. The vertex coordinates in halfedge are usually represented by float point number, which cannot exactly represent the newly introduced intersection points. Therefore, we utilize plane-based representation to avoid computing new coordinates. In addition, we detect all coincident vertices among primitives and linked them together (that is why it is called linked halfedge). This information is used for avoiding repetitive vertices, reconstructing geometry connectivity, and ensuring the topology correctness.
+However, naive halfedge is far from enough. The vertex coordinates in halfedge are usually represented by float point number, which cannot exactly represent the newly introduced intersection points. Therefore, we utilize plane-based representation to avoid computing new coordinates. In addition, we detect all coincident vertices among primitives and linked them together (that is why it is called Linked Halfedge). This information is used for avoiding repetitive vertices, reconstructing geometry connectivity, and ensuring the topology correctness.
 
-Enlightened by Feito et. al. \cite{feito2013fast}, we found that the the topology near intersection lines between faces can benefit point-in-polyhedron test by dramatically reducing the number of faces needing traversing. Therefore, we add extra information into the linked halfedge, called \emph{intersection context}, to facilitate afterwards face classification. Intersection context identifies where an intersection lies on the surface of the related primitives. An edge of linked halfedge has intersection context only if it is coincident with a certain intersection line segment between primitives. We will give the definition and usage of intersection context in details in the following sections.
+Enlightened by Feito et. al. \cite{feito2013fast}, we found that the the topology near intersection lines between faces can benefit point-in-polyhedron test by dramatically reducing the number of faces needing traversing. Therefore, we add extra information into the Linked Halfedge, called \emph{intersection context}, to facilitate afterwards face classification. Intersection context identifies where an intersection lies on the surface of the related primitives. An edge of Linked Halfedge has intersection context only if it is coincident with a certain intersection line segment between primitives. We will give the definition and usage of intersection context in details in the following sections.
 
-To give a overall impression of how we design linked halfedge, we summarize the above content and highlight the following features:
+To give a overall impression of how we design Linked Halfedge, we summarize the above content and highlight the following features:
 
 \begin{itemize}
-  \item Each input primitive mesh is tessellated into a linked halfedge. Faces in a linked halfedge must not cross any other linked halfedges.
-  \item Coincident vertices between different linked halfedge should be linked, that is, coincident vertices are shared among linked halfedges.
-  \item If a certain edge of linked halfedge is coincident with intersection line segment(s), it should be associated with the corresponding intersection context(s).
+  \item Each input primitive mesh is tessellated into a Linked Halfedge. Faces in a Linked Halfedge must not cross any other Linked Halfedges.
+  \item Coincident vertices between different Linked Halfedge should be linked, that is, coincident vertices are shared among Linked Halfedges.
+  \item If a certain edge of Linked Halfedge is coincident with intersection line segment(s), it should be associated with the corresponding intersection context(s).
 \end{itemize}
 
 
@@ -458,11 +458,11 @@ This step is to detect intersections between primitives in a robust and exact wa
 
 \subsubsection{Tessellation}
 
-Once all intersections are detected, we need to tessellate the input primitives and construct the linked halfedges.. In many methods like \cite{ogayar2015deferred}, constraint Delaunay triangulation (CDT) is applied to perform tessellation, since the intersections are naturally the constraints of CDT. However, for a CSG with more than two primitives, the intersection vertices may be generated by intersections of three faces from different primitives, which cannot be computed during the previous step. Also, intersection line segments may overlap or intersect with each other, and cannot be used for constraints of CDT directly. Finally, as our intersection vertices are represented exactly by planes, implementation of CDT could be complex and inefficient, as most CDT methods were not designed to handle planes. Therefore, we design a simple structure, called tessellation graph, to guide the tessellation of each single face, and develop a very fast but exact method to construct linked halfedges from tessellation graphs, which is suitable for dealing with plane-based representation of intersections. Details are shown in section \ref{sec:tessellation}.
+Once all intersections are detected, we need to tessellate the input primitives and construct the Linked Halfedges.. In many methods like \cite{ogayar2015deferred}, constraint Delaunay triangulation (CDT) is applied to perform tessellation, since the intersections are naturally the constraints of CDT. However, for a CSG with more than two primitives, the intersection vertices may be generated by intersections of three faces from different primitives, which cannot be computed during the previous step. Also, intersection line segments may overlap or intersect with each other, and cannot be used for constraints of CDT directly. Finally, as our intersection vertices are represented exactly by planes, implementation of CDT could be complex and inefficient, as most CDT methods were not designed to handle planes. Therefore, we design a simple structure, called tessellation graph, to guide the tessellation of each single face, and develop a very fast but exact method to construct Linked Halfedges from tessellation graphs, which is suitable for dealing with plane-based representation of intersections. Details are shown in section \ref{sec:tessellation}.
 
 \subsubsection{Face classification}
 
-This step is to choose faces from the linked halfedges to generate the final mesh. Literally compute all the space indicators of each face is unacceptable slow for large CSG trees. Enlightened by Feito et. al. \cite{feito2013fast}, we utilize the geometry connectivity to accelerate this process. In Feito et. al.'s method, the faces of tessellated meshes are first grouped according to whether they have the same indicator vector. After the grouping, each group is classified as a whole. This is based on the observation that indicators of faces are spatially coherent. That is, if a face $f$ is outside of primitive $M_0$, the neighbor of $f$ are likely to be out of $M_0$, too. Different from Feito et. al.'s method, we also consider the condition when the number of primitives is larger than two. In this condition, space vector of a face may be partly the same with its neighborhoods'. That is, we allow space indicators not only share within faces of the same group, but also among different groups and even primitives. This is useful when the number of primitives is large, or intersections between primitives is complex. Details will be shown in section \ref{sec:classification}.
+This step is to choose faces from the Linked Halfedges to generate the final mesh. Literally compute all the space indicators of each face is unacceptable slow for large CSG trees. Enlightened by Feito et. al. \cite{feito2013fast}, we utilize the geometry connectivity to accelerate this process. In Feito et. al.'s method, the faces of tessellated meshes are first grouped according to whether they have the same indicator vector. After the grouping, each group is classified as a whole. This is based on the observation that indicators of faces are spatially coherent. That is, if a face $f$ is outside of primitive $M_0$, the neighbor of $f$ are likely to be out of $M_0$, too. Different from Feito et. al.'s method, we also consider the condition when the number of primitives is larger than two. In this condition, space vector of a face may be partly the same with its neighborhoods'. That is, we allow space indicators not only share within faces of the same group, but also among different groups and even primitives. This is useful when the number of primitives is large, or intersections between primitives is complex. Details will be shown in section \ref{sec:classification}.
 
 
 \section{Plane-based geometry}
@@ -495,7 +495,7 @@ Before we start the discussion, we first introduce several regulations frequentl
 
 Suppose there is an edge $e_i(f)$ of a face $f$, and the line of $e_i(f)$, denoted as $l_{i}(f)$, can represented as intersection of supporting plane $p^s(f)$ and bounding plane $p_i^b(f)$. Given two arbitrary points $v_p$ and $v_q$ on $l_{i}(f)$, they can be represented by plane triples $(p^s(f), p_i^b(f), p_p)$ and $(p^s(f), p_i^b(f), p_q)$, sharing the same first two components. We want to determine if $v_q$ is in positive side of $v_p$ along $\vec{l}_{i}(f)$. We call this predicate as \emph{two-point-one-line comparison}. This problem can be converted to the problem of orientation of a plane $p_p$ with respect to a point $v_q$, except that there is an extra request---we have to guarantee cosine between $\vec{l}_{i}(f)$ and the $\vec{n}_p$ (normal of plane $p_p$) be positive. If not, we negate the normal of $p_p$, and the coordinate of  $v_p\colon(p^s(f), p_i^b(f), p_p)$ remains unchanged.
 
-Another predicates is used when tessellating a face (section \ref{sec:tessellation}). Given two coplanar lines $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$, we want decide whether the cross product of $\vec{l}_a$ and $\vec{l}_b$ has the same orientation as the normal $\vec{n}_0$ (the normal of $p_0$) (Fig. \ref{fig:substrates}). Direct solution requires to explicitly compute the vector of $l_a$ and $l_b$ and then decide the sign of $\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)$. However, explicit representation of $\vec{l}_a$ and $\vec{l}_b$ requires more bits than standard double precision float point number, bringing extra computation burden.
+Another predicates is used when tessellating a face (section \ref{sec:tessellation}). Given two coplanar lines $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$, we want decide whether the cross product of $\vec{l}_a$ and $\vec{l}_b$ has the same orientation as $\vec{n}_0$ (the normal of $p_0$). We call it as \emph{two-line-one-plane comparison}(Fig. \ref{fig:substrates}). Direct solution requires to explicitly compute the vector of $l_a$ and $l_b$ and then decide the sign of $\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)$. However, explicit representation of $\vec{l}_a$ and $\vec{l}_b$ requires more bits than standard double precision float point number, bringing extra computation burden.
 
 To solve this, we decompose the normal vectors of $p_a$ and $p_b$: $\vec{n}_a = \vec{n}^\parallel_a + \vec{n}^\perp_a$ and $\vec{n}_b = \vec{n}^\parallel_b + \vec{n}^\perp_b$. Here superscript `$\parallel$` means the vector is in the plane $p_0$ and `$\perp$` means it is orthogonal to $p_0$. Then $\vec{n}_a \times \vec{n}_b = \vec{n}^\parallel_a \times \vec{n}^\parallel_b + \vec{n}^\perp_a \times \vec{n}^\parallel_b + \vec{n}^\parallel_a \times \vec{n}^\perp_b + \vec{n}^\perp_a \times \vec{n}^\perp_b$. As we know $\vec{n}^\perp_a$ and $\vec{n}^\perp_b$ is parallel, $\vec{n}^\perp_a \times \vec{n}^\perp_b = \textbf{0}$. Now, we evaluate the expression $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b)$. Since $\vec{n}_s$ is orthogonal to both $\vec{n}^\perp_a \times \vec{n}^\parallel_b $ and $\vec{n}^\parallel_a \times \vec{n}^\perp_b $, we deduce $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b) = \vec{n}_0 \cdot (\vec{n}^\parallel_a \times \vec{n}^\parallel_b)$. Here we make an essential observation that $\vec{n}^\parallel_a \times \vec{n}^\parallel_b$ has the same direction as $\vec{l}_a \times \vec{l}_b$, that is:
 \begin{equation}
@@ -510,7 +510,7 @@ which means we do not need to explicitly compute $\vec{l}_a$ or $\vec{l}_b$. Ins
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{substrates}
-\caption{The configuration of two-line-one-plane test. $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$ are coplanar in $p_0$. We want to compute $sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b))$.}
+\caption{The configuration of two-line-one-plane comparison. $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$ are coplanar in $p_0$. We want to compute $sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b))$.}
 \label{fig:substrates}
 \end{figure}
 
@@ -545,14 +545,13 @@ M\"{o}ller's algorithm computes the intersection between two triangles $f_1$ and
 \end{figure}
 
 
-Conventional implementations of M\"{o}ller's algorithm use vertex-based geometry, which is neither exact nor robust unless arbitrary precision arithmetic is used. In Fig. \ref{fig:precision}, we illustrate a non-robust 2D case of the Boolean operation. Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from geometry \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. On the other hand, if the computation can be restricted to \emph{predicates}, which make a two or three-way decision based on known coordinates, we could quickly and robustly implement this algorithm.
-
+Conventional implementations of M\"{o}ller's algorithm use vertex-based geometry, which is neither exact nor robust.  Although implementing M\"{o}ller's algorithm with arbitrary precision arithmetic could make it robust, it is too costly for a large CSG evaluation. Actually, the non-robustness of this algorithm is from geometry \emph{constructions} \cite{bernstein2009fast}, which compute new coordinates of geometry objects based on the known coordinates of existing ones. In M\"{o}ller's algorithm, the coordinates of $Seg_1$ and $Seg_2$ (Fig. \ref{fig_projection}) are computed as intermediate results. We use plane-based geometry to solve these problems by avoiding explicitly computing the coordinates of new vertices.
 
 
 \subsection{Plane-based technique embedding}
 
 \label{sec:embed}
-According to the method described in section \ref{sec:convert}, triangle faces $f$ are firstly converted to its plane-based representation: a supporting plane $P_{s,f}$ surrounded by three bounding planes $P^i_{b,f}, i = 1,2,3$. We introduce the plane-based implementation of M\"{o}ller's algorithm step by step in the following:
+According to the method described in section \ref{sec:convert}, triangle faces $f$ are firstly converted to its plane-based representation: a supporting plane $p^s(f)$ surrounded by three bounding planes $\{p^b_i\ |\  i = 1,2,3\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
 
 \begin{figure}[t]
 \centering
@@ -564,59 +563,57 @@ According to the method described in section \ref{sec:convert}, triangle faces $
 
 
 \begin{itemize}[leftmargin=0.45cm]
-\item[1)] In this step, we only need to compute the orientation of a plane $(a, b, c, d)$
-with respect to a point $(x, y, z)$, that is to compute:
-\begin{equation}
+\item[1)] The basic routine of the first step is given two faces $f_1$ and $f_2$, computing the orientation of the supporting plane (denoted as $p(f_1)\colon(a, b, c, d)$) of a face with respect to a certain vertex (denoted as  $v_i(f_2)\colon(x, y, z)$) of the other face. That is to compute:
+\begin{equation}\label{eq:plane}
 sign(ax+by+cz+d).
 \end{equation}
-Using the notation in section \ref{sec:convert},  we know the coordinates of the points are precisely represented by $L$ bits. Also, after the conversion, the precisions of four coefficients of the supporting plane are $(P', P', P', P)$, where $P'=P-(L-1)-2$ and $P$ is defined in equation \ref{eq:precision}. Using the strengthened criterion $M \ge P+1$, we find that $M$ bits are enough to perform the predicates. This observation allow us to perform very efficient early discard on the triangle-triangle intersection test, which is the key idea to stay efficiency while perusing exactness.
-\item[2)]In step 2, constructions are avoid by explicitly represent the end points of $Seg_1$ and $Seg_2$ using plane triples. As illustrated in Fig. \ref{fig:isect}(a), these points are the intersection between an edge line of a face and the supporting plane of the other face. Because the edge line of $f_1$ ($f_2$) can be represented as $[P_{s, f_1}, P^i_{b, f_1}]$ ($[P_{s, f_2}, P^i_{b, f_2}]$), the end points of $Seg_1$ ($Seg_2$) can be represented in the form of $[P_{s, f_1}, P_{s, f_2}, P^i_{b, f_2}]$ ($[P_{s, f_1}, P_{s, f_2}, P^i_{b, f_1}]$). In Fig. \ref{fig:isect}, we list all intersection situations between a triangle and a plane, and the corresponding bounding plane in each situation. Note, coplanar situation will be discussed later in section \ref{sec:degenerate}.
- \item[3)] The intersection between $f_1$ and $f_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by comparing the end points of $Seg_1$ and $Seg_2$ along $L$ (Fig. \ref{fig_projection}), where $L$ is the intersection between $P_{s, f_1}$ and $P_{s, f_2}$. Because end points are all represented using plane triples, we can use the technique discussed in section \ref{sec:substrates} to implement the comparison.
+Reviewing the discussion of section \ref{sec:convert},  the coordinates of vertices are represented by three L-bit float point numbers.Precisions of the four coefficients of the supporting plane are $(P^\star, P^\star, P^\star, P)$. Here $P$ is defined in equation \ref{eq:precision}, and $$P^\star=P-(L-1)-2.$$ Using the enforced criterion $M \ge P+1$, we find that $M$ bits are enough to perform the predicate of equation \ref{eq:plane}. This allow us to perform the early discard efficiently.
+\item[2)]In step 2, the end points of $Seg_1$ and $Seg_2$ are implicitly represented using intersections of plane triples. Take $Seg_1$ as an example. As illustrated in Fig. \ref{fig:isect}, $Seg_1$ are the intersection between $f_1$ and $p_s(f_2)$. Because the edge $e_i(f_1)$ can be represented as $(p^s( f_1), p^b_i(f_1))$, the end points of $Seg_1$ can be represented in the form of $(p^s( f_1), p^s(f_2), p^b_i(f_1))$. In Fig. \ref{fig:isect}, we list all intersection situations between $f_1$ and $p_s(f_2)$, and the corresponding bounding plane $p^b_i(f_1)$ in each situation. Coplanar conditions will be discussed later in section \ref{sec:degenerate}.
+ \item[3)] The intersection between $f_1$ and $f_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by comparing the end points of $Seg_1$ and $Seg_2$ along $l$ (Fig. \ref{fig_projection}), where $l$ is the intersection between $p_s(f_1)$ and $p_s(f_2)$. Because end points are all represented using plane triples, we can use the two-line-one-plane comparison discussed in section \ref{sec:substrates} to perform the comparison.
 \end{itemize}
 
 \subsection{Intersection record}
 \label{sec:ir}
 
-The output of this stage, or what we call triangle-triangle intersection record (TTIR), is the data structure which organize the results of triangle-triangle intersection test. TTIR is also the input of tessellation, and is in deep couple with the tessellation method. It is hard to give full idea of how we design TTIR before we introduce our tessellation algorithm. We first give several requirements from tessellation stage, and then discuss the compositions of TTIR. To have a comprehensive understanding of TTIR, readers may need to review this section after finish reading section \ref{sec:tessellation}.
+The output of this stage, or what we call intersection record (IR), is the data structure which organize the results of triangle-triangle intersection test. IR is also the input of tessellation, and is in deep couple with the tessellation method. It is hard to give full idea of why the IR is like that before we introduce our tessellation algorithm. Therefore, in this section, we first give several requirements for IR from tessellation stage, and then discuss the IR structure. To have a comprehensive understanding of IR, readers may need to review this section after finish reading section \ref{sec:tessellation} about tessellation stage.
 
-We recall our description of LHEC in section \ref{sec:meshes}, we need to transfer necessary information by TTIR to tessellation stage for LHEC construction. Necessary information includes:
-\begin{itemize}
-  \item The plane-based representation of intersection vertices.
-  \item Intersection line segments, each consisting of references of two end points.
-  \item Intersection context of the intersection line segments.
-\end{itemize}
+We recall our definition of Linked Halfedge in section \ref{sec:meshes}, we need to transfer necessary information by IR to tessellation stage for Linked Halfedge construction. For each intersection line segment, we use a five-component vector  $\gamma \colon(v_b, v_e, f, p, C)$ to describe it. Here, $v_b$ and $v_e$ are the two end points of $\gamma$. Component $f$ is the face where the $\gamma$ lies. Component $C$ is the intersection context, and will be further explained later. Component $p$ is the plane representation of the line where $\gamma$ lies (denoted as $\vec{n}_\gamma$). Normally, line is represented by two planes. However, one of the planes for $\vec{n}_\gamma$ must be $f$'s supporting plane $p^s(f)$, so we just omit it, and use the other plane as the representation for $\vec{n}_\gamma$ .
 
-For example, assume two triangle faces $f_1$ and $f_2$, from primitive $A$ and $B$, intersect at line segment $(v_1, v_2)$, where $v_1$ and $v_2$ are references of two end points. First, $v_1$ and $v_2$ are introduced to $A$ and $B$, then intersection line segment $(v_1, v_2)$ is stored on both $f_1$ and $f_2$. At last, intersection context of $(v_1, v_2)$ is attached as an attribute. In this case, the intersection context of $(v_1, v_2)$  is $f_1$ for $A$ and $f_2$ for $B$.
+To illustrate, assume two triangle faces $f_1$ and $f_2$, from primitive $P_1$ and $P_2$, intersect at line segment $\gamma$. Note that there are two versions of $\gamma$ for each of the two faces respectively, denoted as $\gamma(f_1)$ and $\gamma(f_2)$. For $\gamma(f_1)$, $v_b$ and $v_e$ are the two end points of $\gamma$ and $f=f_1$. The representation plane $p$ is $p^s(f_2)$. Note that $p^s(f_2)$ must not be coplanar with $f_1$. The intersection context $C=f_2$ in most cases. It means that, in primitive $P_2$, $\gamma(f_1)$ lies on the face $f_2$. However, sometimes, intersection may lie on the edge, instead of face,  of other primitive. In that case,  the intersection context is an edge, and we discuss such degenerate case in the next section. The situation of $\gamma(f_2)$ is similar we omit the discussion here.
 
-In LHEC, there must not be any repetitive vertices within each LHEC or among LHECs in order to reconstruct the correct topology. Therefore, repetitive vertices elimination must be performed. Checking whether there are coincident points in a global scope can be quite inefficient. Fortunately, it is easy to figure out the location of an intersection vertex---whether it is inside, on a certain edge, or coincident with one of the three corners of intersection faces. Therefore, if we store the references of vertices on faces, edges, coincidence detection is localized and repetitive vertices elimination can be very fast.
-
-// Çø·Öcontext and plane representation
-
+In the Linked Halfedge, there must not be any repetitive vertices in order to reconstruct the correct topology. Therefore, repetitive vertices elimination must be performed. Checking whether there are coincident points in a global scope can be quite inefficient. Our implementation use a localized scheme that store the reference of intersection vertices into their corresponding geometry location, like edges and faces. Therefore, coincidence detection performed within the geometry elements and repetitive vertices elimination can be very fast.
 
 \subsection{Degenerate cases}
 \label{sec:degenerate}
 
-Before we discuss the degenerate cases, we give three principles for handling them. First, we want our method be unconditional robust and exact, so all degenerate cases should be well handled (completeness). Second, to control the complexity of tessellation, we want degenerate cases to be invisible to tessellation, that is, degenerate cases have the same format of output as non-degenerate cases (invisibility). Third, we want the outcome of tessellation be as simple as possible. That is, intersection line segments that will not help tessellation, if recognized, are disposed (simplicity).
+To solve degenerate cases, we have three principles. First, we want our method be unconditional robust and exact, so all degenerate cases should be well handled (completeness). Second, to control the complexity of tessellation, we want degenerate cases to be invisible to tessellation, that is, degenerate cases have the same format of output, in our method, IR, as non-degenerate cases (invisibility). Third, we want the outcome of tessellation be as simple as possible. That is, intersection line segments that will not help tessellation, if recognized, are disposed (concision).
 
-To ensure the completeness, we classify all degenerate cases into three categories by the dimension of intersection:
+To ensure the completeness, we classify all degenerate cases into three categories by the dimension of intersection, and solving each of them as follows.
 
 \subsubsection{Intersects on point}
-Point is degenerate case of line segment with zero length. The intersection point is potentially a vertex in the LHEC. There are two kinds of vertices, depending on whether the vertex is isolated. An isolated vertex does not need to participate tessellation. On the other side, if the intersection point is not isolated, it is end point of other intersection line segment and will be introduced when that intersection line segment is detected. Therefore, we treat the cases of intersection on point as non-intersection cases.
-
-\subsubsection{Intersects on line segment}
-This category is often not degenerate cases. However, when intersection line segment lies on a edge of one of the two triangle faces (Fig. \ref{fig:isect}b), error will occur if not careful. In this case, there will be another pair of triangle faces that will have exactly the same intersection line segment (Fig. \ref{fig:isect2}). This is what we called twin intersections. With twin intersections exist, one intersection line segment will be inserted twice, requiring extra effort to eliminate repetitions. To make things worse, the intersection will have different intersection contexts.
-
-Twin intersection can be treated as union to resolve this.
-
-
-\subsubsection{Coplanar}
+When two triangles intersect on a single point, there are two different conditions (Fig. \ref{fig:isolated}), depending on whether the point is isolated. If the point is isolated, it means that there is no other intersection line segment sharing the point. This condition may cause non-manifold surface because of the singularity of the isolated intersection point. Also, isolated intersection point will not affect the tessellation of the intersection face. On the other hand, if the intersection point is not isolated, there must be other intersection line segments that contain the point, thus the point will be introduced at least twice. Therefore, no matter which condition it is, when two triangle faces intersect on point, we can just omit this intersection and this will not affect the correctness of the final topology.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=3.5in]{degenerate}
-\caption{}
-\label{fig:isect2}
+\includegraphics[width=3.5in]{isolated}
+\caption{Two situations of point intersections. (a) The intersection point is isolated, and there is no adjacent intersection line segment. This situation may cause non-manifold surface in Boolean operation. (b) The intersection point is not isolated. The intersection point can be introduced by other face pairs during intersection tests.}
+\label{fig:isolated}
 \end{figure}
+
+
+\subsubsection{Intersects on face edges}
+When intersection line segment lies on an edge (Fig. \ref{fig:isect}b), there will be another pair of triangle faces that will have exactly the same intersection line segment (Fig. \ref{fig:twin}). We call this condition as \emph{twin intersections}. When there are twin intersections, the intersection line segment will be inserted twice, requiring extra effort to eliminate repetitions. Also, twin intersections lies on the edge, so they will have different type of intersection contexts. Finally, in some configurations, twin intersections will cause non-manifold surface as isolated intersection point does, which have to be detected and eliminated.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{twin}
+\caption{Four situations of twin intersections. (a) Triangles are located in two sides, cross condition. (b) Triangles are located in the same sides, invalid condition. (c) One of the triangles are coplanar, coplanar condition. (d) Double twin intersections, cross condition. (e) Double twin intersections, coplanar condition. (f) Double twin intersections, coplanar condition.}
+\label{fig:twin}
+\end{figure}
+
+The basic situations of twin intersections are shown in Fig. \ref{fig:twin} (a)(b)(c). 
+
+\subsubsection{Coplanar}
 
 Coplanar cases can also be seen as a special type of twin intersections. One is valid case, another is not.
 
@@ -665,19 +662,19 @@ There is yet another problem on this method. Our method of extracting sub-faces 
 \section{Face Classification}
 
 \label{sec:classification}
-As the final stage, face classification classify all candidate faces in linked halfedges, and decides which faces belong to the final mesh. Classification is done by evaluating the indicator vector of each face. During this process, we take advantage of plane-based representation to ensure unconditional correct classification. Also, as we maintain the geometry intra-primitive connectivity (by halfedge structure) and inter-primitive (by denoting shared vertex), we can utilize the space coherence of indicator vectors to accelerate this process.
+As the final stage, face classification classify all candidate faces in Linked Halfedges, and decides which faces belong to the final mesh. Classification is done by evaluating the indicator vector of each face. During this process, we take advantage of plane-based representation to ensure unconditional correct classification. Also, as we maintain the geometry intra-primitive connectivity (by halfedge structure) and inter-primitive (by denoting shared vertex), we can utilize the space coherence of indicator vectors to accelerate this process.
 
 In this section, we will first give a overall framework of face classification, then introduce how to classify each individual face. At last, we discuss how to accelerate this process by caching intermediate classification result.
 
 \subsection{Basic idea}
 
-The space coherence of indicator vectors means neighboring faces often have the same indicator vector, or share most components of indicator vectors. This means if we figure out the indicator vector of a face, we may know the indicator vectors of its neighboring faces instantly. In other cases, modification must be applied to the indicator vector. The necessary and sufficient condition of indicator change is that the two faces lie on different side of the primitive boundary. In our method, it means there will be intersection context on the shared edge of the two faces (section ??). Because the indicator change can be figured out  by the intersection context efficiently (section ??), we can classify all the faces of linked halfedges using flood-filling method.
+The space coherence of indicator vectors means neighboring faces often have the same indicator vector, or share most components of indicator vectors. This means if we figure out the indicator vector of a face, we may know the indicator vectors of its neighboring faces instantly. In other cases, modification must be applied to the indicator vector. The necessary and sufficient condition of indicator change is that the two faces lie on different side of the primitive boundary. In our method, it means there will be intersection context on the shared edge of the two faces (section ??). Because the indicator change can be figured out  by the intersection context efficiently (section ??), we can classify all the faces of Linked Halfedges using flood-filling method.
 
 The indicator vector of the first face is special. We can guarantee that the whole vector can be figured out only by intersection context of the face edges. Thus, point-in-polyhedron test is used for compensation. This works well under the assumption that the indicator of the sample point is the same with the face. For the point inside the face, the answer is absolutely yes, because the whole face must be classified as a whole. However, the coordinates of the inner points cannot be exactly represented, thus may lead to wrong predicates. Therefore, we choose to the use the face corners for point-in-polyhedron test. The test must be guaranteed to be exact, and, on the other hand, efficiency is not so important as we won't need many such tests. If ray-trace algorithm is used for the point-in-polyhedron test, the octree built during space division might be useful [].
 
 However, use face corner instead of inner points has another problem. The indicator vector of the corner may not be the same as the of the indicator vector of the whole face. Figure ? shows such condition occurs when any of the face edge is on the boundary of other primitive. Nevertheless, we do not to worry about this. This is because when such case occurs, one of the edge adjacent to that corner will have intersection context to of that primitive, by which we can figure out the real indicator.
 
-Another thing needs to be noticed is that the neighborhood of a certain face $f$ from primitive $A$ in linked halfedges does not only contain the face in $A$, but also include faces from other primitives which share edges with $f$. It can be efficiently found because in linked halfedges, coincident vertices between primitives are shared. Therefore, the indicator vector can be transfer not only intra-primitive, but also inter-primitive.
+Another thing needs to be noticed is that the neighborhood of a certain face $f$ from primitive $A$ in Linked Halfedges does not only contain the face in $A$, but also include faces from other primitives which share edges with $f$. It can be efficiently found because in Linked Halfedges, coincident vertices between primitives are shared. Therefore, the indicator vector can be transfer not only intra-primitive, but also inter-primitive.
 
 \subsection{Fast and exact face classification}
 
