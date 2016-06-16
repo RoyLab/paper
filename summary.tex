@@ -586,11 +586,20 @@ In the Linked Halfedge, there must not be any repetitive vertices in order to re
 \subsection{Degenerate cases}
 \label{sec:degenerate}
 
-To solve degenerate cases, we have three principles. First, we want our method be unconditional robust and exact, so all degenerate cases should be well handled (completeness). Second, to control the complexity of tessellation, we want degenerate cases to be invisible to tessellation, that is, degenerate cases have the same format of output, in our method, IR, as non-degenerate cases (invisibility). Third, we want the outcome of tessellation be as simple as possible. That is, intersection line segments that will not help tessellation, if recognized, are disposed (concision).
+Assume there are two faces $f_1$ and $f_2$ from primitive $P_1$ and $P_2$ respectively. These two faces intersect on line segment $\gamma$, which has two versions of IR $\gamma(f_1)$ and $\gamma(f_2)$ for the two faces respectively. Without loss of generality, we only discuss the configuration of $\gamma(f_1)$, as $\gamma(f_2)$ can be figured out similarly.  We classify all degenerate cases into three categories by the dimension of intersection. Each of them is discussed separately in the following.
 
-To ensure the completeness, we classify all degenerate cases into three categories by the dimension of intersection, and solving each of them as follows.
+Before we go into details, there are three principles that we follow to solve degenerate cases:
+\begin{itemize}
+\item We want our method be unconditional robust and exact, so all degenerate cases should be well handled (completeness).
+  \item To control the complexity of tessellation, we want degenerate cases to be invisible to tessellation, that is, degenerate cases have the same format of output, in our method, IR, as non-degenerate cases (invisibility).
+  \item we want the outcome of tessellation be as simple as possible. That is, intersection line segments that will not help tessellation, if recognized, are disposed (concision).
+\end{itemize}
+The criterion of whether an intersection help tessellation is by its necessity: if the intersection is not presented, whether some faces from the linked halfedge will cross the boundary of primitives. The word 'cross' do not only include the situation that a face is partly outside and partly inside of a primitive, but also can mean that a face is partly inside (outside) and part on the boundary of the primitive.
+
+
 
 \subsubsection{Intersects on point}
+\label{sec:ipoint}
 When two triangles intersect on a single point, there are two different conditions (Fig. \ref{fig:isolated}), depending on whether the point is isolated. If the point is isolated, it means that there is no other intersection line segment sharing the point. This condition may cause non-manifold surface because of the singularity of the isolated intersection point. Also, isolated intersection point will not affect the tessellation of the intersection face. On the other hand, if the intersection point is not isolated, there must be other intersection line segments that contain the point, thus the point will be introduced at least twice. Therefore, no matter which condition it is, when two triangle faces intersect on point, we can just omit this intersection and this will not affect the correctness of the final topology.
 
 \begin{figure}[t]
@@ -602,20 +611,33 @@ When two triangles intersect on a single point, there are two different conditio
 
 
 \subsubsection{Intersects on face edges}
-When intersection line segment lies on an edge (Fig. \ref{fig:isect}b), there will be another pair of triangle faces that will have exactly the same intersection line segment (Fig. \ref{fig:twin}). We call this condition as \emph{twin intersections}. When there are twin intersections, the intersection line segment will be inserted twice, requiring extra effort to eliminate repetitions. Also, twin intersections lies on the edge, so they will have different type of intersection contexts. Finally, in some configurations, twin intersections will cause non-manifold surface as isolated intersection point does, which have to be detected and eliminated.
+When intersection line segment lies on an edge (Fig. \ref{fig:twin}). we call it as \emph{edge intersections}. When there are edge intersections, the intersection line segment will be inserted several times, requiring extra effort to eliminate repetitions. Also, as edge intersections lies on the edge, their intersection contexts are edges, not faces. Finally, in some configurations, edge intersections will cause non-manifold surface as isolated intersection point does, which have to be detected and carefully handled.
+
+There are generally two kinds of edge intersections. If $\gamma(f_1)$ lies on the edge of $f_1$ or $f_2$, but on the inside the face of the other one, then we called it as edge-face intersections (Fig. \ref{fig:twin}(a), (b), (c)). If $l$ lies on the edges of both $f_1$ and $f_2$, we call it as edge-edge intersections (Fig. \ref{fig:twin}(e), (f), (g)). To eliminate repetitive intersection records, when there is edge-face intersection, we treat it as the intersection of three faces $f_1$, $f_2$ and $f_1^\star$ (or $f_2^\star$). When there is edge-edge intersection, we treat it as the intersection of four faces $f_1$, $f_2$, $f_1^\star$ and $f_2^\star$. The $f_1^\star$ (or $f_2^\star$), known as \emph{companion face},  is the neighboring face which shares the intersection edge with $f_1$ (or $f_2$).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{twin}
-\caption{Four situations of twin intersections. (a) Triangles are located in two sides, cross condition. (b) Triangles are located in the same sides, invalid condition. (c) One of the triangles are coplanar, coplanar condition. (d) Double twin intersections, cross condition. (e) Double twin intersections, coplanar condition. (f) Double twin intersections, coplanar condition.}
+\caption{Six situations of edge intersections. The first three subgraphs are edge-face intersections. The last three ones are edge-edge intersections. (a) Triangles are located in two sides, cross condition. (b) Triangles are located in the same sides, invalid condition. (c) One of the triangles are coplanar, coplanar condition. (d) Double twin intersections, cross condition. (e) Double twin intersections, coplanar condition. (f) Double twin intersections, coplanar condition.}
 \label{fig:twin}
 \end{figure}
+ 
+Both edge-face and edge-edge intersection can be further classified into three subclasses by the location of companion faces---cross condition, coplanar condition and invalid condition. We first consider edge-face intersection. Without generality, assume $f_1$ and $f_2$ intersect on the edge of $f_1$ and there is a companion face $f_1^\star$. If $f_1$ and $f_1^\star$ are on the same side of $f_2$, it is cross condition. If they are on the same side, it is invalid condition. If $f_1^\star$ is coplanar with $f_2$, it is coplanar condition. Consider the cross and coplanar condition. For $f_2$, the IR is the same as the common situation, except that the intersection context is an edge. For $f_1$ and $f_1^\star$, they have to share the intersection line segment, while the intersection context is $f_2$.  However, when there is invalid condition, we should not record the intersection for the similar reasons of isolated point intersection (section \ref{sec:ipoint}).
 
-The basic situations of twin intersections are shown in Fig. \ref{fig:twin} (a)(b)(c). 
+The handling of edge-edge intersection is similar with edge-face intersection. The difference is that the intersection contexts are edges for both $f_1$ and $f_2$. We still can classify edge-edge intersection into three subclasses by the relative location of companion faces. There is one difference, though, that in edge-face intersection, we compute on which side of $f_2$ the companion face $f_1^\star$ lies, and compare with $f_1$. However, in edge-edge intersection, we have to consider the space split by both $f_2$ and $f_2^\star$ instead of only $f_2$.  Similar with edge-face intersections, we record the intersection of cross and coplanar condition, while omit the invalid condition for concision and also topology correctness.
 
-\subsubsection{Coplanar}
+\subsubsection{Coplanar cases}
 
-Coplanar cases can also be seen as a special type of twin intersections. One is valid case, another is not.
+When two triangle faces are coplanar, they may intersect with each other depending on whether they overlap in some area. Many methods \cite{feito2013fast} claim that it is important to compute the overlap in a 2D intersection way and to tessellate the face according to the intersection result afterwards. We will show that this is not necessary in our method. We simply omit coplanar cases in our intersection test and it will not affect the correctness of our tessellation stage.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3.5in]{coplanar}
+\caption{a) Coplanar cases and the b) the possible configurations of the companion faces. In any configurations, their is no need to record the intersection of coplanar cases.}
+\label{fig:coplanar}
+\end{figure}
+
+Consider two triangle faces $f_1$ and $f_2$ intersect within the supporting plane (Fig. \ref{fig:coplanar}). Both $f_1$ and $f_2$ will be divided into two areas---the overlap area and the exclusive part. The boundary of these two parts are the boundary from the other face. Following the concision principle, whether we have to split face according to these boundaries depends on the necessity. That is, we have to 
 
 \section{Deferred Tessellation}
 
