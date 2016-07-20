@@ -135,7 +135,7 @@
 
 % *** SPECIALIZED LIST PACKAGES ***
 %
-\usepackage{algorithmic}
+%\usepackage{algorithmic}
 % algorithmic.sty was written by Peter Williams and Rogerio Brito.
 % This package provides an algorithmic environment fo describing algorithms.
 % You can use the algorithmic environment in-text or within a figure
@@ -305,6 +305,8 @@
 % to submit to, of course. )
 
 \usepackage{enumitem}
+%\usepackage[]{algorithm2e}
+\usepackage[]{algpseudocode}
 \usepackage{algorithm}
 \usepackage{multirow}
 \usepackage{slashbox}
@@ -320,7 +322,8 @@
 \hyphenation{op-tical net-works semi-conduc-tor}
 
 \newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
-\floatname{algorithm}{Procedure}
+
+\floatname{algorithm}{Algorithm}
 
 \begin{document}
 \title{Efficient, Robust and Exact Boolean Operations on N Triangular Mesh Primitives}
@@ -652,9 +655,9 @@ The key observation is that coplanar cases do not create new edges, just like ed
 {\color{red}{red alert start}}
 
 \label{sec:tessellation}
-This is the step to tessellate input meshes with intersections, outputting linked halfedge. We called this stage as deferred tessellation because it happens until we collect all necessary intersections. For this problem, Ogayar-Anguita et. al. \cite{ogayar2015deferred} try to use Constrained Delaunay Triangulation (CDT) to solve, as the intersections is naturally the constraints and triangle faces is naturally a convex zone. It works fine for Boolean operation of two primitives. However, when there are more than two primitives, simply applying CDT covers the complexity of tessellation. The major problem here is that the intersections may be \emph{irregular}. The definition of regular intersection is that it does not cross or overlap with other intersections. In CSG cases with more than two meshes, irregular intersections can introduce new vertex, split original intersection line segments. Naive algorithm of CDT [there should be algorithm for instance] may lead to holes, repetitive edges, and other topology errors when there are irregular intersections {\color{red}{(Fig. ?, use CGAL or fade2d for testing)}}.
+This is the step to tessellate input meshes with intersections, outputting linked halfedge. We called this stage as deferred tessellation because it happens until we collect all necessary intersections. For this problem, Ogayar-Anguita et. al. \cite{ogayar2015deferred} try to use Constrained Delaunay Triangulation (CDT) to solve, as the intersections is naturally the constraints and triangle faces is naturally a convex zone. It works fine for Boolean operation of two primitives. However, when there are more than two primitives, simply applying CDT covers the complexity of tessellation. The major problem here is that the intersections may be \emph{irregular}. The definition of regular intersection is that it does not cross or overlap with other intersections. In CSG cases with more than two meshes, irregular intersections can introduce new vertex, split original intersection line segments. However, most CDT algorithms \cite{chew1989constrained}, or even just constrained triangulation [Computational geometry: an introduction] require that constraints do not cross each other, and will cause topology deficiency if not satisfied.
 
-To solve these problems, we first refine the intersections and eliminate any irregular intersections. When all intersections are regular, we can directly use CDT to tessellate. {\color{red}{However?xxxx(after I research CDT)}}. Therefore, we develop a new tessellation algorithm that guarantee topology correctness and unconditional robust. We organize intersections into single face scope, generating an intermediate data structure---\emph{Tess-graph}, After that, we tessellate each face by subtract sub-faces from its corresponding Tess-graph. Throughout this stage, we utilize plane-based techniques and do not compute explicitly the coordinates of intersection points.
+To solve these problems, we first refine the intersections and eliminate any irregular intersections. When all intersections are regular, we can directly use CDT to tessellate. However, 2D constrained triangulation algorithm \cite{chew1989constrained} [Computational geometry: an introduction] require cross detection between arbitrary connections of vertices, coordinates projection, which is hard to exactly performed using plane-reps geometry. Therefore, we develop a new tessellation algorithm using only plane-based geometry, ensuring topology correctness and unconditional robust. We first organize intersections into single face scope, generating an intermediate data structure---\emph{Tess-graph}. Then we tessellate each face by subtract sub-faces from its corresponding Tess-graph. In compensate, we do not guarantee the faces of the final mesh are triangles, leaving the flexibility to post-processing.
 
 \subsection{Eliminating Irregular Intersection}
 
@@ -673,51 +676,77 @@ After all segment points are found, the related intersections have to be split. 
 So far, intersections are only loose data that store the coordinates and neighbouring information. To perform tessellation and extract sub-faces, we need to organize them to reveal the topology. We use Tess-graph for this purpose. A Tess-graph is the graph description of the tessellated face topology. For each face to be tessellated, we construct a Tess-graph according to the refined intersections. The final Linked Halfedge merges both the original topology and the intersections in the same representation. And the construction of Tess-graph is the first step towards such uniformity. By only nodes and connections, it represents both the intersections and the original boundary of triangle face. This reduces complexity of the following processes and allowing them to be simple and fast.
 
 
-Nodes of Tess-graph represent vertices and store the coordinates of them. Connections are nondirectional, represent edges in Linked Halfedge, storing the I-rep if it is coincident with an intersection. Sometimes, there will be more than one coincident intersections and all I-reps have to be stored.
-
-We classify connections into two types: we call connections on face boundaries as \emph{boundary connections} and connections inside face as \emph{inner connections}. They are different in two aspects: first, the boundary connections may not have an intersection representation since it is not coincident with any intersection; second, in the view of halfedge, inner connections represent two halfedges but boundary connections represent only one halfedge. {\color{red}{The same classification is for intersection line segments: if the intersection are inside the face, it is an inner intersection, otherwise a boundary intersection. // can be forward to the previous place}}
-
-Construction of Tess-graph from I-rep is straightforward except one thing: we have to merge face boundary with the intersections lies on the boundary.
-
-
-Using the notation of I-rep, we find most of the work has already been done. To construct inner edges, we only need to first collect all vertices on the face (including both inside vertices and boundary vertices) to be the nodes, and then connect nodes by inner intersections. However, boundary edge construction is not that easy. We cannot simply connect the three face corners to be the boundary edges, since there may be boundary intersections, and face edges have to be splitted.
-
-To construct boundary edges of graph, we first need to first sort vertices on each face edge along the edge line. This is done by two-point comparison in section \ref{sec:substrates}. After the sort, we connect the nodes by their sequence on the edge line to form the boundary edges. If any boundary edge is coincident with boundary intersection, we assign the intersection context of the boundary intersection to the boundary edge.
-
+Nodes of Tess-graph represent vertices and store the coordinates of them. Connections are nondirectional, represent edges in Linked Halfedge, storing the I-rep if it is coincident with an intersection. Sometimes, there will be more than one coincident intersections and all I-reps have to be stored. Construction of Tess-graph from I-rep is straightforward except one thing: we have to merge face boundary with the intersections lies on the face boundary {\color{red}{Fig}}. This lead to an extra step beforehand. For each edge boundary of face, we treat it as pseudo-intersections with only coordinates information, and perform collinear intersection test with all intersections lies on it, splitting it by corresponding segment points.
 
 \subsection{Extracting Sub-faces}
-The last step of tessellation is to really change the topology of input primitive to construct LHICs. We could apply CDT here since the intersection is refined and there is no intersection between the constraints. However, we choose to design a new method to extract sub-faces from intersection face for the efficiency:
-\begin{itemize}
-  \item lose topology information
-  \item may not need to triangulate, classify in a whole
-  \item hard to implement with planes
-\end{itemize}
 
-There is yet another problem on this method. Our method of extracting sub-faces assume that the Tess-graph is connected. However, this assumption can be false (Fig.).
+The difference between a graph and a mesh surface is that there is no concept of face in graph. In this step, we extract faces from Tess-graph to construct Linked Halfedge.
+
+First, We classify connections of Tess-graph into two types: connections on face boundaries as \emph{boundary connections} and connections inside face as \emph{inner connections}. In the view of halfedge data structure, inner connections represent two opposite halfedges but boundary connections represent only one. We add an attribute for each connection to identify their directions, and thus we get a directed version of Tess-graph. A sub-face is a halfedge loop on the directed Tess-graph. Extracting faces are process of searching for valid loops which meet certain geometry constraints. After all faces are extracted, all halfedges of directed Tess-graph should be used exactly once.
+
+There two geometry constraints for valid loops. First, the direction of loops should be coherent with the face normal, counter-clockwise for example. Second, consecutive halfedges on the loop should be angle adjacent, which means there is no other halfedges between the angle contained by these two halfedges {\color{red}{Fig.?}}. To meet these constraints, we sort the halfedges counter-clockwise for each nodes with more than two halfedges starting from them. This is implemented by using the divide-and-conquer framework of quick sort. During each recursion, we pick a random halfedge and split the rest into two sets according to the sign of two-line-on-plane comparison. To make the results of two-line-on-plane comparisons coherent, we assume that for each halfedge $h_i$, the normal directions of its plane-rep, denoted as $\vec{n}(h_i)$, meets the following criterion:
+\begin{equation}
+(\vec{n}(h_i) \times \vec{n}_0) \cdot \vec{l}(h_i) > 0,
+\end{equation}
+where $\vec{n}_0$ is the normal of the face, and $\vec{l}(h_i)$ is the direction of $h_i$. The plane-rep of halfedge can be inherited from the corresponding connections from the undirected Tess-graph. Since we {\color{red}{guarantee that each connection has a plane-rep //need insert//}}, sorting can be exactly and fast performed. After connections are sorted in each nodes, we can know which connections are adjacent and what is the right direction during the loop search.
 
 
 \section{Face Classification}
 
 \label{sec:classification}
-As the final stage, face classification classify all candidate faces in Linked Halfedges, and decides which faces belong to the final mesh. Classification is done by evaluating the indicator vector of each face. During this process, we take advantage of plane-based representation to ensure unconditional correct classification. Also, as we maintain the geometry intra-primitive connectivity (by halfedge structure) and inter-primitive (by denoting shared vertex), we can utilize the space coherence of indicator vectors to accelerate this process.
+This stage traverses all candidate faces in the Linked Halfedge, and classifies which of them belong to the final mesh. Classification is done by evaluating the indicator vector of each face {\color{red}{(indicator vector?)}}. During this process, we take advantage of plane-based representation to ensure unconditional correct classification. In addition, since we maintain the intra-primitive geometry connectivity and inter-primitive geometry connectivity in Linked Halfedge, we can utilize the space coherence of face indicator vectors to accelerate this process.
 
-In this section, we will first give a overall framework of face classification, then introduce how to classify each individual face. At last, we discuss how to accelerate this process by caching intermediate classification result.
+In this section, we will first give an overall framework of face classification, and then introduce how to classify each individual face. At last, we discuss how to accelerate this process by caching intermediate results.
 
-\subsection{Basic Idea}
+\subsection{Framework}
 
-The space coherence of indicator vectors means neighboring faces often have the same indicator vector, or share most components of indicator vectors. This means if we figure out the indicator vector of a face, we may know the indicator vectors of its neighboring faces instantly. In other cases, modification must be applied to the indicator vector. The necessary and sufficient condition of indicator change is that the two faces lie on different side of the primitive boundary. In our method, it means there will be intersection context on the shared edge of the two faces (section ??). Because the indicator change can be figured out  by the intersection context efficiently (section ??), we can classify all the faces of Linked Halfedges using flood-filling method.
+The space coherence of indicator vectors means neighboring faces could share the same indicator vector, or most components of indicator vectors. For example, given two neighboring faces $t_1$ and $t_2$, indicator vectors $\Lambda(t_1)$ and $\Lambda(t_2)$ would often be the same. Only when there is boundary of some meshes, say $P_k$, on the shared edge $e(t_1, t_2)$ and split $t_1$ and $t_2$ in two sides, the corresponding components $\lambda(t_1, P_k)$ and $\lambda(t_2, P_k)$ can be different. And other components of $\Lambda(t_1)$ and $\Lambda(t_2)$ will remain the same. If we can compute the indicator changes between neighboring faces efficiently, we can start from a single face with a indicator vector as the seed, propagating to all faces with geometry connectivity, reusing indicator vectors according to the spatial coherence and classifying faces very fast.
 
-The indicator vector of the first face is special. We can guarantee that the whole vector can be figured out only by intersection context of the face edges. Thus, point-in-polyhedron test is used for compensation. This works well under the assumption that the indicator of the sample point is the same with the face. For the point inside the face, the answer is absolutely yes, because the whole face must be classified as a whole. However, the coordinates of the inner points cannot be exactly represented, thus may lead to wrong predicates. Therefore, we choose to the use the face corners for point-in-polyhedron test. The test must be guaranteed to be exact, and, on the other hand, efficiency is not so important as we won't need many such tests. If ray-trace algorithm is used for the point-in-polyhedron test, the octree built during space division might be useful [].
 
-However, use face corner instead of inner points has another problem. The indicator vector of the corner may not be the same as the of the indicator vector of the whole face. Figure ? shows such condition occurs when any of the face edge is on the boundary of other primitive. Nevertheless, we do not to worry about this. This is because when such case occurs, one of the edge adjacent to that corner will have intersection context to of that primitive, by which we can figure out the real indicator.
+Fortunately, in the Linked Halfedge, it is straightforward to know whether $\lambda(t_1, P_k)$ and $\lambda(t_2, P_k)$ are different, because it means $e(t_1, t_2)$ will be on the boundary of $P_k$, and there will be corresponding I-reps stored on $e(t_1, t_2)$. In addition, both $\lambda(t_1, P_k)$ and $\lambda(t_2, P_k)$ can be computed efficiently according to the I-reps (details in Section \ref{sec:individual}). We outline our classification method in Algorithm 1.
 
-Another thing needs to be noticed is that the neighborhood of a certain face $f$ from primitive $A$ in Linked Halfedges does not only contain the face in $A$, but also include faces from other primitives which share edges with $f$. It can be efficiently found because in Linked Halfedges, coincident vertices between primitives are shared. Therefore, the indicator vector can be transfer not only intra-primitive, but also inter-primitive.
+\begin{algorithm}
+\caption{Fast Face Classification}
+\label{code:floodfill}
+\textbf{Input: } Linked Halfedge structure $\Omega$
+
+\textbf{Output: } Classification of each face $f(\Lambda(t_i)), t_i \in \Omega$
+
+
+\begin{algorithmic}[1]
+\State Select a proper seed face $t_s$
+\State Compute the first indicator vector $\Lambda(t_s)$
+\State \Call{propagate} { $t_s$ , $\Lambda(t_s)$}
+\State
+\Function{propagate}{ $t_c$ , $\Lambda(t_c)$}
+    \State Compute $f(\Lambda(t_c))$
+    \For {each neighboring face $t_i^c$}
+        \If {there are I-reps $\{\gamma_k\}$ on $e(t_i^c, t_c)$}
+            \State Compute $\Lambda(t_i^c)$ using $\Lambda(t_c)$ and $\{\gamma_k\}$
+            \State \Call{propagate} { $t_i^c$ , $\Lambda(t_i^c)$}
+        \Else
+            \State \Call{propagate} { $t_i^c$ , $\Lambda(t_c)$}
+        \EndIf
+    \EndFor
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Seed Indicator Vector}
+
+Our classification method starts from computing the seed indicator vector using point-in-polyhedron test \cite{ogayar2005point}. Conventionally, the barycenter of the face is used for the test to compute the indicator vector of the whole face. This is because the whole face is classified as a whole, and every inner point will have the same indicator vector. However, the coordinates of the inner points cannot be exactly represented by float point numbers, which may lead to wrong predicates, especially when it is an on-boundary case. Therefore, we use the original vertices, whose exact coordinates are known, for point-in-polyhedron test. For this reason, only tessellated faces with at least one original vertex can be the seed face. The point-in-polyhedron test is guaranteed to be exact. On the other hand, efficiency is not so important as there will not be many such tests. If ray-trace algorithms (e.g., \cite{frisken2002simple}) are used, the octree constructed during space division can be used for acceleration \cite{havran1999summary}.
+
+However, using point on the boundary instead of an inner one has another problem. Given a face $s$ (may not be triangle) and one of its vertex $v_b^i(s)$, the vertex indicator $\lambda(v_{i}(s), P_k)$ may cause ambiguity to deduce the face indicator $\lambda(s, P_k)$. In {\color{red}{Fig. ?}}, $\lambda(v_b^1(s), P_k) = on$, then $\lambda(s, P_k)$ can be any of the four conditions. We solve this problem by trying other vertices in $s$ for the ambiguous components. If all vertices indicators are $on$ and the ambiguity still cannot be resolved, the current face is not proper for being the seed and select a new one instead.
 
 \subsection{Fast and Exact Face Classification}
 
-During flood-filling, we propagate the indicator vector of the current face $f_0$ to its neighboring faces, which have shared edges with the current face. If one of shared edges has intersection context $C_{I_v \mapsto A}$, it means the indicator of primitive $A$, denoted as $i_A$, could be different for the corresponding neighboring face $f_i$. In this section, we will show that $C_{I_v \mapsto A}$ is enough to compute the new $i_A$ for $f_i$. We only discuss the condition that $f_i$ is a triangle in the following. However, $f_i$ may not be triangle, not even a convex polygon. In these conditions, we can select a triangle subset of $f_i$ to represent $f_i$, since $f_i$ is guaranteed to be classified as a whole.
+\label{sec:individual}
 
-Feito et. al. had noticed that intersection neighborhood can be used for fast classification of faces around the intersection. According to their method, faces adjacent to intersection line segments must have neighbors from other primitive(s) that define the position and orientation for each other. Unfortunately, Feito et. al. did not give detail description of how to implement a exact classification, nor discuss about degenerate cases such as coplanar faces. As Feito et. al. use geometry connectivity for classification, any incorrect classification can be spread to neighborhoods, which may cause errors in a wide range.
+Feito et. al. \cite{feito2013fast} had noticed that intersection neighborhood can be used for fast classification of faces around that intersection. According to their method, faces adjacent to intersection have neighbors from other primitive(s) that define the position and orientation for each other, by which the indicators are determined. However, Feito et. al. did not give detail description of how to implement an exact and robust classification. Their implementation of using vertex coordinates may have problems for the degenerate cases. Because geometry connectivity is used, local incorrect classification can be spread to the neighborhoods, leading to errors in wide ranges.
+
+{\color{red}{fdafdafdsfafdfadsfa}}
+
+During flood-filling, we propagate the indicator vector of the current face $f_0$ to its neighboring faces, which have shared edges with the current face. If one of shared edges has intersection context $C_{I_v \mapsto A}$, it means the indicator of primitive $A$, denoted as $i_A$, could be different for the corresponding neighboring face $f_i$. In this section, we will show that $C_{I_v \mapsto A}$ is enough to compute the new $i_A$ for $f_i$. We only discuss the condition that $f_i$ is a triangle in the following. However, $f_i$ may not be triangle, not even a convex polygon. In these conditions, we can select a triangle subset of $f_i$ to represent $f_i$, since $f_i$ is guaranteed to be classified as a whole.
 
 We develop an exact and robust classification method based on the idea of using intersection neighborhood information. The intersection neighborhood is abstracted into two situations of intersection context (section ??). To make a clear description, we denote the three corners of neighboring face $f$ as $v_0^I$, $v_1^I$, $v_2$, where the superscript means the vertex lies on the intersection line segment $I$ with intersection context $C_{I \mapsto A}$. In the first situation, the intersection $I$ lies on the face of primitive $A$. That is, $C_{I \mapsto A} = f_x^A$. To calculate indicator $i_A$ for $f$, we only need to decide on which side of $f_x^A$ the current  face $f$ lies. Any sample point on $f$ except those on $I$ can be used for this predicates. As we can get the exact coordinates of corners, we choose $v_2$ to compute $i_A(f)$.
 
@@ -733,9 +762,13 @@ The most simple cache strategy is final result cache. We know indicator vector $
 Also, we can also do intermediate result cache. It should be noticed that $\Phi(\vec{\lambda}(f))$ can be simplified if some components of $\vec{\lambda}$ is fixed. For example, assume we have a Boolean expression $M_1\cup (M_2\cap M_3-M_4)$. Given the values of two indicators $\lambda_1(x)=out$, $\lambda_2(x)=in$, the expression can be rewritten as $out\cup (in\cap M_3-M_4)$. Using the combination rules we can simplify the expression as $M_3-M_4$. This fact is important because for a large CSG tree, a certain primitive, denoted as $M_x$, often only intersects with a few other primitives $\Theta= \{M_{n_1}, M_{n_2}, \cdots, M_{n_k}\}$. That means all the faces in $M_x$ has the same indicators for the primitives not in $\Theta$. Therefore, we can first determine these fixed indicators and simplify the Boolean function $\Phi$ into a simpler one $\Phi_{M_x}$, and then use $\Phi_{M_x}$ to compute the final indicator for each faces.
 
 
-\section{Experiments}
+\section{Implementation}
 
+\vspace{0.5em}
+\textbf{Generate Seed Indicator Vector.} Our method of generating the first indicator vector will fail on extreme conditions when each face in Linked halfedge is coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the face barycenter with high-precision coordinates for the point-in-polyhedron test to generate the seed indicator vector after several failures of choosing a proper seed face.
 
+\vspace{0.5em}
+\noindent \textbf{Generate Seed Indicator Vector.} Our method of generating the first indicator vector will fail on extreme conditions when each face in Linked halfedge is coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the face barycenter with high-precision coordinates for the point-in-polyhedron test to generate the seed indicator vector after several failures of choosing a proper seed face.
 
 \section{Summary}
 
