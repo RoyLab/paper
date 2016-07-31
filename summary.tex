@@ -722,7 +722,7 @@ Fortunately, in the Linked Halfedge, it is straightforward to know whether $\bol
     \State Compute $f(\boldsymbol{\Lambda}(t_c))$
     \For {each neighboring face $t_i^c$}
         \If {there are I-reps $\{{\boldsymbol{\Gamma}}_k\}$ on $e(t_i^c, t_c)$}
-            \State Compute $\boldsymbol{\Lambda}(t_i^c)$ using $\boldsymbol{\Lambda}(t_c)$ and $\{{\boldsymbol{\Gamma}}_k\}$
+            \State $\boldsymbol{\Lambda}(t_c), \{{\boldsymbol{\Gamma}}_k\} \Longrightarrow \boldsymbol{\Lambda}(t_i^c)$
             \State \Call{propagate} { $t_i^c$ , $\boldsymbol{\Lambda}(t_i^c)$}
         \Else
             \State \Call{propagate} { $t_i^c$ , $\boldsymbol{\Lambda}(t_c)$}
@@ -738,7 +738,7 @@ Our classification method starts from computing the seed indicator vector using 
 
 However, using point on the boundary instead of an inner one has another problem. Given a face $s$ (may not be triangle) and one of its vertex $v_b^i(s)$, the vertex indicator $\boldsymbol{\Lambda}(v_{i}(s), P_k)$ may cause ambiguity to deduce the face indicator $\boldsymbol{\Lambda}(s, P_k)$. In {\color{red}{Fig. ?}}, $\boldsymbol{\Lambda}(v_b^1(s), P_k) = on$, then $\boldsymbol{\Lambda}(s, P_k)$ can be any of the four conditions. We solve this problem by trying other vertices in $s$ for ambiguous indicators. If all vertices indicators are $on$ and the ambiguity cannot be resolved, the current face is not proper for being the seed and we select a new one instead.
 
-\subsection{Fast and Exact Face Classification}
+\subsection{Fast and Exact Classification}
 
 \label{sec:individual}
 
@@ -746,35 +746,29 @@ Feito et. al. \cite{feito2013fast} had noticed that intersection neighborhood ca
 
 We develop an classification method that is unconditionally robust and exact based on the idea of using intersection neighborhood information. The neighborhood information is stored in the context component of I-reps during previous stages . In the following, we discuss the conditions that the face to be classified is a triangle. If the face is not a triangle, we select a triangle slice of the face instead, as the whole face is guaranteed to be classified together. Note that the chosen slice should contain the edge where the I-reps lie, by which we compute the new indicators.
 
-Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersection on one of $t_i$'s edge, we denote the three corners it as $v_0^{\Gamma}, v_1^{\Gamma}, v_2,$ where the superscript $\boldsymbol\Gamma$ means the vertices are on the edge where $\boldsymbol\Gamma$ lies. We also denote the context component of $\boldsymbol\Gamma$ as $C_{P_h \backslash P_j}$, meaning $t_i$ is from primitive $P_j$ and intersects primitive $P_h$. From previous discussion (section \ref{sec:ir}){\color{red}{may be more than one}}, we know there are two types of intersection context---face neighborhood and edge neighborhood. In both conditions, the one or two faces involving in the context split the space into two in and out space by its (their) orientation(s). We will see that under such division (denoted as $\boldsymbol{D}(C_{P_h \backslash P_j})$), we can compute $\lambda(t_i, P_j)$ exactly.
+Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersection on one of $t_i$'s edge, we denote the three corners it as $v_{b*}^{0}(t_i), v_{b*}^{1}(t_i), v_b^2(t_i),$ where the subscript $*$ means the vertices are on the edge where $\boldsymbol\Gamma$ lies. We also denote the context component of $\boldsymbol\Gamma$ as $C_{P_h \backslash P_j}$, meaning $t_i$ is from primitive $P_j$ and intersects primitive $P_h$. From previous discussion (section \ref{sec:ir}){\color{red}{may be more than one}}, we know there are two types of intersection context---face neighborhood and edge neighborhood. In both conditions, the one or two faces involving in the context split the space into two in and out space by its (their) orientation(s). We will see that under such division (denoted as $\boldsymbol{D}(C_{P_h \backslash P_j})$), we can compute $\lambda(t_i, P_j)$ exactly.
 
-Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\boldsymbol{\Gamma}$. The basic idea is to choose one point $v_x$ on $t_i$ close enough to $\boldsymbol{\Gamma}$ to compute $\lambda(v_x, P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_2$, which is not so close to $\boldsymbol{\Gamma}$ instead. To illustrate, assume there is another point $v_{x'}$ in $t_i$ that is very close to $v_2$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x, P_j) = \lambda(v_{x'}, P_j)$. On the other hand, we find that $\lambda(v_{x'}, P_j)$ and $\lambda(v_2, P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{may be proved}}). Therefore, $\lambda(v_2, P_j)$ is equal to $\lambda(v_x, P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, which is coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2, P_j)=on$, $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The orientation test have to be performed to eliminate the ambiguity.
-
-{\color{red}{fen ge xian}}
-
-During flood-filling, we propagate the indicator vector of the current face $f_0$ to its neighboring faces, which have shared edges with the current face. If one of shared edges has intersection context $C_{I_v \mapsto A}$, it means the indicator of primitive $A$, denoted as $i_A$, could be different for the corresponding neighboring face $f_i$. In this section, we will show that $C_{I_v \mapsto A}$ is enough to compute the new $i_A$ for $f_i$. We only discuss the condition that $f_i$ is a triangle in the following. However, $f_i$ may not be triangle, not even a convex polygon. In these conditions, we can select a triangle subset of $f_i$ to represent $f_i$, since $f_i$ is guaranteed to be classified as a whole.
-
-We develop an exact and robust classification method based on the idea of using intersection neighborhood information. The intersection neighborhood is abstracted into two situations of intersection context (section ??). To make a clear description, we denote the three corners of neighboring face $f$ as $v_0^I$, $v_1^I$, $v_2$, where the superscript means the vertex lies on the intersection line segment $I$ with intersection context $C_{I \mapsto A}$. In the first situation, the intersection $I$ lies on the face of primitive $A$. That is, $C_{I \mapsto A} = f_x^A$. To calculate indicator $i_A$ for $f$, we only need to decide on which side of $f_x^A$ the current  face $f$ lies. Any sample point on $f$ except those on $I$ can be used for this predicates. As we can get the exact coordinates of corners, we choose $v_2$ to compute $i_A(f)$.
-
-If $I$ lies on edge of primitive $A$,  the intersection context is face pair: $C_{I \mapsto A} = (f_p^A, f_q^A)$. This situation is a little more complex that we cannot decide $i_A$ until we check the orientations of both $f_p^A$ and $f_q^A$. To correctly classify $f$, we first build BSP structure using $f_p^A$ and $f_q^A$ [?], and then determine the space indicator $i_A(v_2)$ by the BSP. As coordinate of $v_2$ and all the planes can be exactly computed, the classification is exact. The indicator of the face $i_A(f)$ should be the same as $i_A (v_2)$. It is because under a BSP structure with only two division planes, any sample point on $f$ except those on $I$ has the same $\boldsymbol{\Lambda}_A$ (Fig. ??).
+Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\boldsymbol{\Gamma}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\boldsymbol{\Gamma}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\boldsymbol{\Gamma}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
 
 \subsection{Caching Evaluation Results}
 
-If the CSG tree is large, with tens of, or even hundreds of nodes, computing $\boldsymbol{\Lambda}_\Phi(f) = \Phi(\vec{\boldsymbol{\Lambda}}(f))$ for every face can be costly. Considering the space coherence of indicator, we use cache techniques --- by storing the evaluation result of $\Phi$ --- to save the computation time.
+If the CSG tree is large, with hundreds of primitive nodes, computing $\lambda_f(x)$ from $\boldsymbol{\Lambda}(x)$ for every face can be costly. Thanks to the space coherence of $\boldsymbol{\Lambda}(x)$, we can save the computation time by caching the evaluation result of Boolean operations.
 
-The most simple cache strategy is final result cache. We know indicator vector $\vec{\boldsymbol{\Lambda}}$ will not change if there is no intersection context during spreading. That means the final classification $\boldsymbol{\Lambda}_\Phi$ will not change, too. Thus, those faces sharing the same $\boldsymbol{\Lambda}$ can be classified as a whole.
+The basic cache strategy is to cache final result, that is, the value of $\lambda_f(x)$. We know indicator vector $\boldsymbol{\Lambda}$ will not change if there is no intersections during spreading. That means the final classification $\lambda_f(x)$ will not change, too. Thus, those faces sharing the same $\boldsymbol{\Lambda}$ can be classified as a whole.
 
-Also, we can also do intermediate result cache. It should be noticed that $\Phi(\vec{\boldsymbol{\Lambda}}(f))$ can be simplified if some components of $\vec{\boldsymbol{\Lambda}}$ is fixed. For example, assume we have a Boolean expression $M_1\cup (M_2\cap M_3-M_4)$. Given the values of two indicators $\boldsymbol{\Lambda}_1(x)=out$, $\boldsymbol{\Lambda}_2(x)=in$, the expression can be rewritten as $out\cup (in\cap M_3-M_4)$. Using the combination rules we can simplify the expression as $M_3-M_4$. This fact is important because for a large CSG tree, a certain primitive, denoted as $M_x$, often only intersects with a few other primitives $\Theta= \{M_{n_1}, M_{n_2}, \cdots, M_{n_k}\}$. That means all the faces in $M_x$ has the same indicators for the primitives not in $\Theta$. Therefore, we can first determine these fixed indicators and simplify the Boolean function $\Phi$ into a simpler one $\Phi_{M_x}$, and then use $\Phi_{M_x}$ to compute the final indicator for each faces.
+Also, we can perform intermediate results cache. We noticed that the Boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(x)$ is fixed. For example, assume we have a Boolean expression $P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(x)=out$, $\lambda_2(x)=in$, the expression can be rewritten as $out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $P_3-P_4$. This fact is important because for a large CSG, a certain primitive, denoted as $P_x$, often only intersects with a few other primitives, like, $\Theta(P_x)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_x$ has the same indicators for the primitives not in $\Theta(P_x)$. Therefore, we can first determine these fixed indicators and simplify the Boolean function, and then use simplified one to compute the final indicator for each faces in $P_x$.
 
 
 \section{Implementation}
 
 \vspace{0.5em}
-\textbf{Generate Seed Indicator Vector.} Our method of generating the first indicator vector will fail on extreme conditions when all faces in Linked halfedge are coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the face barycenter with high-precision coordinates for the point-in-polyhedron test to generate the seed indicator vector after several failures of choosing a proper seed face.
+\textbf{Seed Indicator Vector Generation.} Our method of generating the first indicator vector will fail on extreme conditions when all faces in Linked halfedge are coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the high-precision face barycenter with the point-in-polyhedron test to generate the seed indicator vector instead after several failures of choosing a proper seed face.
 
 \vspace{0.5em}
-\noindent \textbf{Generate Seed Indicator Vector.} Our method of generating the first indicator vector will fail on extreme conditions when each face in Linked halfedge is coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the face barycenter with high-precision coordinates for the point-in-polyhedron test to generate the seed indicator vector after several failures of choosing a proper seed face.
+\noindent \textbf{Exact Face Classification.} In Linked halfedge, all the supporting planes of faces and all the vertices can be exactly represented. Based on that, when computing the new indicator according to I-reps, we can use BSP techniques similar to \cite{bernstein2009fast} to conduct robust predicates. Since the intersection context is neither face or edge, the space division planes in each BSP will be no more than two, which guarantees fast construction and classification.
+
+\section{Experiments}
 
 \section{Summary}
 
@@ -783,7 +777,6 @@ In this paper, we proposed a novel method to evaluate CSG with triangular mesh p
 
 
 \appendices
-
 
 
 %\newpage
@@ -816,6 +809,12 @@ received his BS degree in computer science from Huazhong University of Science a
 received the BS degree from Tsinghua University in 1970, and the PhD degree from the University of Manchester (UK) in 1984. He is currently a research professor at the Institute of Software, Chinese Academy of Sciences, and Fellow of China Computer Federation. He has also been teaching at the University of Macau since 1997, where he is currently an Emeritus Professor. His research interests include realistic image synthesis, virtual reality, and scientific visualization. He has served as an associate editor of The Visual Computer, Computer Animation and Virtual Worlds.
 \end{IEEEbiography}
 
+\section{Proof of Indicator Equality}
+\label{app:profind}
+
+Using the notation in section \ref{sec:individual}, we prove the equality of $\lambda(v_{x'}(t_i), P_j)$ and $ \lambda(v_b^2(t_i), P_j)$ under the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$.
+
+Because $v_{x'}(t_i)$ can be arbitrarily close to $v_b^2(t_i)$, if $\lambda(v_b^2(t_i), P_j) = in | out$, $\lambda(v_{x'}(t_i), P_j)=\lambda(v_b^2(t_i), P_j)$ holds for the continuity of space. If $\lambda(v_b^2(t_i), P_j) = on$, we divide the proof of $\lambda(v_{x'}(t_i), P_j)=on$ into two parts. If $C_{P_h \backslash P_j}$ is face neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$
 
 
 
