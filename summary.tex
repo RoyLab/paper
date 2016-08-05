@@ -330,7 +330,8 @@
 \author{Rui~Wang,~
         Xudong~Jiang,~
         Hongbo~Fu,~
-        Bin~Sheng,~and
+        Bin~Sheng,~
+        Ping Li~and
         Enhua~Wu
 \IEEEcompsocitemizethanks{
 
@@ -340,6 +341,7 @@
 
 \IEEEcompsocthanksitem H. Fu is with the School of Creative Media, City University of Hong Kong. Email: hongbofu@cityu.edu.hk
 
+\IEEEcompsocthanksitem P. Li is with the Department of Mathematics and Information Technology, The Hong Kong Institute of Education. Email: pli@ied.edu.hk
 
 \IEEEcompsocthanksitem E. Wu is currently a research professor at State Key Lab. of Computer Science, Institute of Software, Chinese Academy of Sciences. Email: ehwu@umac.mo}
 }
@@ -349,17 +351,15 @@
 
 \IEEEtitleabstractindextext{
 \begin{abstract}
-  In this paper, we propose an efficient non-incremental approach to evaluate the boundary of constructive solid geometry (CSG). The face membership classification step is a bottleneck in many existing CSG evaluation approaches. The key idea of our approach is to use local coherence of space labels to accelerate this step. We employ a two-level grouping scheme to group faces that share the same space labels. Therefore, these common space labels can be shared within each group to avoid repetitive computation. Our method is optimized for a non-incremental evaluation. It generates the entire result model at once, rather than performing a step-by-step evaluation of Boolean operations. To achieve a robust evaluation, our approach introduces plane-based geometry into the intersection computation step. Comparison experiments with state-of-the-art techniques show that our method can more efficiently perform boundary evaluation of both trivial and complicated CSG with massive faces while maintaining robustness.
+  Constructive solid geometry is widely used for computer aided design and manufacturing. However, boolean operations, which compute the boundary representation of constructive solid geometry, has been suffered from robustness and efficiency problem for more than three decades. In this paper, we propose a fast and exact boolean operation approach which is theoretically robust for valid triangle mesh inputs. This is done by introducing plane-based geometry into boolean operations and strictly follow the principle of no constructions during processing. Different from previous BSP-based method, our method works on halfedge, with only one-time conversion to the plane representation in intersection areas, instead of a series of complex conversions between different representations. Also, by using geometry connectivity and space neighboring information, our method reuse the computation iteratively, saving much computation time. Comparison experiments with state-of-the-art techniques show that our method is unconditionally exact and robust, while is competitively efficient with non-robust methods and much faster than exact, robust ones.
 \end{abstract}
 
 
 \begin{IEEEkeywords}
-Boolean operations, triangle mesh, CSG evaluation, plane-based geometry.
+boolean operations, triangle mesh, CSG evaluation, plane-based geometry
 \end{IEEEkeywords}
 
 }
-
-
 
 \maketitle
 
@@ -368,17 +368,31 @@ Boolean operations, triangle mesh, CSG evaluation, plane-based geometry.
 \IEEEpeerreviewmaketitle
 
 \IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
-\IEEEPARstart{C}{onstructive} solid geometry (CSG) has long been a popular modeling tool of computer-aided design and computer-aided manufacturing (CAD/CAM). It constructs complex models by combining primitives using a series of regularized Boolean operations \cite{requicha1977mathematical}: union, intersection and difference. CSG is often represented by a binary tree, called a CSG tree, whose leaves are primitives and whose internal nodes are Boolean operations.
+\IEEEPARstart{C}{onstructive} solid geometry (CSG) has long been a popular modeling tool of computer-aided design and computer-aided manufacturing (CAD/CAM). It constructs complex models by combining primitives using a series of regularized Boolean operations \cite{requicha1977mathematical,tilove1980closure}: union, intersection and difference. CSG can be converted into the widely-used boundary representation (i.e., triangle mesh) through boolean operations, which is an classical topic with history of over three decades.
 
-CSG can be converted into the widely-used  boundary representation (i.e., triangle mesh) through boundary evaluation. It is an classical topic with history of over three decades. However, one always have to make a bargain between robustness and efficiency of the boundary evaluation. One could use rational number arithmetic to avoid errors and thus ensure unconditional robustness, which could be over 20 times slower than a non-robust one [?]. On the other hand, using an approximate method for boundary evaluation can be very fast, but lack exactness.
+In general, there are two major types of Boolean algorithms according to how they deal with intersection between primitive meshes. Approximate methods redicretize the intersection areas, fit vertices approximatively and rearrange topology. On the other hand, exact method do not change vertex positions, retain as many input elements as possible (e.g., faces, vertices and topology). In many applications, exact methods are preferred for there accuracy. Also, using exact methods, the clear mapping between the surface of input and output meshes makes it easier for the inheritance of information like face colors and materials. However, for exact boolean operation methods, there is always a bargain between robustness and efficiency. Recent exact boolean operation methods try to find a faster way to compute boundaries of CSG. However, for robustness, the answers are often exact arithmetic \cite{barki2015exact,zhou2016mesh} or trivial workarounds, like setting a tolerance \cite{feito2013fast,segal1990using} or rotating the primitive with small angles to avoid coplanar cases \cite{douze2015quickcsg}. However, none of the solution is good enough. While exact-arithmetic based methods are significantly slower, workarounds are often case dependent and not reliable for complex CSGs.
 
-Most recent methods [???] try to find a faster way to evaluate boundary of CSG, yet for robustness, the answers are often ambiguous workarounds, like setting a tolerance [?], using higher precision float point number [?] or rotating the primitive with small angle to avoid coplanar cases [?], etc. These tricks are often too vague to implement, heavily depend on the experiments, thus not reliable. Campen et. al. [?] gave a good paradigm of a unconditional robust and exact boundary evaluation methods. It proved to be fairly efficient, and never crashed with legal inputs. Since then, few exact evaluation methods declare themselves as an unconditional robust one.
 
-We prove that exact boundary evaluation of CSG can be even faster, while keeping unconditional robust. We adapt the plane-based techniques of Campen et. al.'s method for robustness, but use a framework very different from Campen et. al.'s, taking advantage of the recent popular idea of using geometry connectivity for face classification acceleration. In addition, unlike many other methods, our method can perform boundary evaluation directly for CSG with more than two primitives. That is, we do not incrementally generate the intermediate meshes of each Boolean operation. In opposite, we generate the final mesh directly. In this way, extra complexity of method is introduced, but we can save much computation time. The experiment shows that our method is much faster than Campen et. al.'s method, while only about twice slower than the state-of-art non-robust methods [??].
+We develop an unconditionally robust and exact boolean operation method for triangle meshes without using exact arithmetic. The robustness of our method is based on the observations by Sugihara and Iri \cite{sugihara1990solid} that boolean operations can be performed requiring geometry constructions if representations are based on planes and not vertices. This idea of using plane-based representation has been developed by Berstein and Fussell \cite{bernstein2009fast} by combining it with binary search partition (BSP) techniques \cite{naylor1990merging,thibault1987set}. Later, Campen et. al. \cite{campen2010exact} improved the method using octrees to resolve intersections locally, avoiding inefficient large BSP tree construction. Despite of that, Campen et. al.'s method still suffers from performance problem because of the complex conversions among B-reps, plane-based representations and BSP representations. Also, the incoherence between BSP representation, where boolean operations actually happens, and B-reps, which are input and output meshes, requires an extra stitching step to connect the reconstructed intersection areas with the untouched
+meshes, leading to extra computation burden. 
+
+We adopt plane-based techniques and strictly follow the principle of no geometry construction, yet develop a very different framework based on halfedges, requiring only one-time conversion to the plane representation in intersection areas. Since the geometry connectivity is stored in halfedge, it allow us to take advantage of geometry connectivity for classification acceleration \cite{feito2013fast,ogayar2015deferred,updegrove2016boolean}, which is hard to for a BSP-based method. In addition, our method can perform boolean operations with more than two primitives in one call, instead of recursively doing binary boolean operations. In this way, extra complexity of our method is introduced. But we can save much computation time by avoiding repetitive computation. The experiment shows that our method is much faster than Campen et. al.'s method, while only about two to three times slower than the state-of-art non-robust method \cite{douze2015quickcsg}.
 
 
 
 \section{Related Work}
+
+
+\subsection{Exact methods}
+
+
+Boolean operations have long been notorious with robustness issue since its inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. Many researchers have attempted to solve such an issue using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. However, these methods are often too expensive in computation time and memory to be practical for evaluation of CSG with massive faces. For example, in the Computational Geometry Algorithms Library (CGAL) \cite{cgal:hk-bonp3-15a}, the state-of-the-art robust Boolean operation algorithm \cite{hachenberger2005boolean} (implemented with arbitrary precision arithmetic) is more than 20 times slower than its non-robust version.
+
+
+\subsection{Approximative methods}
+
+With the development of general-purpose computing on graphics processing units (GPGPUs), many researchers  \cite{wang2011approximate, zhao2011parallel, museth2002level, chen1999volumetic, eisemann2008single} have tried to utilize the grand computation power of graphics hardware for Boolean operations. These methods often have good performance and are suitable for interactive applications, such as digital sculpting. However, owing to the paralleled features of graphics hardware, these methods are usually voxel-based and support only approximate evaluation that inevitably suffers from geometric detail loss, especially at the intersection areas of primitives.
+
 
 \subsection{Plane-based geometry representation}
 
@@ -389,16 +403,6 @@ The primary information of commonly used representation of solids are the vertex
 The concept of plane-based representation of polygonal meshes was first described by Sugihara and Iri \cite{sugihara1990solid}. Plane-based representation provides one important advantage
 when it comes to tasks that involve changing the topology of solids represented by meshes like the evaluation of Boolean expressions: no new primary geometry information has to be constructed to obtain the resulting polyhedron ¨C it is composed of a subset of the planes of the input polyhedra. Hence, opposed to the case of using vertex coordinates, that inevitably necessitates the construction of new geometry information, only geometric decision predicates are required to compose the output polyhedron from the face planes of the input. Since the input is usually given in a numerical representation with finite precision, we can determine an upper bound on the precision that is needed to make correct decisions. The a priori knowledge of this upper bound allows us to use fixed precision predicates that are specifically tailored to the precision required in the worst case, resulting in a vastly better performance compared to techniques for arbitrary numerical precision, that are usually required when
 constructions are part of the processing. Our processing is rigorously based on this paradigm of plane-based geometry representation that allows us to perform fully robust, exact computations using only fast fixed precision predicates. These predicates take planes as arguments and check coincidence and co-orientation of planes, orientation of a plane with respect to a point defined by the intersection of three planes, and whether three planes intersect in a unique point. The latter one can also be used in negated form to check if three planes, that are known to intersect in a common point, even intersect in a common line. We implement them using filtering techniques proposed by Shewchuk.
-
-\subsection{Exact evaluation methods}
-
-
-CSG evaluation has had notorious problems with robustness since its inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. The non-robustness is inherited from the building blocks of CSG: Boolean operations on solids. Many researchers have attempted to solve such an issue using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. However, these methods are often too expensive in computation time and memory to be practical for evaluation of CSG with massive faces. For example, in the Computational Geometry Algorithms Library (CGAL) \cite{cgal:hk-bonp3-15a}, the state-of-the-art robust Boolean operation algorithm \cite{hachenberger2005boolean} (implemented with arbitrary precision arithmetic) is more than 20 times slower than its non-robust version.
-
-
-\subsection{Approximative evaluation methods}
-
-With the development of general-purpose computing on graphics processing units (GPGPUs), many researchers  \cite{wang2011approximate, zhao2011parallel, museth2002level, chen1999volumetic, eisemann2008single} have tried to utilize the grand computation power of graphics hardware for Boolean operations. These methods often have good performance and are suitable for interactive applications, such as digital sculpting. However, owing to the paralleled features of graphics hardware, these methods are usually voxel-based and support only approximate evaluation that inevitably suffers from geometric detail loss, especially at the intersection areas of primitives.
 
 \section{Motivation and Overview}
 
