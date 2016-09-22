@@ -318,7 +318,7 @@
 
 
 \usepackage{color}
-
+\usepackage{bm}
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -494,7 +494,7 @@ As illustrated in Fig. \ref{fig:overview}, we divide our methods into four steps
 
 This step is the preparation of intersection detection. As intersection detection is performed between each pair of faces, localization is necessary to filter invalid pairs beforehand. In general, any space division data structure can be applied in this step. We use the adaptive octree for its simplicity. Our implementation is akin to the implementation in \cite{ogayar2015deferred}. Intersection between triangle faces and octree leaves can be efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{normal cell}. Otherwise, it is a \emph{critical cell}, within which the following intersection detection is performed.
 
-The difference between our space division and Ogayar et al.'s is that we do not subdivide any normal cell no matter how many faces it contains. This is because subdividing normal cells benefits only the ray-casting point-in-polyhedron test  \cite{frisken2002simple}, which seldom uses in our method. This simplification can bring large performance advantage, especially for those cases where intersections between primitives are not complex and limited in small regions (e.g. Fig. \ref{fig:models}(x)).
+The difference between our space division and Ogayar et al.'s is that we do not subdivide any normal cell no matter how many faces it contains. This is because subdividing normal cells benefits only the ray-casting point-in-polyhedron test  \cite{frisken2002simple}, which seldom uses in our method. This simplification can save much computing time, especially when intersections between primitives are not complex and located in small regions (e.g. Fig. \ref{fig:models}(x)).
 
 \subsubsection{Intersection detection}
 
@@ -522,32 +522,31 @@ As we discussed in Section \ref{sec:paradigm}, one of the problem in boolean ope
 
 Using plane-based representation, each face of polyhedron is represented by a supporting plane $p^s$, where the face lies, and a list bounding planes $\{p^b_i \ \vert\  i = 1, 2, 3\}$, each has a corresponding edge (Fig. \ref{fig:p-reps}). Edge line is represented by intersection of $p^s$ and the related $p^b_i$. Corner vertex is the intersection of $p^s$ and two consecutive bounding planes $p^b_i$ and $p^b_{i+1}$.
 
-We also introduce some other notations before starting our discussion. A plane $p_x$ can be represented by plane coefficients $(a_x, b_x, c_x, d_x)$. The normal of $p_x$ is denoted as $\vec{n}_x$. A line $l$ can be represented by intersection of two planes $(p_m, p_n)$, or in short, $l\colon(p_m, p_n)$. The positive direction of the line $\vec{l}$ is defined by $\vec{n}_a \times \vec{n}_b$. A point $v$ is represented by non-trivial plane triples $(p_a, p_b, p_c)$, or in short, $v\colon(p_a, p_b, p_c)$.
+We also introduce some other notations before starting our discussion. A plane $\bm{p}$ can be represented by plane coefficients $(a, b, c, d)$. The normal of $p$ is denoted as $\bm{n}=(a,b,c)$. A line $l$ can be represented by intersection of two planes $(p_m, p_n)$, or in short, $l\colon(p_m, p_n)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}_a\times\bm{n}_b$. A point $v$ is represented by non-trivial plane triples $(p_m, p_n, p_l)$, or in short, $v\colon(p_m, p_n, p_l)$.
 
 
 \subsection{Conversion}
 
 \label{sec:convert}
 
-Efficient and exact conversion from the vertex-based representation to plane-based representation is described in detail in \cite{campen2010exact}. If the input vertices precision is $L$, the maximum precision $P$ required to represent the plane coefficients is:
-\begin{equation}
-\label{eq:precision}
-P = (L-1)+2(K-1)+3+1,
-\end{equation}
-where $K$  is the maximum bits to represent edge vector components. If the plane coefficient has $M$ bit precision, $M$ have to greater than or equal to $P$ for exact conversion. However, different from \cite{campen2010exact}, we choose to enforce the criterion to $M \ge P+1$. This enforcement of criterion allow us to perform predicates of orientation of plane $p_x$ with respect to a point $v$ with exact $L$-bit coordinates by simply compute the sign ${\vec{n}_x}\cdot{v} + d_x$ within $M$-bit precision, instead of first converting $v$ into its plane-based representation and then computing the sign of 4x4 determinant. This can save much computation time by avoid unnecessary conversion for intersection computation.
+We use Campen et al.'s method \cite{campen2010exact} for efficient and exact conversion from the vertex-based representation to plane-based representation. Given the input vertex coordinates represented by $L$ bits including sign, the precisions of the four plane coefficients required for exact conversion are $L_a, L_b, L_c, L_d$, where $L_a=L_b=L_c=2(K-1)+1+1$ and $L_d=(L_a-1)+(L-1)+2+1$. Here $K$ is the maximum bits to represent edge vector components. If each coefficient is stored using $M$ bits, the constraint is $M \ge L_d$. In addition, different from Campen et al.'s method, we further enforce the constraint to $M \ge L_d+1$. In this way, given a $L$-bit vertex $\bm{v}$, we can compute predicate of orientation of plane with respect to the vertex by simply compute the sign $\bm{n}\cdot\bm{v} + d$ within $M$-bit precision. This allows fast predicates especially for early rejection in collision detection ($\S$ \ref{section:isect}).
 
 
-Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edge in the mesh (relative to the bounding box). If we use IEEE 754 double precision ($M=53$) and assume $\delta \le 2^{-5.5} \approx 0.22$, the maximum input precision $L$ can reach to 20, which is enough for most application.
+Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edge in the mesh (relative to the bounding box). If we use IEEE 754 double float point number ($M=53$) and assume $\delta \le 2^{-5.5} \approx 0.22$, the maximum input precision $L$ can reach to 20, which is enough for most application (note that IEEE 754 single float point number has only 24-bit precision).
 
 
 \subsection{Substrates}
 \label{sec:substrates}
-Our method rigorously follows the paradigm of plane-based geometry. Predicates are all computed using planes as input. These predicates include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. In the following, we only focus on two specific predicates. Other substrates may refer to \cite{bernstein2009fast}.
+Plane-based geometry predicates include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. Most of them are well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two advanced plane-based predicates---\emph{point ordering on line} and \emph{circular ordering of line}.
 
-
+\vspace{0.5em}
+\noindent \textbf{Point ordering on line}~~~~
 Given an arbitrary line $l\colon(p_m, p_n)$ with two points $v_p$ and $v_q$ on $l$, the two points can be represented by plane triples $(p_m, p_n, p_p)$ and $(p_m, p_n, p_q)$, sharing the same first two components. We want to determine if $v_q$ is in positive side of $v_p$ along $\vec{l}$. We call this predicate as \emph{two-point-one-line comparison} (Fig. \ref{fig:twopointoneline}). This problem can be converted to the problem of orientation of a plane $p_p$ with respect to a point $v_q$, except that there is an extra request---we have to guarantee $\vec{l}$ and $\vec{n}_p$ have the same orientation. If not, we negate the normal of $p_p$, and the implicit coordinate of  $v_p\colon(p_m, p_n, p_p)$ remains unchanged.
 
-Another predicates is called \emph{two-line-one-plane comparison} (Fig. \ref{fig:substrates}). Given two coplanar lines $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$, we want decide whether the cross product of $\vec{l}_a$ and $\vec{l}_b$ has the same orientation as $\vec{n}_0$ (the normal of $p_0$). Direct solution requires to explicitly compute the vector of $l_a$ and $l_b$ and then decide the sign of $\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)$. However, explicit representation of $\vec{l}_a$ and $\vec{l}_b$ cannot be represented by the float point number.
+
+\vspace{0.5em}
+\noindent \textbf{Circular ordering of line}~~~~
+As in Fig. \ref{fig:substrates}, Given two coplanar but no parallel lines $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$, they intersect on point $\bm{v}\colon(p_0,p_a,p_b)$.we want decide whether the cross product of $\vec{l}_a$ and $\vec{l}_b$ has the same orientation as $\vec{n}_0$ (the normal of $p_0$). Direct solution requires to explicitly compute the vector of $l_a$ and $l_b$ and then decide the sign of $\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)$. However, explicit representation of $\vec{l}_a$ and $\vec{l}_b$ cannot be represented by the float point number.
 
 To solve this, we decompose the normal vectors of $p_a$ and $p_b$ by the normal of $p_0$: $\vec{n}_a = \vec{n}^\parallel_a + \vec{n}^\perp_a$ and $\vec{n}_b = \vec{n}^\parallel_b + \vec{n}^\perp_b$. Here superscript `$\parallel$` means the vector is in the plane $p_0$ and `$\perp$` means it is orthogonal to $p_0$. Then $\vec{n}_a \times \vec{n}_b = \vec{n}^\parallel_a \times \vec{n}^\parallel_b + \vec{n}^\perp_a \times \vec{n}^\parallel_b + \vec{n}^\parallel_a \times \vec{n}^\perp_b + \vec{n}^\perp_a \times \vec{n}^\perp_b$. As we know $\vec{n}^\perp_a$ and $\vec{n}^\perp_b$ is parallel, $\vec{n}^\perp_a \times \vec{n}^\perp_b = \textbf{0}$. Now, we evaluate the expression $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b)$. Since $\vec{n}_s$ is orthogonal to both $\vec{n}^\perp_a \times \vec{n}^\parallel_b $ and $\vec{n}^\parallel_a \times \vec{n}^\perp_b $, we deduce $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b) = \vec{n}_0 \cdot (\vec{n}^\parallel_a \times \vec{n}^\parallel_b)$. Here we make an essential observation that $\vec{n}^\parallel_a \times \vec{n}^\parallel_b$ has the same direction as $\vec{l}_a \times \vec{l}_b$, that is:
 \begin{equation}
