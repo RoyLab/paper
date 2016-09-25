@@ -450,7 +450,7 @@ We want to develop an exact boolean operation method based on the two-step parad
 
 For efficiency, the exactness and robustness should not rely on arbitrary precision arithmetic. Instead, we choose the plane-based techniques from \cite{campen2010exact}. However, as we discussed in section \ref{sec:pbrelated}, BSP structure does not support geometry connectivity query in nature, and we do not want fussy conversions between different representations. Therefore, we use halfedge instead as our major data structure and embed plane-based representation into it.
 
-\subsection{Linked Halfedge}
+\subsection{Intersection-Free Hybrid Mesh}
 
 \begin{figure}[t]
 \centering
@@ -520,9 +520,9 @@ This step is to choose faces from the Linked Halfedges to generate the final mes
 
 As we discussed in Section \ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if plane-based representation is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations. As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates techniques to gain much performance while keeping exactness. For efficiency, we implement the predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
 
-Using plane-based representation, each face of polyhedron is represented by a supporting plane $p^s$, where the face lies, and a list bounding planes $\{p^b_i \ \vert\  i = 1, 2, 3\}$, each has a corresponding edge (Fig. \ref{fig:p-reps}). Edge line is represented by intersection of $p^s$ and the related $p^b_i$. Corner vertex is the intersection of $p^s$ and two consecutive bounding planes $p^b_i$ and $p^b_{i+1}$.
+Using plane-based representation, each face $f$ of polyhedron is represented by a supporting plane $\bm{p}_{f,s}$, where the face lies, and a list bounding planes $\{\bm{p}_{f,b}^i \ \vert\  i = 1, 2, 3\}$, each has a corresponding edge (Fig. \ref{fig:p-reps}). Edge line is represented by intersection of $\bm{p}_{f,s}$ and the related $\bm{p}_{f,b}^i$. Corner vertex is the intersection of $\bm{p}_{f,s}$ and two consecutive bounding planes $\bm{p}_{f,b}^i$ and $\bm{p}_{f,b}^{i+1}$.
 
-We also introduce some other notations before starting our discussion. A plane $\bm{p}$ can be represented by plane coefficients $(a, b, c, d)$. The normal of $p$ is denoted as $\bm{n}=(a,b,c)$. A line $l$ can be represented by intersection of two planes $(p_m, p_n)$, or in short, $l\colon(p_m, p_n)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}_a\times\bm{n}_b$. A point $v$ is represented by non-trivial plane triples $(p_m, p_n, p_l)$, or in short, $v\colon(p_m, p_n, p_l)$.
+We also introduce some commonly used notations for better presentation in the rest of paper. A plane $\bm{p}$ can be represented by four scalar coefficients $(a, b, c, d)$. The normal of $\bm{p}$ is denoted as $\bm{n}(\bm{p})$. A line $\bm{l}$ can be represented by intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, or in short, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$. A point $\bm{v}$ can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, or in short, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
 
 
 \subsection{Conversion}
@@ -547,24 +547,34 @@ Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edg
 Plane-based geometry predicates include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. Most of them are well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two advanced plane-based predicates---\emph{point ordering on line} and \emph{circular ordering of line}, which are important building blocks of our method.
 
 \vspace{0.5em}
-\noindent \textbf{Point ordering on line}~~~~
-Given an arbitrary line $\bm{l}\colon(p_m, p_n)$ with two points $\bm{v}_1\colon(\bm{p}_1^0\cap\bm{p}_1^1\cap\bm{p}_1^2)$ and $\bm{v}_2\colon(\bm{p}_2^0\cap\bm{p}_2^1\cap\bm{p}_2^2)$ on it, we need to determine the linear order of the two points along $\bm{l}$ (Fig. \ref{fig:twopointoneline}). To solve this problem, we choose one plane not parallel with $\bm{l}$ from the plane representation of each point. Then we convert this problem into linear order of planes and solve it using the same technique as Banerjee et al. \cite{banerjee1996topologically}. The chosen planes have to have the same orientation with $\bm{l}$ (the dot product between plane normal and $\bm{l}$ has to be positive) and unqualified planes are flipped.
+\noindent \textbf{Linear ordering on points}~~~~
+Given an arbitrary line $\bm{l}$ with two points $\bm{v}_1\colon(\bm{p}_1^0\cap\bm{p}_1^1\cap\bm{p}_1^2)$ and $\bm{v}_2\colon(\bm{p}_2^0\cap\bm{p}_2^1\cap\bm{p}_2^2)$ on it, we need to determine the linear order of the two points along $\bm{l}$ (Fig. \ref{fig:twopointoneline}). To solve this problem, we choose one plane not parallel with $\bm{l}$ from the plane representation of each point. Then we convert this problem into linear order of planes and solve it using the same technique as Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with $\bm{l}$ (the dot product between plane normal and $\bm{l}$ has to be positive) and unqualified planes have to be flipped.
 
 
 \vspace{0.5em}
-\noindent \textbf{Circular ordering of line}~~~~
-During face tessellation, we need to know the which edges are neighboring. While the relationships among original mesh edges are clear, the relations among newly introduced edges, which are generated by intersection between meshes, are totally unknown. Given two coplanar and not parallel lines $\bm{l}_a\colon(\bm{p}_0\cap\bm{p}_a)$ and $l_b\colon(p_0, p_b)$, they intersect on point $\bm{v}\colon(p_0,p_a,p_b)$.we want decide whether the cross product of $\vec{l}_a$ and $\vec{l}_b$ has the same orientation as $\vec{n}_0$ (the normal of $p_0$). Direct solution requires to explicitly compute the vector of $l_a$ and $l_b$ and then decide the sign of $\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)$. However, explicit representation of $\vec{l}_a$ and $\vec{l}_b$ cannot be represented by the float point number.In Fig. \ref{fig:substrates}, 
+\noindent \textbf{Circular ordering of lines}~~~~
+During face tessellation, we need to know the which edges are neighboring (Fig. \ref{fig:circularorder}), that is, circular ordering of directed lines around a vertex. Lines can be sorted in a divide-and-conquer way based on the relative order of each pair of lines. Therefore, this problem is converted to that given two coplanar lines $\bm{l}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1)$ and $\bm{l}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1)$ with their intersection point $\bm{v}_{ab}$, compute the circular order of the two lines. Supposing the common plane is $\bm{p}_s$, we can compute the order by the sign of $\sin{\theta_{ab}}$, where $\theta_{ab}\in(-\pi,\pi)$ is the angle from $\bm{l}_a$ to $\bm{l}_b$ under the top view of $\bm{p}_s$. And the sign of sine is the same as triple product $\bm{n}(\bm{p}_s) \cdot (\bm{l}_a\times\bm{l}_b)$,
+where $\bm{n}$ means the normal direction. However, explicit computing this equation is complicated because both $\bm{l}_a$ and $\bm{l}_b$ are implicitly represented by intersection of planes.
 
-To solve this, we decompose the normal vectors of $p_a$ and $p_b$ by the normal of $p_0$: $\vec{n}_a = \vec{n}^\parallel_a + \vec{n}^\perp_a$ and $\vec{n}_b = \vec{n}^\parallel_b + \vec{n}^\perp_b$. Here superscript `$\parallel$` means the vector is in the plane $p_0$ and `$\perp$` means it is orthogonal to $p_0$. Then $\vec{n}_a \times \vec{n}_b = \vec{n}^\parallel_a \times \vec{n}^\parallel_b + \vec{n}^\perp_a \times \vec{n}^\parallel_b + \vec{n}^\parallel_a \times \vec{n}^\perp_b + \vec{n}^\perp_a \times \vec{n}^\perp_b$. As we know $\vec{n}^\perp_a$ and $\vec{n}^\perp_b$ is parallel, $\vec{n}^\perp_a \times \vec{n}^\perp_b = \textbf{0}$. Now, we evaluate the expression $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b)$. Since $\vec{n}_s$ is orthogonal to both $\vec{n}^\perp_a \times \vec{n}^\parallel_b $ and $\vec{n}^\parallel_a \times \vec{n}^\perp_b $, we deduce $\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b) = \vec{n}_0 \cdot (\vec{n}^\parallel_a \times \vec{n}^\parallel_b)$. Here we make an essential observation that $\vec{n}^\parallel_a \times \vec{n}^\parallel_b$ has the same direction as $\vec{l}_a \times \vec{l}_b$, that is:
+We develop an easier way that requiring no explicit computation of $\bm{l}_a$ and $\bm{l}_b$. We orthogonally decompose $\bm{n}(\bm{p}_a)$ and $\bm{n}(\bm{p}_b)$ along the normal the common plane $\bm{p}_s$:
 \begin{equation}
 \begin{split}
-\label{eq:cosine}
-sign(\vec{n}_0 \cdot (\vec{n}_a \times \vec{n}_b)) &= sign(\vec{n}_0 \cdot (\vec{n}^\parallel_a \times \vec{n}^\parallel_b)) \\
-&=  sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b)),
+&\bm{n}(\bm{p}_a)= \bm{n}^\parallel(\bm{p}_a) + \bm{n}^\perp(\bm{p}_a)\\
+&\bm{n}(\bm{p}_b)= \bm{n}^\parallel(\bm{p}_b) + \bm{n}^\perp(\bm{p}_b)
 \end{split}
 \end{equation}
-which means we do not need to explicitly compute $\vec{l}_a$ or $\vec{l}_b$. Instead, we only have to evaluate the left expression of equation \ref{eq:cosine}, which is much easier to compute.
+Here superscript `$\parallel$` means the projection on $\bm{p}_s$ and `$\perp$` means orthogonal to $\bm{p}_s$. As we know $\bm{n}^\perp(\bm{p}_a)$ and $\bm{n}^\perp(\bm{p}_b)$ are both parallel to $\bm{n}(\bm{p}_s)$, we get:
+\begin{equation}
+\label{eq:circ1}
+\bm{n}(\bm{p}_s) \cdot (\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)) = \bm{n}(\bm{p}_s) \cdot (\bm{n}^\parallel(\bm{p}_a) \times \bm{n}^\parallel(\bm{p}_b)).
+\end{equation}
+By simple geometry reasoning, we find that the angle between $\bm{n}^\parallel(\bm{p}_a)$ and $\bm{n}^\parallel(\bm{p}_b)$ is exactly $\theta_{ab}$. So the sign of the right side of equation \ref{eq:circ1} is exactly the sign of $\sin{\theta_{ab}}$. It means we have the following nice conclusion:
+\begin{equation}
+\label{eq:circ2}
+sign(\sin{\theta_{ab}})=  sign(\bm{n}(\bm{p}_s)\cdot(\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)))
+\end{equation}
 
+Since all the three vectors are already explicitly represented, we only have to evaluate the sign of an 3x3 matrix and avoid complicated high precision float-point arithmetic.
 \begin{figure}
   \centering
   % Requires \usepackage{graphicx}
@@ -574,9 +584,9 @@ which means we do not need to explicitly compute $\vec{l}_a$ or $\vec{l}_b$. Ins
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=2.5in]{substrates}
+\includegraphics[width=2.5in]{circularorder}
 \caption{The configuration of two-line-one-plane comparison. $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$ are coplanar in $p_0$. We want to compute $sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b))$.}
-\label{fig:substrates}
+\label{fig:circularorder}
 \end{figure}
 
 
