@@ -319,6 +319,9 @@
 
 \usepackage{color}
 \usepackage{bm}
+%\usepackage{mathrsfs}
+\usepackage[mathcal]{eucal}
+\usepackage{amsfonts}
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -459,13 +462,14 @@ For efficiency, the exactness and robustness should not rely on arbitrary precis
 \label{fig:linkedhalfedge}
 \end{figure}
 
-
+\iffalse
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=7.1in]{flowchart}
 \caption{{\color{red}{Sketch: overview, will be replaced}}}
 \label{fig:overview}
 \end{figure*}
+\fi
 
 \label{sec:meshes}
 We made an observation that the non-intersected meshes, as intermediate result of intersection computation, plays an important role of boolean operations. It is a bridge that controls the complexity of intersection computation and facilitates face classification. After the data structure of non-intersected meshes is determined, all things left are how to construct this structure and how to classify according to it.
@@ -637,17 +641,17 @@ According to the method described in section \ref{sec:convert}, triangle faces $
  \item[3)] The intersection between $t_1$ and $t_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by sorting the end points of $Seg_1$ and $Seg_2$ along the line $\bm{l}\colon \bm{p}_{t_1, s} \cap \bm{p}_{t_2, s}$. Because end points are all represented using plane triples, we can use the linear order of points discussed in \S \ref{sec:substrates} to sort.
 \end{itemize}
 
-Each time an intersection is computed, two intersections are generated (one for each triangle face) and the newly introduced vertices are introduced into related meshes. To avoid repetitive vertices in the final result, we do repetition elimination in this stage, merging coincident vertices even among different input meshes. Because we use P-reps, the comparison of vertices is exact.
+Each time an intersection is computed, two intersections are generated (one for each triangle) and the newly generated vertices are added into meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this stage, merging coincident vertices even among different input meshes. Because we use P-reps, the comparison of vertices is exact.
 
 \subsection{Plane-Based Intersection Representation}
 \label{sec:ir}
 
-Once intersections are computed, proper representation is needed to guarantee exact transfer of information and low cost to process. In our method, each line segment intersection $\bm{\Gamma}$ between triangles is represented by our plane-based intersection representation (PBI-rep) as $\{t, \bm{p}_{ext}, (\bm{p}^0, \bm{p}^1),\bm{\Psi}\}$. The first component indicates $\bm{\Gamma}$ is on triangle $t$, and second one $\bm{p}_{ext}$ indicates $\bm{\Gamma}$ lies on a line $\bm{l}_{\bm{\Gamma}}\colon(\bm{p}_{t, s} \cap \bm{p}_{ext})$. The two end points of $\bm{\Gamma}$ are $\bm{l}_{\bm{\Gamma}}\cap\bm{p}^0$ and $\bm{l}_{\bm{\Gamma}}\cap\bm{p}^1$. The last component $\bm{\Psi}$ is a vector that represents the neighborhood of the intersection, which is for fast face classification in later stages. For each component of $\bm{\Psi}$, if $\bm{\Gamma}$ is on the surface of primitive $P_k$, the $k^{th}$ component $\Psi_{k}$ is the edge or face of $P_k$ where $\bm{\Gamma}$ lies. Otherwise, $\Psi_{k}=0$, meaning default empty data.
+Once intersections are computed, proper representation is needed to guarantee exact transfer of information and low cost to process. In our method, an intersection line segment $\mathbb{I}$ is represented by our plane-based intersection representation (PBI-rep) as $\{t, \bm{p}_{ext}, (\bm{p}^0, \bm{p}^1),\bm{\Psi}\}$. The first component indicates $\mathbb{I}$ is on triangle $t$, and second one $\bm{p}_{ext}$ indicates $\mathbb{I}$ lies on a line $\bm{l}_{\mathbb{I}}\colon(\bm{p}_{t, s} \cap \bm{p}_{ext})$. The two end points of $\mathbb{I}$ are $\bm{l}_{\mathbb{I}}\cap\bm{p}^0$ and $\bm{l}_{\mathbb{I}}\cap\bm{p}^1$. The last component $\bm{\Psi}$ is a vector that represents the neighborhood of the intersection, which is for fast face classification in later stages. For each component of $\bm{\Psi}$, if $\mathbb{I}$ is on the surface of primitive $P_k$, the $k^{th}$ component $\Psi_{k}$ is the edge or face of $P_k$ where $\mathbb{I}$ lies. Otherwise, $\Psi_{k}=0$, meaning default empty data.
 
-To illustrate, assume two triangle faces $t_1$ and $t_2$, from primitive $P_a$ and $P_b$, intersect on a line segment. Then it generates two intersections for both triangles respectively, denoted as ${\boldsymbol{\Gamma}}_{12}$ and ${\boldsymbol{\Gamma}}_{21}$. For ${\boldsymbol{\Gamma}}_{12}$, the first two components are $t_1$ and $\bm{p}_{t_2, s}$. The computation of the third component is discussed in \S\ref{sec:embed}. The neighborhood $\bm{\Psi}$ is zero for all components except $\Psi_a$ and $\Psi_b$. In most time, $\Psi_a=t_1$ and $\Psi_b=t_2$. However, sometimes, intersections may lie on the primitive edges instead of faces. In that case, $\Psi_a$ and $\Psi_b$ are edges. We postpone this discussion until \S\ref{sec:degenerate}. The computation of ${\boldsymbol{\Gamma}}_{21}$ is similar.
+To illustrate, assume two triangle faces $t_1$ and $t_2$, from primitive $P_a$ and $P_b$, intersect on a line segment. Then it generates two intersections for both triangles respectively, denoted as ${\mathbb{I}}_{12}$ and ${\mathbb{I}}_{21}$. For ${\mathbb{I}}_{12}$, the first two components are $t_1$ and $\bm{p}_{t_2, s}$. The computation of the third component is discussed in \S\ref{sec:embed}. The neighborhood $\bm{\Psi}$ is zero for all components except $\Psi_a$ and $\Psi_b$. In most time, $\Psi_a=t_1$ and $\Psi_b=t_2$. However, sometimes, intersections may lie on the primitive edges instead of faces. In that case, $\Psi_a$ and $\Psi_b$ are edges. We postpone this discussion until \S\ref{sec:degenerate}. The computation of ${\mathbb{I}}_{21}$ is similar.
 
 
-\subsection{Degenerate Situations}
+\subsection{Degenerate Case Handling}
 \label{sec:degenerate}
 
 Which two triangles, if intersecting, intersect on a line segment in most situations, they can also intersect on a point or a convex area (coplanar case). Even if line segment is the intersection, the intersection can be on triangle edges or inside triangles. These degenerate situations are troublesome to develop a robust boolean method. In this section, we offer simple but robust way to deal with all the degenerations and conceal the complexity of intersections behind the concise intersection representation in \S\ref{sec:ir}.
@@ -677,7 +681,7 @@ If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the inte
 
 When intersection line segment lies on an edge (Fig. \ref{fig:twin}). we call it \emph{edge intersection}. The only difference between edge intersection and the general case is the neighborhood representation $\Psi$. The space near edge intersection is decided by both face in the two side of the intersected edge, instead of just one triangle face (Fig. X). Therefore, supposing intersection is on the edge from mesh $P_k$, the neighborhood $\Psi_k$ is then an edge. Note that an intersection can be on edges from different meshes. Then there are more than one component of $\bm{\Psi}$ are edges.
 
-One thing need to be noticed is that there will be repetitive detection of edge intersections. In Fig. \ref{fig:twin}a, the same intersection on $t_1$ will be detected twice with both $t_2$ and $t_2^{\star}$. We solve this duplication together with other interactions among intersections in \S\ref{sec:tessellation}. We call $t_2$ and $t_2^{\star}$ as \emph{companion triangles} in an edge intersection, a concept which will be referred again in the discussion of coplanar cases.
+One thing need to be noticed is that there will be repetitive detection of edge intersections. In Fig. \ref{fig:twin}a, the same intersection on $t_1$ will be detected twice with both $t_2$ and $t_2^{\star}$. We solve this duplication together with other interactions among intersections in \S\ref{sec:tessellation}. We call such $t_2$ and $t_2^{\star}$ as \emph{companion triangles} in an edge intersection, a concept which will be referred again in the discussion of coplanar cases.
 
 \begin{figure}[t]
 \centering
@@ -705,50 +709,63 @@ The key observation is that intersection in 2D does not create new valid edges. 
 
 
 \label{sec:tessellation}
-After intersection computation, tessellation is performed on each intersecting triangle face and generate the intersection-free hybrid mesh. We call this stage as deferred tessellation because the tessellation happens until all valid intersections are computed. Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrained Delaunay Triangulation (CDT) to perform deferred tessellation. They treat triangle faces as convex triangulation zones and intersections as constraints. However, CDT has at least two drawbacks for this problem.
+After intersection computation, tessellation is performed on each intersecting triangle face and generate the intersection-free hybrid mesh. We call this stage as deferred tessellation because the tessellation happens until all valid intersections are computed. Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrained Delaunay Triangulation (CDT) to perform deferred tessellation. They treat triangle faces as convex triangulation zones and intersections as constraints.
 
-The first problem is the dilemma of precision and efficiency. Constrained triangulation algorithms \cite{chew1989constrained,preparata2012computational} usually require coordinates projection or intersection detection between arbitrary connections of input vertices. These geometry predicates are hard to guarantee computation efficiency and precision simultaneously neither by arbitrary precision arithmetic or P-rep geometry.
+Our first try is to implement a robust CDT and apply to our method. However, we fail because of the dilemma of precision and efficiency. CDT algorithms \cite{chew1989constrained,preparata2012computational} usually require coordinates projection or intersection detection between arbitrary connections of vertices within triangulation zone. Because vertices may be implicitly represented in our method, these geometry predicates are hard to guarantee computation efficiency and precision simultaneously. Moreover, when there are more than two primitives, simply applying CDT omits the complexity of intersections between meshes. The intersections may intersect each other, introducing new vertices and splitting original intersection line segments (Fig. x). This breaks the assumption of most CDT algorithms and may lead to incorrect output topology.
 
-The second problem is that when there are more than two primitives, simply applying constrained triangulation covers the complexity of intersections between mesh. The intersections may intersect each other, introducing new vertices, splitting original intersection line segments (Fig. x). However, most constrained triangulation algorithms assume that constraint edges do not intersect. They may fail to output the correct topology if the assumption is broken.
+To solve these problems, we first perform intersection refinement to eliminate any crossing or overlapping between intersections. After that, we perform conservative tessellation based on plane-based geometry, ensuring unconditional topology correctness. The word `conservative` means we tessellate face into polygons, not triangles. During tessellation, we organize intersections and generate an \emph{tess-graph}, which is a graph-like description of intersections. At last, we extract subfaces from tess-graph of each triangle face and construct the intersection-free hybrid meshes.
 
-To solve these problems, we first perform 2D intersection detection between intersections. After that, we develop a new tessellation method using only plane-based geometry, ensuring unconditional topology correctness. We first organize intersections into single face scope, generating an intermediate data structure---\emph{Tess-graph}. Then we tessellate each face by extract sub faces from its corresponding Tess-graph. In compensate, we do not guarantee the faces of the final mesh are triangles, leaving the flexibility to post-processing.
-
-\subsection{Eliminating Irregular Intersection}
+\subsection{Intersection Refinement}
 
 
-In IFS-mesh, there must not be any repetitive vertices in order to reconstruct the correct topology. Therefore, repetitive vertices elimination must be performed. Checking whether there are coincident points in a global scope can be quite inefficient. Our implementation use a localized scheme that store the reference of intersection vertices into their corresponding geometry location, like edges and faces. Therefore, coincidence detection performed within the geometry elements and repetitive vertices elimination can be very fast.
+The intersection vertices are not only introduced by intersection between an edge and a triangle, but also introduced by intersections of three triangles. It is not enough to find all of them by only triangle-triangle intersection tests. Also, because of degenerate cases, there will be other forms of intersections involving three or even more triangles. To make tessellation easier and more robust, we have to refine these intersections and all unusual conditions have to be removed before it.
 
-Regular intersections are guaranteed when there are only two meshes, because the surfaces of primitives are all without self-intersection. However, when there are more than two primitives, this constraint can be violated. In the view of intersection detection, it is not enough to find all intersection vertices by only triangle-triangle intersection test. This is because in such case, the new vertex can be introduced not only by intersection between edge and plane, but also by intersections of three planes, which involves more than two faces.
+Intersection refinement is performed in a local scope. For each intersecting face $t_i$, we collect all intersections on $t$ as a set $\bm{\Gamma}(t)=\{\mathbb{I}_{t}^i, i=0,1,2,...\}\cup\{\mathbb{I}_{t}^{e_i},i=0,1,2\}$ and refine them together. The set $\{\mathbb{I}_{t}^{e_i},i=0,1,2\}$ is the PBI-reps of the three edges of $t$. We treat edges as intersections for simplicity in this stage. The neighborhood component $\bm{\Psi}(\mathbb{I}_{t}^{e_i})$ is set as $\bm{0}$. Other components of $\mathbb{I}_{t}^{e_i}$ are straightforward to determine. Refinement on $\bm{\Gamma}(t)$ is done using only plane-based geometry predicates by the following three steps:
 
-Intersection refinement is performed in a local scope. For each face, we detect irregular intersections by intersection test between pairs of intersections. Because primitive meshes are not self-intersecting, we only check intersections between intersections made by different meshes. Face intersecting only one other mesh do not need refinement, since they do not have such intersection pairs.
+\vspace{0.5em}
+\noindent \textbf{Collinear splitting}~~~~
+Each intersection $\mathbb{I}_{t}^x$ are testing whether they are collinearly overlapping with other intersections. If yes, $\mathbb{I}_{t}^x$ is split by the end points of overlapping intersections (Fig. x). Because $\mathbb{I}_{t}^x$ may collinearly overlap more than one other intersection, the splitting may be deferred until all splitting points are found. The subroutine linear order of points (\S\ref{sec:substrates}) is used to sort these splitting points along $\mathbb{I}_{t}^x$. The PBI-reps of split segments inherit their father's except the second component the end points.
 
-Using P-rep, whether two intersections intersects each other is determined by predicate of orientation of plane against a point. For example, we want determine whether ${\boldsymbol{\Gamma}}_1$ and ${\boldsymbol{\Gamma}}_2$ intersects. Using the notation of section \ref{sec:ir}, we perform the test by checking whether $v_0({\boldsymbol{\Gamma}}_1), v_1({\boldsymbol{\Gamma}}_1)$ are on two sides of $p({\boldsymbol{\Gamma}}_2)$ and whether $v_0({\boldsymbol{\Gamma}}_2), v_1({\boldsymbol{\Gamma}}_2)$ are on two sides of $p({\boldsymbol{\Gamma}}_1)$. If yes, ${\boldsymbol{\Gamma}}_1$ and ${\boldsymbol{\Gamma}}_2$ intersects and introduces new intersection vertex $v_{new}$, which is the intersection of $p({\boldsymbol{\Gamma}}_1), p({\boldsymbol{\Gamma}}_2)$ and the supporting plane of $t({\boldsymbol{\Gamma}}_1)$. The new vertex $v_{new}$ should be added into both ${\boldsymbol{\Gamma}}_1$ and ${\boldsymbol{\Gamma}}_2$ as a segment point. Since there may be more than one segment point added into a certain intersection during the whole test, we do not divide the intersection until all intersection pairs are tested.
-
-Degenerate cases are when the two intersections intersect on one of the end points or are collinear. In the first condition {\color{red}{Fig. ??(a)}}, there is no new vertex generated and only one of the intersection needs splitting. The collinear case {\color{red}{Fig. ??(b)}} is intersection in 1D and are tested exactly by two-point-on-line comparison between the end points of intersections. If there is intersection between them, it should be straightforward to figure out the segment points for each intersections.
-
-After all segment points are found, the related intersections have to be split. For a certain intersection, we sort the segment points by two-point-on-line comparisons and subtract child intersections along the direction of their father one by one. The representation of the child intersections should be the same with their father except the coordinate components $v_0$ and $v_1$. So far, we guarantee that all refined intersections need not be further divided as the potential edges of the Linked Halfedge. However, if there are collinear cases, there will be coincident child intersections from different fathers. We choose to resolve them in Tess-graph. If CDT is chosen instead of Tess-graph, coincidence can be handled like-wise.
-
-\subsection{Tess-Graph}
-
-So far, intersections are only loose data that store the coordinates and neighbouring information. To perform tessellation and extract sub-faces, we need to organize them to reveal the topology. We use Tess-graph for this purpose. A Tess-graph is the graph description of the tessellated face topology. For each face to be tessellated, we construct a Tess-graph according to the refined intersections. The final Linked Halfedge merges both the original topology and the intersections in the same representation. And the construction of Tess-graph is the first step towards such uniformity. By only nodes and connections, it represents both the intersections and the original boundary of triangle face. This reduces complexity of the following processes and allowing them to be simple and fast.
-
-
-Nodes of Tess-graph represent vertices and store the coordinates of them. Connections are nondirectional, represent edges in Linked Halfedge, storing the I-rep if it is coincident with an intersection. Sometimes, there will be more than one coincident intersections and all I-reps have to be stored. Construction of Tess-graph from I-rep is straightforward except one thing: we have to merge face boundary with the intersections lies on the face boundary {\color{red}{Fig}}. This lead to an extra step beforehand. For each edge boundary of face, we treat it as pseudo-intersections with only coordinates information, and perform collinear intersection test with all intersections lies on it, splitting it by corresponding segment points.
-
-\subsection{Extracting Sub-faces}
-
-The difference between a graph and a mesh surface is that there is no concept of face in graph. In this step, we extract faces from Tess-graph to construct Linked Halfedge.
-
-First, We classify connections of Tess-graph into two types: connections on face boundaries as \emph{boundary connections} and connections inside face as \emph{inner connections}. In the view of halfedge data structure, inner connections represent two opposite halfedges but boundary connections represent only one. We add an attribute for each connection to identify their directions, and thus we get a directed version of Tess-graph. A sub-face is a halfedge loop on the directed Tess-graph. Extracting faces are process of searching for valid loops which meet certain geometry constraints. After all faces are extracted, all halfedges of directed Tess-graph should be used exactly once.
-
-There two geometry constraints for valid loops. First, the direction of loops should be coherent with the face normal, counter-clockwise for example. Second, consecutive halfedges on the loop should be angle adjacent, which means there is no other halfedges between the angle contained by these two halfedges {\color{red}{Fig.?}}. To meet these constraints, we sort the halfedges counter-clockwise for each nodes with more than two halfedges starting from them. This is implemented by using the divide-and-conquer framework of quick sort. During each recursion, we pick a random halfedge and split the rest into two sets according to the sign of two-line-on-plane comparison. To make the results of two-line-on-plane comparisons coherent, we assume that for each halfedge $h_i$, the normal directions of its plane-rep, denoted as $\vec{n}(h_i)$, meets the following criterion:
+\vspace{0.5em}
+\noindent \textbf{Coincidence elimination}~~~~
+We merge coincidence intersections which have the same end points. Intersections are undirected so intersections with inverse end points are also coincident. The PBI-rep of the new intersection is inherited from either of the old one's except the neighborhood component $\bm{\Psi}$. We follow the merging rules below:
 \begin{equation}
-(\vec{n}(h_i) \times \vec{n}_0) \cdot \vec{l}(h_i) > 0,
+  \Psi_k(\mathbb{I}_{t}^{12})=\left\{
+   \begin{array}{l}
+   \Psi_k(\mathbb{I}_{t}^1)\mbox{ or }\Psi_k(\mathbb{I}_{t}^2),\ \mbox{ if } \Psi_k(\mathbb{I}_{t}^1)=\Psi_k(\mathbb{I}_{t}^2) \\
+   \Psi_k(\mathbb{I}_{t}^1),\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{ if } \Psi_k(\mathbb{I}_{t}^2)=0  \\
+   \Psi_k(\mathbb{I}_{t}^2),\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{ if } \Psi_k(\mathbb{I}_{t}^1)=0  \\
+   \end{array}
+  \right.
 \end{equation}
-where $\vec{n}_0$ is the normal of the face, and $\vec{l}(h_i)$ is the direction of $h_i$. The plane-rep of halfedge can be inherited from the corresponding connections from the undirected Tess-graph. Since we {\color{red}{guarantee that each connection has a plane-rep //need insert//}}, sorting can be exactly and fast performed. After connections are sorted in each nodes, we can know which connections are adjacent and what is the right direction during the loop search.
+, where $\mathbb{I}_{t}^1$ and $\mathbb{I}_{t}^2$ are old intersections and $\mathbb{I}_{t}^{12}$ is the new one.
 
 
-\section{Face Classification}
+\vspace{0.5em}
+\noindent \textbf{Crossing intersection resolving}~~~~
+After the process of two previous steps, there are no overlapping intersections in $\bm{\Gamma}(t)$. We check whether any pair of intersections intersect each other. The definition of \emph{intersect} does not include the situation that two intersections share end points. In Fig. x, we illustrate the only two situations. In both situations, one intersection is split by other, and the same splitting routine is used as in collinear splitting.
+
+%\vspace{0.5em}
+%There is one more thing that we give intersections generated (by merging or splitting) from the PBI-reps of edges  the positive directions. That means all intersections lies on triangle edges have a positive direction. Direction is defined by the direction of edge the intersection lies on.
+
+\subsection{Tessellation by Tess-Graph}
+
+So far, intersections are only independent data that store the coordinates and neighbouring information. To perform tessellation and extract subfaces, we need to organize them to reveal the topology. We use tess-graph for this purpose. A tess-graph is the graph description of the tessellated face topology. For each face to be tessellated, we construct a tess-graph according to the refined intersections. Nodes of tess-graph represent end points of intersections and undirectional connections between nodes represent intersections. The construction of tess-graph is straightforward and the reader will not have problem filling the details.
+
+After we have tess-graph, we tessellate face and extract subfaces according to it. This is done by tracing loops on tess-graph. A valid loop that corresponds to a subface must satisfy two criterions: 1) the direction of loops should be coherent with the face normal, and 2) consecutive connections on the loop should be adjacent by circular order {\color{red}{Fig.?}}. After we find out all valid loops on tess-graph, the tessellation is done on that triangle face. More details are discussed in \S\ref{sec:}.
+
+%In our implementation, we find that it is not easy to check whether the loop direction is coherent with face normal by plane-based geometry.
+
+%First, We classify connections of tess-graph into two types: connections on face boundaries as \emph{boundary connections} and connections inside face as \emph{inner connections} by the whether they have positive directions. In the view of halfedge, inner connections represent two opposite halfedges but boundary connections represent only one. We add an attribute for each connection to identify their directions, and thus we get a directed version of Tess-graph. A sub-face is a halfedge loop on the directed Tess-graph. Extracting faces are process of searching for valid loops which meet certain geometry constraints. After all faces are extracted, all halfedges of directed Tess-graph should be used
+
+%There two geometry constraints for valid loops. Second, consecutive connections on the loop should be adjacent by circular order {\color{red}{Fig.?}}. To meet these constraints, we sort the halfedges counter-clockwise for each nodes with more than two halfedges starting from them. This is implemented by using the divide-and-conquer framework of quick sort. During each recursion, we pick a random halfedge and split the rest into two sets according to the sign of two-line-on-plane comparison. To make the results of two-line-on-plane comparisons coherent, we assume that for each halfedge $h_i$, the normal directions of its plane-rep, denoted as $\vec{n}(h_i)$, meets the following criterion:
+%\begin{equation}
+%(\vec{n}(h_i) \times \vec{n}_0) \cdot \vec{l}(h_i) > 0,
+%\end{equation}
+%where $\vec{n}_0$ is the normal of the face, and $\vec{l}(h_i)$ is the direction of $h_i$. The plane-rep of halfedge can be inherited from the corresponding connections from the undirected Tess-graph. Since we {\color{red}{guarantee that each connection has a plane-rep //need insert//}}, sorting can be exactly and fast performed. After connections are sorted in each nodes, we can know which connections are adjacent and what is the right direction during the loop search.
+
+
+\section{Face Classification, p->e->f, patial sort}
 
 \label{sec:classification}
 This stage traverses all candidate faces in the Linked Halfedge, and classifies which of them belong to the final mesh. Classification is done by evaluating the indicator vector of each face {\color{red}{(indicator vector?)}}. During this process, we take advantage of P-rep to ensure unconditional correct classification. In addition, since we maintain the intra-primitive geometry connectivity and inter-primitive geometry connectivity in Linked Halfedge, we can utilize the space coherence of face indicator vectors to accelerate this process.
@@ -778,8 +795,8 @@ Fortunately, in the Linked Halfedge, it is straightforward to know whether $\bol
 \Function{propagate}{ $t_c$ , $\boldsymbol{\Lambda}(t_c)$}
     \State Compute $f(\boldsymbol{\Lambda}(t_c))$
     \For {each neighboring face $t_i^c$}
-        \If {there are I-reps $\{{\boldsymbol{\Gamma}}_k\}$ on $e(t_i^c, t_c)$}
-            \State $\boldsymbol{\Lambda}(t_c), \{{\boldsymbol{\Gamma}}_k\} \Longrightarrow \boldsymbol{\Lambda}(t_i^c)$
+        \If {there are I-reps $\{{\mathbb{I}}_k\}$ on $e(t_i^c, t_c)$}
+            \State $\boldsymbol{\Lambda}(t_c), \{{\mathbb{I}}_k\} \Longrightarrow \boldsymbol{\Lambda}(t_i^c)$
             \State \Call{propagate} { $t_i^c$ , $\boldsymbol{\Lambda}(t_i^c)$}
         \Else
             \State \Call{propagate} { $t_i^c$ , $\boldsymbol{\Lambda}(t_c)$}
@@ -805,16 +822,8 @@ We develop an classification method that is unconditionally robust and exact bas
 
 Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersection on one of $t_i$'s edge, we denote the three corners it as $v_{b*}^{0}(t_i), v_{b*}^{1}(t_i), v_b^2(t_i),$ where the subscript $*$ means the vertices are on the edge where $\boldsymbol\Gamma$ lies. We also denote the context component of $\boldsymbol\Gamma$ as $C_{P_h \backslash P_j}$, meaning $t_i$ is from primitive $P_j$ and intersects primitive $P_h$. From previous discussion (section \ref{sec:ir}){\color{red}{may be more than one}}, we know there are two types of intersection context---face neighborhood and edge neighborhood. In both conditions, the one or two faces involving in the context split the space into two in and out space by its (their) orientation(s). We will see that under such division (denoted as $\boldsymbol{D}(C_{P_h \backslash P_j})$), we can compute $\lambda(t_i, P_j)$ exactly.
 
-Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\boldsymbol{\Gamma}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\boldsymbol{\Gamma}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\boldsymbol{\Gamma}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
+Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\mathbb{I}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\mathbb{I}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\mathbb{I}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
-
-\subsection{Caching Evaluation Results}
-
-If the CSG tree is large, with hundreds of primitive nodes, computing $\lambda_f(x)$ from $\boldsymbol{\Lambda}(x)$ for every face can be costly. Thanks to the space coherence of $\boldsymbol{\Lambda}(x)$, we can save the computation time by caching the evaluation result of Boolean operations.
-
-The basic cache strategy is to cache final result, that is, the value of $\lambda_f(x)$. We know indicator vector $\boldsymbol{\Lambda}$ will not change if there is no intersections during spreading. That means the final classification $\lambda_f(x)$ will not change, too. Thus, those faces sharing the same $\boldsymbol{\Lambda}$ can be classified as a whole.
-
-Also, we can perform intermediate results cache. We noticed that the Boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(x)$ is fixed. For example, assume we have a Boolean expression $P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(x)=out$, $\lambda_2(x)=in$, the expression can be rewritten as $out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $P_3-P_4$. This fact is important because for a large CSG, a certain primitive, denoted as $P_x$, often only intersects with a few other primitives, like, $\Theta(P_x)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_x$ has the same indicators for the primitives not in $\Theta(P_x)$. Therefore, we can first determine these fixed indicators and simplify the Boolean function, and then use simplified one to compute the final indicator for each faces in $P_x$.
 
 
 \section{Implementation}
@@ -824,6 +833,36 @@ Also, we can perform intermediate results cache. We noticed that the Boolean exp
 
 \vspace{0.5em}
 \noindent \textbf{Exact Face Classification.} In Linked halfedge, all the supporting planes of faces and all the vertices can be exactly represented. Based on that, when computing the new indicator according to I-reps, we can use BSP techniques similar to \cite{bernstein2009fast} to conduct robust predicates. Since the intersection context is neither face or edge, the space division planes in each BSP will be no more than two, which guarantees fast construction and classification.
+
+
+\vspace{0.5em}
+\noindent \textbf{Continuous operations.}
+
+
+\vspace{0.5em}
+\noindent \textbf{Parallel.}
+
+
+\vspace{0.5em}
+\noindent \textbf{Lazy intersection.}
+
+
+
+\vspace{0.5em}
+\noindent \textbf{Caching Evaluation Results}
+If the CSG tree is large, with hundreds of primitive nodes, computing $\lambda_f(x)$ from $\boldsymbol{\Lambda}(x)$ for every face can be costly. Thanks to the space coherence of $\boldsymbol{\Lambda}(x)$, we can save the computation time by caching the evaluation result of Boolean operations.
+
+The basic cache strategy is to cache final result, that is, the value of $\lambda_f(x)$. We know indicator vector $\boldsymbol{\Lambda}$ will not change if there is no intersections during spreading. That means the final classification $\lambda_f(x)$ will not change, too. Thus, those faces sharing the same $\boldsymbol{\Lambda}$ can be classified as a whole.
+
+Also, we can perform intermediate results cache. We noticed that the Boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(x)$ is fixed. For example, assume we have a Boolean expression $P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(x)=out$, $\lambda_2(x)=in$, the expression can be rewritten as $out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $P_3-P_4$. This fact is important because for a large CSG, a certain primitive, denoted as $P_x$, often only intersects with a few other primitives, like, $\Theta(P_x)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_x$ has the same indicators for the primitives not in $\Theta(P_x)$. Therefore, we can first determine these fixed indicators and simplify the Boolean function, and then use simplified one to compute the final indicator for each faces in $P_x$.
+
+\vspace{0.5em}
+\noindent \textbf{Proof of Indicator Equality}
+\label{app:profind}
+
+Using the notation in section \ref{sec:individual}, we prove the equality of $\lambda(v_{x'}(t_i), P_j)$ and $ \lambda(v_b^2(t_i), P_j)$ under the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$.
+
+Given $v_{x'}(t_i)$ can be arbitrarily close to $v_b^2(t_i)$, if $\lambda(v_b^2(t_i), P_j) = in | out$, the equality holds because of the continuity of space. If $\lambda(v_b^2(t_i), P_j) = on$, we divide the proof of equality into two parts according to the type of intersection context. If $C_{P_h \backslash P_j}$ is face neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ is a single face, say, $t_0^c$. We have already know that the other two corners $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on $s_0$. Since $\lambda(v_b^2(t_i), P_j) = on$, we know $v_b^2(t_i)$ is on $t_0^c$, too. There comes the conclusion that the whole triangle $t_i$ is coplanar with $t_0^c$. Therefore, $v_{x'}(t_i)$ is on $t_0^c$ and $\lambda(v_{x'}(t_i), P_j) = on$, too. On the other hand, if $C_{P_h \backslash P_j}$ is edge neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ are two neighboring faces (denoted as $t_1^c, t_2^c$). We know that both $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on the shared edge $e(v_{b*}^{0}(t_i), v_{b*}^{1}(t_i))$. It means both vertices are on both $t_1^c$ and $t_2^c$. Using the same deduction of the first condition, we can conclude $\lambda(v_{x'}(t_i), P_j) = on$ whenever $\lambda(v_b^2(t_i), P_j) = on$.
 
 \section{Experiments}
 
@@ -866,12 +905,7 @@ received his BS degree in computer science from Huazhong University of Science a
 received the BS degree from Tsinghua University in 1970, and the PhD degree from the University of Manchester (UK) in 1984. He is currently a research professor at the Institute of Software, Chinese Academy of Sciences, and Fellow of China Computer Federation. He has also been teaching at the University of Macau since 1997, where he is currently an Emeritus Professor. His research interests include realistic image synthesis, virtual reality, and scientific visualization. He has served as an associate editor of The Visual Computer, Computer Animation and Virtual Worlds.
 \end{IEEEbiography}
 
-\section{Proof of Indicator Equality}
-\label{app:profind}
 
-Using the notation in section \ref{sec:individual}, we prove the equality of $\lambda(v_{x'}(t_i), P_j)$ and $ \lambda(v_b^2(t_i), P_j)$ under the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$.
-
-Given $v_{x'}(t_i)$ can be arbitrarily close to $v_b^2(t_i)$, if $\lambda(v_b^2(t_i), P_j) = in | out$, the equality holds because of the continuity of space. If $\lambda(v_b^2(t_i), P_j) = on$, we divide the proof of equality into two parts according to the type of intersection context. If $C_{P_h \backslash P_j}$ is face neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ is a single face, say, $t_0^c$. We have already know that the other two corners $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on $s_0$. Since $\lambda(v_b^2(t_i), P_j) = on$, we know $v_b^2(t_i)$ is on $t_0^c$, too. There comes the conclusion that the whole triangle $t_i$ is coplanar with $t_0^c$. Therefore, $v_{x'}(t_i)$ is on $t_0^c$ and $\lambda(v_{x'}(t_i), P_j) = on$, too. On the other hand, if $C_{P_h \backslash P_j}$ is edge neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ are two neighboring faces (denoted as $t_1^c, t_2^c$). We know that both $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on the shared edge $e(v_{b*}^{0}(t_i), v_{b*}^{1}(t_i))$. It means both vertices are on both $t_1^c$ and $t_2^c$. Using the same deduction of the first condition, we can conclude $\lambda(v_{x'}(t_i), P_j) = on$ whenever $\lambda(v_b^2(t_i), P_j) = on$.
 
 
 
