@@ -711,7 +711,7 @@ The first problem is the dilemma of precision and efficiency. Constrained triang
 
 The second problem is that when there are more than two primitives, simply applying constrained triangulation covers the complexity of intersections between mesh. The intersections may intersect each other, introducing new vertices, splitting original intersection line segments (Fig. x). However, most constrained triangulation algorithms assume that constraint edges do not intersect. They may fail to output the correct topology if the assumption is broken.
 
-To solve these problems, we first perform 2D intersection detection between intersections. After that, we develop a new tessellation method using only plane-based geometry, ensuring unconditional topology correctness. We first organize intersections into single face scope, generating an intermediate data structure---\emph{Tess-graph}. Then we tessellate each face by extract subfaces from its corresponding Tess-graph. In compensate, we do not guarantee the faces of the final mesh are triangles, leaving the flexibility to post-processing.
+To solve these problems, we first perform 2D intersection detection between intersections. After that, we develop a new tessellation method using only plane-based geometry, ensuring unconditional topology correctness. We first organize intersections into single face scope, generating an intermediate data structure---\emph{Tess-graph}. Then we tessellate each face by extract sub faces from its corresponding Tess-graph. In compensate, we do not guarantee the faces of the final mesh are triangles, leaving the flexibility to post-processing.
 
 \subsection{Eliminating Irregular Intersection}
 
