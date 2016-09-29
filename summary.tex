@@ -641,7 +641,7 @@ According to the method described in section \ref{sec:convert}, triangle faces $
  \item[3)] The intersection between $t_1$ and $t_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by sorting the end points of $Seg_1$ and $Seg_2$ along the line $\bm{l}\colon \bm{p}_{t_1, s} \cap \bm{p}_{t_2, s}$. Because end points are all represented using plane triples, we can use the linear order of points discussed in \S \ref{sec:substrates} to sort.
 \end{itemize}
 
-Each time an intersection is computed, two intersections are generated (one for each triangle) and the newly generated vertices are added into meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this stage, merging coincident vertices even among different input meshes. Because we use P-reps, the comparison of vertices is exact.
+Each time an intersection is computed, two intersections are generated (one for each triangle) and the newly generated vertices are added into meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this stage, merging coincident vertices even if they come from different input meshes. Because we use P-reps, the comparison of vertices is exact.
 
 \subsection{Plane-Based Intersection Representation}
 \label{sec:ir}
@@ -752,7 +752,9 @@ After the process of two previous steps, there are no overlapping intersections 
 
 So far, intersections are only independent data that store the coordinates and neighbouring information. To perform tessellation and extract subfaces, we need to organize them to reveal the topology. We use tess-graph for this purpose. A tess-graph is the graph description of the tessellated face topology. For each face to be tessellated, we construct a tess-graph according to the refined intersections. Nodes of tess-graph represent end points of intersections and undirectional connections between nodes represent intersections. The construction of tess-graph is straightforward and the reader will not have problem filling the details.
 
-After we have tess-graph, we tessellate face and extract subfaces according to it. This is done by tracing loops on tess-graph. A valid loop that corresponds to a subface must satisfy two criterions: 1) the direction of loops should be coherent with the face normal, and 2) consecutive connections on the loop should be adjacent by circular order {\color{red}{Fig.?}}. After we find out all valid loops on tess-graph, the tessellation is done on that triangle face. More details are discussed in \S\ref{sec:}.
+After we have tess-graph, we tessellate face and extract subfaces according to it. This is done by tracing loops on tess-graph. A valid loop that corresponds to a subface must satisfy two criterions: 1) the direction of loops should be coherent with the face normal, and 2) consecutive connections on the loop should be adjacent by circular order ({\color{red}{Fig.?}}). After we find out all valid loops on tess-graph, we finish tessellating the corresponding face.
+
+When all faces are tessellated, meshes are intersection-free. We further attach the PBI-reps of intersections to the edges generated from tess-graph connections which corresponds to an intersection. Finally, we get the intersection-free hybrid meshes, while `hybrid` means some parts of meshes are both vertex-based and plane-based represented.
 
 %In our implementation, we find that it is not easy to check whether the loop direction is coherent with face normal by plane-based geometry.
 
@@ -765,54 +767,106 @@ After we have tess-graph, we tessellate face and extract subfaces according to i
 %where $\vec{n}_0$ is the normal of the face, and $\vec{l}(h_i)$ is the direction of $h_i$. The plane-rep of halfedge can be inherited from the corresponding connections from the undirected Tess-graph. Since we {\color{red}{guarantee that each connection has a plane-rep //need insert//}}, sorting can be exactly and fast performed. After connections are sorted in each nodes, we can know which connections are adjacent and what is the right direction during the loop search.
 
 
-\section{Face Classification, p->e->f, patial sort}
+\section{Exact Face Classification}
 
 \label{sec:classification}
-This stage traverses all candidate faces in the Linked Halfedge, and classifies which of them belong to the final mesh. Classification is done by evaluating the indicator vector of each face {\color{red}{(indicator vector?)}}. During this process, we take advantage of P-rep to ensure unconditional correct classification. In addition, since we maintain the intra-primitive geometry connectivity and inter-primitive geometry connectivity in Linked Halfedge, we can utilize the space coherence of face indicator vectors to accelerate this process.
-
-In this section, we will first give an overall framework of face classification, and then introduce how to classify each individual face. At last, we discuss how to accelerate this process by caching intermediate results.
+We traverse each face in the hybrid meshes, and classify which one belongs to the final mesh. Classification is done by evaluating the indicator vector of each face. The basic idea of our classification method is to utilize the space coherence of face indicator vectors to reuse the classification results. Also, because we store the PBI-reps which contains neighborhood information in the edges which intersect other meshes, the search space of point-in-polyhedron test is limited to only a few faces, which makes the indicator computation very fast. Also, by using P-reps, our classification method can deal with any degenerate cases.
 
 \subsection{Framework}
 
-The space coherence of indicator vectors means neighboring faces could share the same indicator vector, or most components of indicator vectors. For example, given two neighboring faces $t_1$ and $t_2$, indicator vectors $\boldsymbol{\Lambda}(t_1)$ and $\boldsymbol{\Lambda}(t_2)$ would often be the same. Only when there is boundary of some meshes, say $P_k$, on the shared edge $e(t_1, t_2)$ and split $t_1$ and $t_2$ in two sides, the corresponding components $\boldsymbol{\Lambda}(t_1, P_k)$ and $\boldsymbol{\Lambda}(t_2, P_k)$ can be different. And other components of $\boldsymbol{\Lambda}(t_1)$ and $\boldsymbol{\Lambda}(t_2)$ will remain the same. If we can compute the indicator changes between neighboring faces efficiently, we can start from a single face with a indicator vector as the seed, propagating to all faces with geometry connectivity, reusing indicator vectors according to the spatial coherence and classifying faces very fast.
+The space coherence of indicator vectors means neighboring faces could share the same indicator vector, or most components of indicator vectors. Therefore, we start from a seed face $s_0$ with its indicator vector $\bm{\Lambda}(s_0)$ known, and propagate to other faces in a flood-filling manner. The trace of indicator propagation is:
+\begin{equation}
+\label{eq:trace}
+s_0\to s_1\to s_2\to s_3\to ...
+\end{equation}
 
 
-Fortunately, in the Linked Halfedge, it is straightforward to know whether $\boldsymbol{\Lambda}(t_1, P_k)$ and $\boldsymbol{\Lambda}(t_2, P_k)$ are different, because it means $e(t_1, t_2)$ will be on the boundary of $P_k$, and there will be corresponding I-reps stored on $e(t_1, t_2)$. In addition, both $\boldsymbol{\Lambda}(t_1, P_k)$ and $\boldsymbol{\Lambda}(t_2, P_k)$ can be computed efficiently according to the I-reps (details in Section \ref{sec:individual}). We outline our classification method in Algorithm 1.
+Our hybrid meshes facilitate this process by accelerating the indicator propagation. Given adjacent faces $s_1$ and $s_2$, it is straightforward to know whether $\bm{\Lambda}(s_1)$ and $\bm{\Lambda}(s_2)$ are different. The two indicator vectors are the same unless the shared edge $e_{12}$ lies on the boundary of some meshes, and it means there is an intersection $\mathbb{I}(e_{12})$ stored on $e_{12}$. For a certain indicator $\lambda_k$, it always stands:
+\begin{equation}
+\label{eq:eq1}
+{\lambda_k}(s_1) = {\lambda_k}(s_2),\ \ \  \mbox{if }\Psi_k(\mathbb{I}(e_{12}))= 0.
+\end{equation}
+Even if $\Psi_k(\mathbb{I}(e_{12})) \neq 0$, both $\lambda_k(t_1)$ and $\lambda_k(t_2)$ can be computed efficiently and exactly according to $\mathbb{I}(e_{12})$ (\S\ref{sec:propagation}). We outline our classification method in Algorithm \ref{code:floodfill}.
 
 \begin{algorithm}
 \caption{Fast Face Classification}
 \label{code:floodfill}
-\textbf{Input: } Linked Halfedge structure $\Omega$
+\textbf{Input: } IFH meshes $\bm{P'}$, a boolean function $f$
 
-\textbf{Output: } Classification of each face $f(\boldsymbol{\Lambda}(t_i)), t_i \in \Omega$
+\textbf{Output: } Classification $f(\bm{\Lambda}(s_i))$, for all faces $s_i$ from $\bm{P'}$
 
 
 \begin{algorithmic}[1]
-\State Select a proper seed face $t_s$
-\State Compute the first indicator vector $\boldsymbol{\Lambda}(t_s)$
-\State \Call{propagate} { $t_s$ , $\boldsymbol{\Lambda}(t_s)$}
+\State Select a proper seed face $s_0$
+\State Compute the first indicator vector $\boldsymbol{\Lambda}(s_0)$
+\State \Call{propagate} { $s_0$ , $\boldsymbol{\Lambda}(s_0)$}
 \State
-\Function{propagate}{ $t_c$ , $\boldsymbol{\Lambda}(t_c)$}
-    \State Compute $f(\boldsymbol{\Lambda}(t_c))$
-    \For {each neighboring face $t_i^c$}
-        \If {there are I-reps $\{{\mathbb{I}}_k\}$ on $e(t_i^c, t_c)$}
-            \State $\boldsymbol{\Lambda}(t_c), \{{\mathbb{I}}_k\} \Longrightarrow \boldsymbol{\Lambda}(t_i^c)$
-            \State \Call{propagate} { $t_i^c$ , $\boldsymbol{\Lambda}(t_i^c)$}
+\Function{propagate}{ $s$ , $\boldsymbol{\Lambda}(s)$}
+    \State Compute $f(\boldsymbol{\Lambda}(s))$
+    \For {each neighboring face $s_i$}
+        \If {$s_i$ has been classified}
+            \State continue
+        \EndIf
+        \If {there are PBI-reps $\{{\mathbb{I}}_k\}$ on $e(s_i, s)$}
+            \State compute $\boldsymbol{\Lambda}(s_i)$ by $\boldsymbol{\Lambda}(s)$ and $\{{\mathbb{I}}_k\}$
+            \State \Call{propagate} { $s_i$ , $\boldsymbol{\Lambda}(s_i)$}
         \Else
-            \State \Call{propagate} { $t_i^c$ , $\boldsymbol{\Lambda}(t_c)$}
+            \State \Call{propagate} { $s_i$ , $\boldsymbol{\Lambda}(s)$}
         \EndIf
     \EndFor
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
 
+\iffalse
 \subsection{Precise Seed Generation}
 
 Our classification method starts from computing the seed indicator vector using point-in-polyhedron test \cite{ogayar2005point}. Conventionally, the barycenter of the face is used for the test to compute the indicator vector of the whole face. This is because the whole face is classified as a whole, and every inner point will have the same indicator vector. However, the coordinates of the inner points cannot be exactly represented by float point numbers, which may lead to wrong predicates, especially when it is an on-boundary case. Therefore, we use the original vertices, whose exact coordinates are known, for point-in-polyhedron test. For this reason, only tessellated faces with at least one original vertex can be the seed face. The point-in-polyhedron test is guaranteed to be exact. On the other hand, efficiency is not so important as there will not be many such tests. If ray-trace algorithms (e.g., \cite{frisken2002simple}) are used, the octree constructed during space division can be used for acceleration \cite{havran1999summary}.
 
 However, using point on the boundary instead of an inner one has another problem. Given a face $s$ (may not be triangle) and one of its vertex $v_b^i(s)$, the vertex indicator $\boldsymbol{\Lambda}(v_{i}(s), P_k)$ may cause ambiguity to deduce the face indicator $\boldsymbol{\Lambda}(s, P_k)$. In {\color{red}{Fig. ?}}, $\boldsymbol{\Lambda}(v_b^1(s), P_k) = on$, then $\boldsymbol{\Lambda}(s, P_k)$ can be any of the four conditions. We solve this problem by trying other vertices in $s$ for ambiguous indicators. If all vertices indicators are $on$ and the ambiguity cannot be resolved, the current face is not proper for being the seed and we select a new one instead.
 
-\subsection{Fast and Exact Classification}
+\fi
+
+\subsection{Indicator Propagation}
+\label{sec:propagation}
+Now, our meshes consist of vertices, edges and faces. Classification is required to perform on face level. However, polyhedron in-out test is performed based on points. Conventionally, face inner point such as barycenter is used to compute the indicator of the whole face. This is because in intersection-free meshes, face is classified as a whole, and every inner point will have the same indicator as the face's. However, the coordinates of inner points cannot be exactly represented by float point numbers, which may lead to wrong predicates, especially when the face lies on the surface of other mesh (Fig. x). Therefore, we use the vertices, whose exact representations are known, for indicator computation.
+
+%For example, given a face $s$ and one of its vertex $v^i(s)$, if $\lambda_k(v^i(s))=on$, $\lambda_k(s)$ can be any of $on$, $in$ or $out$ (see {\color{red}{Fig. ?}})
+However, there are two gaps between face indicator and vertex indicator. First, the indicator of vertex does not always equal to indicator of face. Second, face indicator has two conditions in $on$ case, $same$ and $oppo$, because the face has its orientation.
+
+To solve these problems, we discuss our indicator trace (\ref{eq:trace}) in finer granularity. In the beginning, we start from a seed vertex $v_0$ on seed face $s_0$. We assume indicator vector $\bm{\Lambda}(v_0)$ is known. Then we use $\bm{\Lambda}(v_0)$ to compute $\bm{\Lambda}(s_0)$. In addition, we add the edge layer into the trace. Then it changes to:
+\begin{equation}
+v_0\to e_0\to s_0\to e_1\to s_1\to e_2\to s_2\to ...
+\end{equation}
+, where $v, e$ means vertex and edge respectively. We find that there are three kinds of basic operations in the trace: $v_e\to e$, $e_s\to s$ and $s\to e_s$, where $v_e$ means the vertex is the end point of $e$, and $e_s$ means the edge is the edge of $s$.
+
+Given the partial order $on \succ in$ and $on \succ out$, our key observation is that the following relation always stands for indicators:
+\begin{equation}
+\label{eq:porder}
+\lambda_k(v_{e_s}) \succeq \lambda_k(e_s) \succeq \lambda_k(s)
+\end{equation}
+, where $\lambda_k(x)$ means the indicator of $x$ against a certain primitive $P_k$. This relation can be inferred from continuous space assumption and the definition of intersection-free mesh (def. \ref{eq:ifmdef}). It tells us when we perform $v_e\to e$ and $e_s\to s$, we decide whether the $on$ indicator change to $in$ or $out$ or remain $on$. When we perform $s\to e_s$, we decide whether $in$ and $out$ indicators change to $on$. In addition, considering the orientation of face, we also need to figure out whether the $on$ indicators change to $same$ or $oppo$ during $e_s\to s$ operation.
+
+\vspace{0.5em}
+\noindent\textbf{$\bm{s\to e_s}$}~~~~ When $\lambda_k(e_s)=on$, there will be PBI-rep $\mathbb{I}(e_s)$ attached to $e_s$ and the related neighborhood $\Psi_k(\mathbb{I}(e_s))$ must be nonzero, since it is on the surface of mesh $P_k$:
+\begin{equation}
+\label{eq:eq1}
+\lambda_k(e_s)=on,\ \ \  \mbox{iff. }\Psi_k(\mathbb{I}(e_s))\neq 0.
+\end{equation}
+So all we need is to iterate over all nonzero components of $\bm{\Psi}(\mathbb{I}(e_s))$ and change corresponding indicators to $on$.
+
+
+\vspace{0.5em}
+\noindent\textbf{$\bm{e_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(e_s) \neq on$, then $\lambda_k(e_s)=\lambda_k(s)$. When $\lambda_k(e_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\mathbb{I}(e_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\mathbb{I}(e_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\mathbb{I}(e_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $e_s$. If $\Psi_k(\mathbb{I}(e_s))$ is an edge, we can still build BSP using the opposite two faces along $e_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $s$ that near $e_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $v_x$ from the half plane $\bm{p}_{s, s}^+$, which is on the supporting plane of $s$ and on the positive side of bounding plane $\bm{p}_{s, b}^{e_s}$ (Fig. x). There is at least one such $v_x$ among the vertices of $s$. We find that the BSP is so simple that indicators of all points on $\bm{p}_{s, s}^+$ are the same. Thus we can compute $\lambda_k(s)$ by figuring out $\lambda_k(v_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $v_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
+
+\vspace{0.5em}
+\noindent\textbf{$\bm{v_e\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no auxiliary information stored on vertex. If $\lambda_k(v_e)=on$, we first check whether $\lambda_k(e) = on$ by (\ref{eq:eq1}). If not, we need to find where $v_e$ lies on the surface of $P_k$. It may be a vertex, an edge or a face. The same BSP trick as in ${e_s\to s}$ is applied and we use the other vertex of $e$ to be the sample point $v_x$.
+
+\vspace{0.5em}
+
+
+\iffalse
+\subsection{Implementation}
 
 \label{sec:individual}
 
@@ -824,7 +878,7 @@ Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersec
 
 Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\mathbb{I}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\mathbb{I}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\mathbb{I}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
-
+\fi
 
 \section{Implementation}
 
@@ -838,6 +892,8 @@ Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$
 \vspace{0.5em}
 \noindent \textbf{Continuous operations.}
 
+\vspace{0.5em}
+\noindent \textbf{Valid loops}
 
 \vspace{0.5em}
 \noindent \textbf{Parallel.}
