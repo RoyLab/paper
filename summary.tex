@@ -322,6 +322,7 @@
 %\usepackage{mathrsfs}
 \usepackage[mathcal]{eucal}
 \usepackage{amsfonts}
+\usepackage{amssymb}
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -619,7 +620,7 @@ M\"{o}ller's algorithm computes the intersection between two triangles $t_1$ and
 The non-robustness of this algorithm is from computing the coordinates of intersection vertices, which is the end points of $Seg1$ and $Seg2$. Although implementation with arbitrary precision arithmetic produces exact coordinates, it is too costly for boolean operations of large CSG. We use plane-based geometry to solve this problem by implicitly representing intersections with planes.
 
 
-\subsection{Plane-based Technique Embedding}
+\subsection{Plane-Based Intersection}
 
 \label{sec:embed}
 According to the method described in section \ref{sec:convert}, triangle faces $f$ are firstly converted to its P-rep: a supporting plane $\bm{p}_{t, s}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
@@ -749,10 +750,10 @@ After the process of two previous steps, there are no overlapping intersections 
 %There is one more thing that we give intersections generated (by merging or splitting) from the PBI-reps of edges  the positive directions. That means all intersections lies on triangle edges have a positive direction. Direction is defined by the direction of edge the intersection lies on.
 
 \subsection{Tessellation by Tess-Graph}
-
+\label{sec:tess}
 So far, intersections are only independent data that store the coordinates and neighbouring information. To perform tessellation and extract subfaces, we need to organize them to reveal the topology. We use tess-graph for this purpose. A tess-graph is the graph description of the tessellated face topology. For each face to be tessellated, we construct a tess-graph according to the refined intersections. Nodes of tess-graph represent end points of intersections and undirectional connections between nodes represent intersections. The construction of tess-graph is straightforward and the reader will not have problem filling the details.
 
-After we have tess-graph, we tessellate face and extract subfaces according to it. This is done by tracing loops on tess-graph. A valid loop that corresponds to a subface must satisfy two criterions: 1) the direction of loops should be coherent with the face normal, and 2) consecutive connections on the loop should be adjacent by circular order ({\color{red}{Fig.?}}). After we find out all valid loops on tess-graph, we finish tessellating the corresponding face.
+After we have tess-graph, we tessellate face and extract subfaces according to it. This is done by extract valid loops on tess-graph. A valid loop that corresponds to a subface must satisfy two criterions: 1) the direction of loops should be coherent with the face normal, and 2) consecutive connections on the loop should be adjacent by circular order ({\color{red}{Fig.?}}). Each valid loop corresponds to a intersection-free face. After we find out all valid loops on tess-graph, we finish tessellating the corresponding face.
 
 When all faces are tessellated, meshes are intersection-free. We further attach the PBI-reps of intersections to the edges generated from tess-graph connections which corresponds to an intersection. Finally, we get the intersection-free hybrid meshes, while `hybrid` means some parts of meshes are both vertex-based and plane-based represented.
 
@@ -857,12 +858,10 @@ So all we need is to iterate over all nonzero components of $\bm{\Psi}(\mathbb{I
 
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{e_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(e_s) \neq on$, then $\lambda_k(e_s)=\lambda_k(s)$. When $\lambda_k(e_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\mathbb{I}(e_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\mathbb{I}(e_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\mathbb{I}(e_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $e_s$. If $\Psi_k(\mathbb{I}(e_s))$ is an edge, we can still build BSP using the opposite two faces along $e_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $s$ that near $e_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $v_x$ from the half plane $\bm{p}_{s, s}^+$, which is on the supporting plane of $s$ and on the positive side of bounding plane $\bm{p}_{s, b}^{e_s}$ (Fig. x). There is at least one such $v_x$ among the vertices of $s$. We find that the BSP is so simple that indicators of all points on $\bm{p}_{s, s}^+$ are the same. Thus we can compute $\lambda_k(s)$ by figuring out $\lambda_k(v_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $v_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
+\noindent\textbf{$\bm{e_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(e_s) \neq on$, then $\lambda_k(e_s)=\lambda_k(s)$. When $\lambda_k(e_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\mathbb{I}(e_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\mathbb{I}(e_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\mathbb{I}(e_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $e_s$. If $\Psi_k(\mathbb{I}(e_s))$ is an edge, we can still build BSP using the opposite two faces along $e_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $s$ that near $e_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $v_x$ from the half plane $\bm{p}_{s, sp}^+$, which is on the supporting plane of $s$ and on the positive side of bounding plane $\bm{p}_{s, b}^{e_s}$ (Fig. x). For polygons, there is at least one such $v_x$ among the vertices of $s$. We find that the BSP is so simple that indicators $\lambda_k$ of all points on $\bm{p}_{s, sp}^+$ are the same. Since $\bm{p}_{s, sp}^+ \cap s \neq \varnothing$, we can compute $\lambda_k(s)$ by figuring out $\lambda_k(v_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $v_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{v_e\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no auxiliary information stored on vertex. If $\lambda_k(v_e)=on$, we first check whether $\lambda_k(e) = on$ by (\ref{eq:eq1}). If not, we need to find where $v_e$ lies on the surface of $P_k$. It may be a vertex, an edge or a face. The same BSP trick as in ${e_s\to s}$ is applied and we use the other vertex of $e$ to be the sample point $v_x$.
-
-\vspace{0.5em}
+\noindent\textbf{$\bm{v_e\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(v_e)=on$, we first check whether $\lambda_k(e) = on$ by (\ref{eq:eq1}). If not, we need to find where $v_e$ lies on the surface of $P_k$ and determine the neighborhood of $v_e$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${e_s\to s}$ to determine the high dimensional $\lambda_k(e)$. We use the other vertex of $e$ to be the sample point $v_x$ for the BSP classification.
 
 
 \iffalse
@@ -880,45 +879,74 @@ Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$
 
 \fi
 
-\section{Implementation}
+\section{Discussion}
 
 \vspace{0.5em}
-\textbf{Seed Indicator Vector Generation.} Our method of generating the first indicator vector will fail on extreme conditions when all faces in Linked halfedge are coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the high-precision face barycenter with the point-in-polyhedron test to generate the seed indicator vector instead after several failures of choosing a proper seed face.
+
+\subsection{Essential Subroutines}
+\label{sec:esubroutine}
 
 \vspace{0.5em}
-\noindent \textbf{Exact Face Classification.} In Linked halfedge, all the supporting planes of faces and all the vertices can be exactly represented. Based on that, when computing the new indicator according to I-reps, we can use BSP techniques similar to \cite{bernstein2009fast} to conduct robust predicates. Since the intersection context is neither face or edge, the space division planes in each BSP will be no more than two, which guarantees fast construction and classification.
+\noindent\textbf{Searching valid loops}~~~~ In \S\ref{sec:tess}, we claim a valid loops on tess-graph has to be correct with its orientation. However, since tess-graph is undirectional, it is not easy to check whether a loop orientation agrees with the face's. We observe that the graph connections lie on face edges have their unambiguous directions (Fig. x). Starting from these edges, we can guarantee that the loops have the right orientations. After we find a valid loop, more graph connections will have unambiguous directions because one connection can participate two valid loops at most. In such way, the correct orientation will propagate in a flood-filling way.
 
 
-\vspace{0.5em}
-\noindent \textbf{Continuous operations.}
-
-\vspace{0.5em}
-\noindent \textbf{Valid loops}
+\vspace{0.5em}\noindent There is another problem that the tess-graph may not be a connected graph. We avoid this problem by inserting fake-intersections into the tess-graph. An fake intersection links the vertex of face (on the outer connected component) with the vertex on the inner connected component. The intersection refinement has to be performed again if the fake intersections cross any other intersections. To guarantee the fake intersection has a valid PBI-rep, we require the vertex from inner connected component generated by edge-face intersection, which means it is introduced during triangle-triangle intersection test. In this way, we can find an exact plane with the fake intersection on it (Fig. x).
 
 \vspace{0.5em}
-\noindent \textbf{Parallel.}
+\noindent\textbf{Seed indicator generation}~~~~In \S\ref{sec:propagation}, we claim that our flood-filling starts from a seed vertex $v_0$. While the indicator vector of the seed $\bm{\Lambda}(v_0)$ can be generated by point-in-polyhedron test \cite{ogayar2005point} with the octree as acceleration structure \cite{frisken2002simple}, we have simpler strategies by using vertex with known indicators as the seed. We choose the `peak vertex` with the max x coordinate as the seed. In this way, $\lambda_k(v_0)$ is either $out$ ($in$, if complement is applied on mesh) or $on$. The $on$ indicators are easy to determine in most time. Though sometimes exception occur because of multi-coplanar situation, this will not happen if we carefully choose the right peak vertex whose neighbor faces are not coplanar (Fig. x).
+
+\vspace{0.5em}\noindent The indicator vectors can propagate not only among single meshes, but can also between different meshes by the vertices and edges they share. Therefore in most time, we only need one single seed vertex for classification. However, if there are lonely meshes that do not intersect with other meshes, we need to new seeds. The indicators of the second and later seeds can only be computed by point-in-polyhedron tests.
+
+%Our method of generating the first indicator vector will fail on extreme conditions when all faces in Linked halfedge are coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the high-precision face barycenter with the point-in-polyhedron test to generate the seed indicator vector instead after several failures of choosing a proper seed face.
 
 
-\vspace{0.5em}
-\noindent \textbf{Lazy intersection.}
+\iffalse
 
-
-
-\vspace{0.5em}
-\noindent \textbf{Caching Evaluation Results}
-If the CSG tree is large, with hundreds of primitive nodes, computing $\lambda_f(x)$ from $\boldsymbol{\Lambda}(x)$ for every face can be costly. Thanks to the space coherence of $\boldsymbol{\Lambda}(x)$, we can save the computation time by caching the evaluation result of Boolean operations.
-
-The basic cache strategy is to cache final result, that is, the value of $\lambda_f(x)$. We know indicator vector $\boldsymbol{\Lambda}$ will not change if there is no intersections during spreading. That means the final classification $\lambda_f(x)$ will not change, too. Thus, those faces sharing the same $\boldsymbol{\Lambda}$ can be classified as a whole.
-
-Also, we can perform intermediate results cache. We noticed that the Boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(x)$ is fixed. For example, assume we have a Boolean expression $P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(x)=out$, $\lambda_2(x)=in$, the expression can be rewritten as $out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $P_3-P_4$. This fact is important because for a large CSG, a certain primitive, denoted as $P_x$, often only intersects with a few other primitives, like, $\Theta(P_x)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_x$ has the same indicators for the primitives not in $\Theta(P_x)$. Therefore, we can first determine these fixed indicators and simplify the Boolean function, and then use simplified one to compute the final indicator for each faces in $P_x$.
+\subsection{Robustness}
 
 \vspace{0.5em}
-\noindent \textbf{Proof of Indicator Equality}
-\label{app:profind}
+\noindent\textbf{Indicator up-propagation}~~~~
+In \S\ref{sec:propagation}, we point out that up-propagation (from low dimension to high dimension, $v_e\to e$ and $e_s\to s$, etc.) can be done by using sample points. Here we give use a heuristic method to prove our claim in $e_s\to s$. Extension to $v_e\to e$ should not take much effort.
 
-Using the notation in section \ref{sec:individual}, we prove the equality of $\lambda(v_{x'}(t_i), P_j)$ and $ \lambda(v_b^2(t_i), P_j)$ under the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$.
+\vspace{0.5em}\noindent We prove $\lambda_k(v_x)=\lambda_k(v_{\delta})$ in the BSP of $e_s$'s neighborhood, where $ v_x$ is the sample point from $\bm{p}_{s, sp}^+$ and $v_{\delta}$ is from the neighborhood $U(e_s, \delta)$. If $\lambda_k(v_x) \neq on$, then
 
 Given $v_{x'}(t_i)$ can be arbitrarily close to $v_b^2(t_i)$, if $\lambda(v_b^2(t_i), P_j) = in | out$, the equality holds because of the continuity of space. If $\lambda(v_b^2(t_i), P_j) = on$, we divide the proof of equality into two parts according to the type of intersection context. If $C_{P_h \backslash P_j}$ is face neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ is a single face, say, $t_0^c$. We have already know that the other two corners $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on $s_0$. Since $\lambda(v_b^2(t_i), P_j) = on$, we know $v_b^2(t_i)$ is on $t_0^c$, too. There comes the conclusion that the whole triangle $t_i$ is coplanar with $t_0^c$. Therefore, $v_{x'}(t_i)$ is on $t_0^c$ and $\lambda(v_{x'}(t_i), P_j) = on$, too. On the other hand, if $C_{P_h \backslash P_j}$ is edge neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ are two neighboring faces (denoted as $t_1^c, t_2^c$). We know that both $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on the shared edge $e(v_{b*}^{0}(t_i), v_{b*}^{1}(t_i))$. It means both vertices are on both $t_1^c$ and $t_2^c$. Using the same deduction of the first condition, we can conclude $\lambda(v_{x'}(t_i), P_j) = on$ whenever $\lambda(v_b^2(t_i), P_j) = on$.
+
+\vspace{0.5em}
+\noindent\textbf{Proof of Robustness}
+
+\fi
+
+\subsection{Extensions}
+
+\vspace{0.5em}
+\noindent\textbf{Converting to float-point number}~~~~
+The vertices of final mesh in our method are represented in both P-reps and plain coordinates. While the vertices from the input meshes have there exact coordinates, the vertices newly introduced by intersection between meshes require round-off when converting to coordinates representation. Though we guarantee the correct topology in the result mesh, such round-off can still cause topology deficiencies such as self-intersections. Here we adopt Zhou et al.'s method \cite{zhou2016mesh} to solve it iteratively.
+
+\vspace{0.5em}
+\noindent\textbf{Incremental evaluation}~~~~While we claim in many CSGs, a non-incremental evaluation is faster by avoiding repetitive computation, one can easily find counter-examples that non-incremental evaluation contains useless intersection computation. For example, if 100 spheres densely locate in a small region, each sphere will need to intersect with other 99 spheres. However, if evaluating incrementally, we do not need computing so many intersections. Fortunately, our method can also perform incremental evaluation. For exactness and robustness, we have to deal with non-triangle input meshes in incremental evaluations and intersection vertices should not be converted to float-point.
+
+
+\vspace{0.5em}
+\noindent\textbf{Extending to polygon meshes}~~~~
+In our method, we claim the inputs are triangle meshes mainly to avoid plane fitting when converting to P-reps. However, if we assume the P-reps of non-triangle faces are exactly known, our method can be easily extend to polygon meshes.
+
+
+\vspace{0.5em}\noindent The only different part is intersection computation. The first step of M\''{o}ller's triangle-triangle intersection method is to test each edge-plane pair respectively. This idea can be transferred to polygon intersections without any change. Then we can get two plane-face intersections $Seg1$ and $Seg2$, except that in polygon cases, $Seg1$ and $Seg2$ are two sets of line segments, not single segments. And the later processes are the same.
+
+
+\vspace{0.5em}
+\noindent\textbf{Classification acceleration}~~~~If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(s_x)$ from $\boldsymbol{\Lambda}(s_x)$ for every face $s_x$ can be costly. Thanks to the indicator space coherence, we can save the computation time by caching the evaluation result $f(\boldsymbol{\Lambda}(s_x))$ during flood-filling.
+
+The basic cache strategy is to cache final result, that is, the value of $\lambda_f(s_x)$. We know indicator vector will not change if there is no intersections during propagation. That means the final classification $\lambda_f(s_x)$ will not change, too. Thus, those faces sharing the same indicator vector can be classified as a whole.
+
+Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(s_x)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(s_x)=out$, $\lambda_2(s_x)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often only intersects with a few other primitives $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
+
+\iffalse
+\vspace{0.5em}
+\noindent\textbf{Lazy intersection}~~~~
+Another way to avoid useless intersection computation is to use lazy intersection technique
+\fi
 
 \section{Experiments}
 
