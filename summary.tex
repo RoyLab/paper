@@ -323,6 +323,7 @@
 \usepackage[mathcal]{eucal}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{wrapfig}
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -378,84 +379,89 @@ boolean operations, triangle mesh, CSG evaluation, plane-based geometry
 In general, there are two major types of boolean algorithms according to how they deal with intersection between primitive meshes. Approximate methods redicretize the intersection areas, fit vertices approximatively and rearrange topology. On the other hand, exact method do not change vertex positions, retain as many input elements  (e.g., faces, vertices and topology) as possible. In many applications, exact methods are preferred for their accuracy. Also, using exact methods, the clear mapping between the surface of input and output meshes makes it easier for the inheritance of information like face colors and materials. However, for exact boolean operation methods, there is always a bargain between robustness and efficiency. Recent exact boolean operation methods try to find faster ways to compute boundaries of CSG. However, for robustness, the answers are often exact arithmetic \cite{barki2015exact,zhou2016mesh} or trivial workarounds, like setting a tolerance \cite{feito2013fast,segal1990using} or rotating the primitive with small angles to avoid coplanar cases \cite{douze2015quickcsg}. However, none of the solution is good enough. While methods using exact arithmetic are significantly slower, workarounds are often case dependent and not reliable for complex CSGs.
 
 
-We develop an unconditionally robust and exact boolean operation method for triangle meshes without using exact arithmetic. The robustness of our method is based on the observations by Sugihara and Iri \cite{sugihara1990solid} that boolean operations can be performed requiring geometry constructions if representations are based on planes. This idea of using plane-based representation (P-rep) has been developed by Berstein and Fussell \cite{bernstein2009fast} by combining it with binary search partition (BSP) techniques \cite{naylor1990merging,thibault1987set}. Later, Campen et. al. \cite{campen2010exact} improved the method using octrees to resolve intersections locally, avoiding inefficient large BSP tree construction. Despite of that, Campen et. al.'s method still suffers from performance problem because of the complex conversions among B-reps, P-reps and BSP representations. Also, the incoherence between BSP representation, where boolean operations actually happens, and B-reps, which are input and output meshes, requires extra steps to connect the reconstructed intersection areas with the untouched meshes, leading to extra computation burden and complex topology.
+We develop an unconditionally robust and exact boolean operation method for triangle meshes without using exact arithmetic. The robustness of our method is based on the observations by Sugihara and Iri \cite{sugihara1990solid} that boolean operations can be performed without geometry constructions if representations are based on planes. This idea of using plane-based representation (P-rep) has been developed by Berstein and Fussell \cite{bernstein2009fast} by combining it with binary search partition (BSP) techniques \cite{naylor1990merging,thibault1987set}. Later, Campen et. al. \cite{campen2010exact} improved the method using octrees to resolve intersections locally, avoiding inefficient large BSP tree construction. Despite of that, Campen et. al.'s method still suffers from performance problem because of the complex conversions among B-reps, P-reps and BSP representations. Also, the incoherence between BSP representation, where boolean operations actually happens, and B-reps, which are input and output meshes, requires extra steps to connect the reconstructed intersection areas with the unchanged areas, leading to extra computation burden and complex topology.
 
-We develop a boolean operation method based on B-reps of meshes with geometry connectivity (e.g., halfedge). We further embed P-rep of faces into the B-rep, forming a hybrid representation, which allows us to take the advantage of both representations. This hybrid representation is fast that requires only one-time conversion to the P-rep in intersection areas of meshes.
+We develop a boolean operation method based on B-reps of meshes with geometry connectivity (e.g., halfedge \cite{mcguire2000half}). Additionally, we embed P-rep of faces into the B-rep, forming a hybrid representation, which allows us to take the advantage of both representations for robustness and efficiency. This hybrid representation requires only one-time conversion from B-rep to P-rep in intersection areas of meshes.
 %that allows us to take advantage of geometry connectivity for classification acceleration \cite{feito2013fast,ogayar2015deferred,updegrove2016boolean}, which is hard for BSP-based methods.
-In addition, our method can perform boolean operations with more than two primitives in one call, instead of recursively doing incremental boolean operations. Despite of extra complexity, non-incremental boolean operation may save much computation time by avoiding repetitive computation. The major difficulty of embed P-rep into B-rep is caused by the incoherence between the two representations. Many geometry operations (e.g., coordinates projection and compute the barycenter coordinate of triangle) available on B-reps can be very complex and thus inefficient under P-rep. On the contrary, all computations have to be performed under P-rep for exactness and robustness. Therefore, we manage to constrain our computation to several basic plane-based geometry predicates. The experiment shows that our method is much faster than exact, robust methods, while only about two to three times slower than the state-of-art non-robust method \cite{douze2015quickcsg}.
+Moreover, our method can perform boolean operations with more than two primitives in one call, instead of recursively doing incremental boolean operations. Despite of extra complexity, non-incremental boolean operation may save much computation time by avoiding repetitive computation. The major difficulty of embedding P-rep into B-rep is the incoherence between the two representations. Many geometry operations (e.g., coordinates projection and compute the barycenter coordinate of triangle) available on B-rep can be very complex and thus inefficient on P-rep. On the contrary, all geometry predicates have to be performed under P-rep for exactness and robustness. We solve this problem by various methods to constrain the computation within plane-based geometry predicates. The experiments show that our method is much faster than existing robust exact methods, while only about two to three times slower than the state-of-art non-robust exact methods.
 
 
 
 \section{Related Work}
 
-Boolean operations have been researched for over three decades since it inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. Previous work of boolean operations can be classified into two categories: exact and approximate methods. Exact methods retain vertex positions. And the topology of the input meshes is also preserved as much as possible. The coordinates of intersection points between input meshes are computed by input configurations to construct the topology around intersection. However, the coordinates cannot be represented exactly using fix-precision float-point numbers and the robustness is often a problem. However, using exact arithmetic is too expensive in computing. Therefore, exact methods face the problem of the balance between performance and robustness. On the other hand, approximate methods rediscretize the input mesh surfaces using techniques such as voxels, octrees and Layered Depth Images and can reach better performance and robustness.
+Boolean operations have been researched for over three decades since it inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. Previous works of boolean operations can be classified into two categories: exact methods and approximate methods. Exact methods retain vertex positions. Also the topology of the input meshes is preserved as much as possible. The coordinates of intersection points between input meshes are computed by input configurations to construct the topology around intersection. However, the coordinates cannot be represented exactly using fix-precision float-point numbers and the robustness is always a problem. On the other hand, approximate methods rediscretize the input mesh surfaces using techniques such as voxels, octrees and Layered Depth Images. They can reach better performance and robustness, but loss of geometry information and precision is inevitable.
 
 \subsection{Exact Methods}
 
+\iffalse
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{coplanarexample}
 \caption{{\color{red}{Sketch: the example of coplanar cases in a boolean operations with four cylinders}}}
 \label{fig:coplanarexample}
 \end{figure}
+\fi
+
+For exact methods, some \cite{ogayar2015deferred,douze2015quickcsg,zhou2016mesh,xu2013fast,feito2013fast} pursues efficiency but cannot guarantee robustness in degenerate cases. Most of them are implemented by fix-precision float-point arithmetic and numerical errors are inevitable. Douze et al. \cite{douze2015quickcsg} implemented very efficient method that can handle very large meshes. Also, they can perform non-incremental boolean operations: evaluating the final result mesh of CSG all at once instead of decomposing the CSG into a series of incremental boolean operations. However, their method can neither deal with coplanar cases nor guarantee accuracy of topology. In fact, large CSGs are more complex and more likely to contain degenerate cases, and more vulnerable under numerical errors. Efficiency only is far from being practical. 
+%Also, coplanar cases can regularly happens for man-made artifact modeling (Fig. \ref{fig:coplanarexample}) and should not be treated as exceptions for boolean operation methods.
 
 
-For exact methods, some \cite{ogayar2015deferred,douze2015quickcsg,zhou2016mesh,xu2013fast,feito2013fast} pursues efficiency but cannot guarantee robustness in degenerate cases such as coplanar conditions. Most of them are implemented by fix-precision float-point arithmetic and round errors accumulation is inevitable. Douze et al. \cite{douze2015quickcsg} implemented very efficient boolean operations that can handle very large meshes. Also, their method is able to perform non-incremental boolean operations: evaluating the final result mesh of CSG all at once instead of decomposing the CSG into a series of incremental boolean operations. However, their method can neither deal with coplanar cases nor guarantee accuracy for common situations. On the contrary, CSGs with large number of faces contain are more complex and more likely to contain degenerate cases. Also, coplanar cases can regularly happens for man-made artifact modeling (Fig. \ref{fig:coplanarexample}) and should not be treated as exceptions for boolean operation methods.
-
-
-Many researchers have attempted to solve robustness issue for exact boolean operations using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. These methods are often too expensive in computation time and memory to be practical for CSG with massive faces. For example,
-the current standard of robust exact boolean operations method is CGAL's \cite{cgal:hk-bonp3-15a} exact-arithmetic implementation \cite{granados2003boolean} of Nef polyhedra \cite{bieri1988elementary}. It requires conversions between Nef polyhedra and input mesh data structures during evaluation and is more than 50 times slower than non-robust booleans \cite{bernstein2009fast}.
+Many researchers have attempted to solve robustness issue for exact boolean operations using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. However, these methods are too expensive in computation time and memory to be practical for CSGs with massive faces. For example, the current standard of robust exact boolean operations method is CGAL's \cite{cgal:hk-bonp3-15a} exact-arithmetic implementation \cite{granados2003boolean} of Nef polyhedra \cite{bieri1988elementary}. It requires conversions between Nef polyhedra and input mesh data structures during evaluation and is more than 50 times slower than non-robust booleans \cite{bernstein2009fast}.
 
 
 \subsection{Approximative Methods}
 
-Since efficiency, accuracy and robustness seem unable to be obtained at the same time, starting from \cite{museth2002level}, some sacrifice accuracy for better efficiency and robustness. Most of such methods are based on conversion to volumetric representations. However, the quality of result mesh depends on the resolution of the volume grid and better quality requires higher resolution. To accelerate this process, some try to reduce the complexity of the output mesh \cite{varadhan2004topology} and others try to preserve non-intersected areas of the input mesh to avoid redundant tessellation \cite{pavic2010hybrid,wang2011approximate,zhao2011parallel,hable2005blister,ogayar2006gpu}. Also, with the development of general-purpose computing on graphics processing units, many of them utilize the grand computation power of graphics hardware for boolean operations. These methods often have good performance and are suitable for interactive applications. However, the fundamental problem of approximate methods is owing to grid-depend nature of volumetric calculations: they inevitably suffers from geometric detail loss and unwieldy topology changes.
+Since efficiency, accuracy and robustness are hard to be satisfied at the same time, starting from \cite{museth2002level}, some sacrifice accuracy for better efficiency and robustness. Most of such methods are based on conversion to volumetric representations. However, the quality of result mesh depends on the resolution of the volume grid and better quality requires dramatically higher resolution. To accelerate this process, some try to reduce the complexity of the output mesh \cite{varadhan2004topology} and others try to preserve non-intersected areas of the input mesh to avoid redundant tessellation \cite{pavic2010hybrid,wang2011approximate,zhao2011parallel,hable2005blister,ogayar2006gpu}. Also, with the development of general-purpose computing on graphics processing units (GPGPU), many of them utilize the grand computation power of graphics hardware for boolean operations. These methods often have good performance and are suitable for interactive applications. However, the fundamental problem of approximate methods is owing to grid-depend nature of volumetric calculations: they inevitably suffers from geometric detail loss and unwieldy topology changes.
 
 
 \subsection{Plane-Based Methods}
 \label{sec:pbrelated}
 
-The concept of P-rep of polygonal meshes was first described by Sugihara and Iri \cite{sugihara1990solid}. Such representation provides important advantage that for boolean operations, no new primary geometry information has to be constructed to obtain the result polyhedron---it is composed of a subset of the planes of the input polyhedra. Berstein and Fussell \cite{bernstein2009fast} combined the P-rep with binary space partitioning (BSP) \cite{thibault1987set,naylor1990merging} to develop an unconditionally robust boolean operation method. Compared to volume-grid based methods, their BSP-based method increases mesh complexity more moderately and the input topology can be reconstructed better. However, it requires conversions between input data structures and P-rep which are inefficient from both storage and time views. Also, the merge of two BSP trees is an $O(mn)$ time complexity process, where $m$ and $n$ are the size of the trees. It makes this method impractical for very large input meshes. Campen and Kobbelt \cite{campen2010exact} improved their method by localization using an octree. And the refinement only takes place locally near intersections.
+The concept of plane-based representation of polygonal meshes was first described by Sugihara and Iri \cite{sugihara1990solid}. P-rep provides important advantage that for boolean operations, no new primary geometry information has to be constructed to obtain the result polyhedron---it is composed of a subset of the planes of the input polyhedra. Berstein and Fussell \cite{bernstein2009fast} combined the P-rep with binary space partitioning (BSP) \cite{thibault1987set,naylor1990merging} to develop an unconditionally robust boolean operation method. Compared to volume-grid based methods, their BSP-based method increases mesh complexity more moderately and the input topology can be reconstructed better. However, it requires conversions between input data structures and P-rep which are inefficient from both storage and time views. Also, the merge of two BSP trees is an $O(mn)$ time complexity process, where $m$ and $n$ are the size of the trees. It makes this method impractical for very large input meshes. Campen and Kobbelt \cite{campen2010exact} improved their method by localization using an octree. And the refinement only takes place locally near intersections.
 
 
-\section{Motivation and Overview}
+\section{Background and Overview}
 
 \label{sec:overview}
-Our method is designed for boolean operations on arbitrary number of triangle meshes. Input mesh primitives are required to be watertight and not self-intersecting, with manifold surface, represented by wide-used halfedges \cite{mcguire2000half}. Despite of so many constraints, our method is not sensitive to topology deficiencies and works well if deficiencies are not near the intersection areas between meshes.
+Our method is designed for boolean operations on arbitrary number of regular triangle meshes \cite{requicha1985boolean}. Input meshes are required to be without self-intersecting, represented with B-reps with geometry connectivity (e.g., halfedge, winged-edge, etc.). Despite of these requirements, our method is not sensitive to topology deficiencies like holes and self-intersections and works correctly deficiencies are not near the intersection areas between meshes.
 
 
-\subsection{Background \& Motiviation}
+\subsection{Background}
 \label{sec:paradigm}
 
-The boolean operation of triangle meshes is in essence a process of selection. In other words, given a boolean function, it reserves those primitive faces that pass the function and drop the others to generate the final mesh. Unfortunately, for B-reps primitives such as triangle mesh, not all the facets from the input primitives can be classified as a whole, since some of them intersect other primitives. Therefore, we need an extra step aiming at detecting the intersection between primitives and performing tessellation. Most of the boolean operation methods follow this two-step paradigm, which consists of intersection computation and face classification. So is our method.
+The boolean operation of triangle meshes is in essence a process of face selection. Namely, given a boolean function, it reserves those primitive faces that pass the function and drop the others to generate the final mesh. Unfortunately, for B-rep meshes, not all the input faces can be classified as a whole, since only part of the faces belong to the final mesh. Therefore, we need an extra step aiming at detecting intersections between meshes and performing tessellation. Most of the boolean operation methods follow this two-step paradigm, which consists of intersection computation and face classification. So is our method.
 
-During the intersection computation, primitive facets are tested in pairs to compute their intersections. Each input meshes are tessellated according to the intersection results, making every face be either inside, outside or on the boundary of other primitives. The retessellated meshes are what we called \emph{non-intersected meshes}. Unfortunately, under fix-precision float-point arithmetic, intersection test is error-prone for two causes: first, there are a large amount of degenerate cases which are hard to be precisely classified; second, when there are intersections, new vertices are introduced into the geometry, whose coordinates cannot be exactly represented by float-point numbers.
+During the intersection computation, input faces are tested in pairs to compute their intersections. Each input meshes are tessellated according to the intersection results, making every face be either inside, outside or on the boundary of other primitives. The tessellated meshes are what we called \emph{intersection-free meshes}. Unfortunately, under fix-precision float-point arithmetic, intersection tests are error-prone: first, degenerate cases of intersection are hard to detect; second, when there are intersections, new vertices are introduced into the geometry, whose coordinates cannot be exactly represented by fix-precision float-point numbers.
 
-The second step, face classification, is to evaluate whether a given face $x$ belongs to the final geometry according to the n-primitive boolean function $f$ :
+During face classification, we evaluate whether a given face $s$ belongs to the final geometry according to the n-primitive boolean function $f$ :
 \begin{equation}
-\lambda_f(x) = f(\boldsymbol{\Lambda}(x)) = f(\lambda_1(x), \lambda_2(x), \cdots, \lambda_n(x)).
+\lambda_f(s) = f(\boldsymbol{\Lambda}(s)) = f(\lambda_1(s), \lambda_2(s), \cdots, \lambda_n(s)).
 \end{equation}
-The parameter $\lambda_i(x)$ is space indicator with respect to primitive $P_i$. To classify a single face $x$, one has to know the space indicators with respect to all the primitives (or their vector representation $\boldsymbol{\Lambda}(x)$). A space indicator has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normals (\emph{same}) or opposite normals (\emph{oppo}). The rules of Boolean function evaluation by these indicators are described in \cite{douze2015quickcsg,feito2013fast}.
+The parameter $\lambda_i(s)$ is space indicator with respect to mesh $P_i$. To compute $\lambda_f(s)$ and classify $s$, one has to know the space indicators with respect to all the primitives (denoted as $\boldsymbol{\Lambda}(s)$). A space indicator has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normals (\emph{same}) or opposite normals (\emph{oppo}). The rules of boolean function evaluation are described in \cite{douze2015quickcsg,feito2013fast}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{falseclass}
-\caption{{\color{red}{Sketch: False classification}}}
+\caption{In a 2D view, face $s$ is on the surface of mesh $P$. However, because we use barycenter $v_c(s)$ to compute the indicator  and the coordinates of $v_c(s)$ contain round-off error, we might falsely classify $s$ as outside of $P$.}
 \label{fig:falseclass}
 \end{figure}
 
-Face classification also suffers from robustness and exactness problems. Many methods classify face according to the indicators of its barycenter, which can be computed by point-in-polyhedron test \cite{feito2013fast,campen2010exact}. However, coordinates of barycenters cannot be exactly represented and have the potential to generate false classification (Fig. \ref{fig:falseclass}). In addition, for the large amount of faces and input meshes, many methods take the benefits of the local coherence of indicators, classifying neighboring faces together \cite{pavic2010hybrid,feito2013fast,ogayar2015deferred,zhou2016mesh}. While this does improve the performance, it can make the robustness problem worse because the false classification may be propagated to neighboring faces.
+Face classification also suffers from robustness problems. Many methods classify face according to the indicators of its barycenter, which can be computed by point-in-polyhedron test \cite{feito2013fast,campen2010exact}. However, coordinates of barycenters cannot be exactly represented and could generate false classification (Fig. \ref{fig:falseclass}). In addition, for the large amount of faces and input meshes, many methods take the benefits of the local coherence of indicators, classifying neighboring faces together \cite{pavic2010hybrid,feito2013fast,ogayar2015deferred,zhou2016mesh}. Despite of the performance improvement, it can make the robustness problem worse because the false classification may propagate to neighboring faces.
 
-We want to develop an exact boolean operation method based on the two-step paradigm, being unconditional robust and as fast as possible. Considering the analysis above, we think our method have to include the following features:
+We develop an exact boolean operation method based on the two-step paradigm, being unconditional robust and as fast as possible. 
+\iffalse
+Our method includes the following features:
 \begin{itemize}
     \item Intersection computation has to avoid errors when introducing new vertices into meshes.
     \item All degenerate cases of intersection between input meshes have to be well resolved.
     \item Face classification has to be exact and robust.
     \item Acceleration using geometry connectivity is necessary for face classification.
 \end{itemize}
+\fi
+For efficiency, the robustness of method does not rely on arbitrary precision arithmetic. Instead, we apply the plane-based techniques from BSP-based method \cite{campen2010exact}. However, BSP structure does not support geometry connectivity query in nature, which is essential for classification acceleration. Also, we do not want complex conversions between different representations. Therefore, our method is based on B-rep and we embed P-rep into intersection areas to guarantee the robust geometry computations.
 
-For efficiency, the exactness and robustness should not rely on arbitrary precision arithmetic. Instead, we choose the plane-based techniques from \cite{campen2010exact}. However, as we discussed in section \ref{sec:pbrelated}, BSP structure does not support geometry connectivity query in nature, and we do not want fussy conversions between different representations. Therefore, we use halfedge instead as our major data structure and embed P-rep into it.
 
+\iffalse
 \subsection{Intersection-Free Hybrid Mesh}
 
 \begin{figure}[t]
@@ -465,14 +471,13 @@ For efficiency, the exactness and robustness should not rely on arbitrary precis
 \label{fig:linkedhalfedge}
 \end{figure}
 
-\iffalse
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=7.1in]{flowchart}
 \caption{{\color{red}{Sketch: overview, will be replaced}}}
 \label{fig:overview}
 \end{figure*}
-\fi
+
 
 \label{sec:meshes}
 We made an observation that the non-intersected meshes, as intermediate result of intersection computation, plays an important role of boolean operations. It is a bridge that controls the complexity of intersection computation and facilitates face classification. After the data structure of non-intersected meshes is determined, all things left are how to construct this structure and how to classify according to it.
@@ -481,7 +486,7 @@ Our non-intersected mesh, called Linked Halfedge (Fig. \ref{fig:linkedhalfedge})
 
 However, naive halfedge is far from enough. The vertex coordinates in halfedge are usually represented by float point number, which cannot exactly represent the newly introduced intersection points. Therefore, we utilize P-rep to avoid computing new coordinates. In addition, we detect all coincident vertices among input meshes (including intersection vertices). This information is used for avoiding repetitive vertices in the final mesh, reconstructing geometry connectivity, and ensuring the topology correctness.
 
-Enlightened by Feito et. al. \cite{feito2013fast}, we found that the the topology near intersection lines between faces can benefit point-in-polyhedron test by dramatically reducing the number of faces needing traversing. Therefore, we add what we call \emph{intersection context} into the our non-intersected meshes to facilitate afterwards face classification. Intersection context identifies where an intersection lies on the surface of the related primitives. An edge of Linked Halfedge stores intersection context only if it is coincident with a certain intersection line segment between primitives. We will give the definition and usage of intersection context in details in section \ref{sec:ir}.
+Enlightened by Feito et. al. \cite{feito2013fast}, we found that the the topology near intersection lines between faces can benefit point-in-polyhedron test by dramatically reducing the number of faces needing traversing. Therefore, we add what we call \emph{intersection context} into the our non-intersected meshes to facilitate afterwards face classification. Intersection context identifies where an intersection lies on the surface of the related primitives. An edge of Linked Halfedge stores intersection context only if it is coincident with a certain intersection line segment between primitives. We will give the definition and usage of intersection context in details in \S\ref{sec:ir}.
 
 To give an overall impression of Linked Halfedge, we summarize the above content and highlight the features of Linked Halfedge as follows:
 
@@ -491,43 +496,60 @@ To give an overall impression of Linked Halfedge, we summarize the above content
   \item If a certain edge of Linked Halfedge is coincident with intersection line segment(s), it should be associated with the corresponding intersection context(s).
 \end{itemize}
 
-
+\fi
 \subsection{Method Overview}
 
-
-As illustrated in Fig. \ref{fig:overview}, we divide our methods into four steps as follows.
+There are generally four stages for our boolean method. The first three stages are to compute intersection, which can be seen as pre-processing, processing and post-processing. After that, the input meshes are tessellated into intersection-free meshes with hybrid representations. The last step is to classify each face and get the final result mesh of boolean operations.
 
 \subsubsection{Space division}
 
-This step is the preparation of intersection detection. As intersection detection is performed between each pair of faces, localization is necessary to filter invalid pairs beforehand. In general, any space division data structure can be applied in this step. We use the adaptive octree for its simplicity. Our implementation is akin to the implementation in \cite{ogayar2015deferred}. Intersection between triangle faces and octree leaves can be efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{normal cell}. Otherwise, it is a \emph{critical cell}, within which the following intersection detection is performed.
 
-The difference between our space division and Ogayar et al.'s is that we do not subdivide any normal cell no matter how many faces it contains. This is because subdividing normal cells benefits only the ray-casting point-in-polyhedron test  \cite{frisken2002simple}, which seldom uses in our method. This simplification can save much computing time, especially when intersections between primitives are not complex and located in small regions (e.g. Fig. \ref{fig:models}(x)).
+\begin{wrapfigure}{r}[0in]{0in}
+\includegraphics[width=1.2in]{octreediff}
+\end{wrapfigure}
 
-\subsubsection{Intersection detection}
+As intersection detection is performed between each pair of faces, localization is necessary to filter invalid pairs beforehand. Many space division methods can be used in this step. We use the adaptive octree for its simplicity and efficiency. Our implementation is akin to the implementation in Ogayar et al.'s method \cite{ogayar2015deferred}. Intersection between triangle faces and octree leaves are efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{normal cell}. Otherwise, it is a \emph{critical cell}, within which the following intersection computation is performed.
 
-This step is to detect intersections between primitives in a robust and exact way. Our algorithm is largely based on vertex-based M\"{o}ller's algorithm \cite{moller1997fast}, which is very efficient to compute intersection between two triangles. However, naive implementation of M\"{o}ller's algorithm always incurs robustness issues. To avoid an unexpected failure caused by numeric errors, we integrate P-rep of polyhedra into M\"{o}ller's algorithm. All intersection vertices are represented using plane intersections to avoid geometry constructions. Also, we carefully identify all degenerate cases of triangle intersections, including point intersection, line intersection and coplanar intersection, and respectively discuss how to deal with each of them. Details are provided in Section \ref{section:isect}.
+
+The difference between our octree and Ogayar et al.'s is that we do not subdivide any normal cell no matter how many faces it contains. This is because subdividing normal cells benefits only the point-in-polyhedron test  \cite{frisken2002simple}, which seldom uses in our method. This simplification can save much computing time, especially when intersections between primitives are not complex and located in small regions.
+
+
+
+\subsubsection{Triangle-triangle intersection}
+
+Our triangle-triangle intersection test is largely based on M\"{o}ller's algorithm \cite{moller1997fast}, which is very efficient to compute intersection between two triangles. However, naive implementation of M\"{o}ller's algorithm using vertex-based geometry brings numerical errors. Therefore, we integrate P-rep into M\"{o}ller's algorithm. All intersection points and line segments are represented using plane intersections to avoid explicitly computing the coordinates. Also, we carefully deal with degenerate cases of triangle intersections, including point intersection, edge intersection and coplanar situation. Details are provided in \S\ref{section:isect}.
 
 \subsubsection{Tessellation}
 
-Once all intersections are detected, we need to tessellate the input primitives and construct the Linked Halfedges. In many methods like \cite{ogayar2015deferred}, constraint Delaunay triangulation (CDT) is applied to perform tessellation, since the intersections are naturally the constraints of CDT. However, for a CSG with more than two primitives, the intersection vertices may be generated by intersections of three faces from different primitives, which cannot be computed during by triangle-triangle intersections in the previous step. Intersection line segments may overlap or intersect with each other, and cannot be used for constraints of CDT directly. In addition, as our intersection vertices are represented exactly by planes, implementation of CDT are complex and inefficient, as most CDT methods were not designed to handle planes and requires explicit coordinates. Therefore, we design a structure suited for P-rep, called \emph{Tess-graph}, to guide the tessellation of each single face, and develop a very fast but exact method to construct Linked Halfedges from Tess-graphs. Details are shown in section \ref{sec:tessellation}.
-
-\subsubsection{Face classification}
-
-This step is to choose faces from the Linked Halfedges to generate the final mesh. Literally computing all the space indicators of each face is unacceptably slow for large CSG trees. We utilize the geometry connectivity to accelerate this process. This is based on the observation that indicators of faces are locally coherent. Many method uses barycenters of faces together with point-in-polyhedra test for face classification, which is not exact nor robust with fix-precision float-point coordinates. Douze et al. \cite{douze2015quickcsg} classifies faces using space indicators of vertices, but failed to deal with coplanar conditions because of coplanar leads to ambiguity in such configurations. Different from all above, we classify faces based on the classification results of exactly represented vertices, including input vertices and newly introduced intersection vertices, and carefully deal with coplanar conditions to ensure topology consistency. Details will be shown in section \ref{sec:classification}.
-
-
-\section{Plane-based Geometry}
+Once all intersections between triangles are detected, we need to tessellate the input meshes and construct the intersection-free meshes. In many methods like \cite{ogayar2015deferred}, constraint Delaunay triangulation (CDT) is applied to perform tessellation. However, for a CSG with more than two meshes, intersections may overlap or intersect with each other, and cannot be used for constraints of CDT directly. In addition, as our intersections are represented by planes, implementation of CDT are complex and inefficient, as most CDT algorithms (e.g. \cite{chew1989constrained}, \cite{de1992line}) is not designed to handle planes and requires explicit coordinates. Therefore, we first perform intersection refinement to resolve intersecting intersections. After that, we construct a graph-like structure suitable for P-rep intersections, called \emph{tess-graph}, to guide the exact tessellation of each face. After all faces are tessellated, we get our intersection-free hybrid meshes, where 'hybrid' means the meshes are represented by both B-rep and P-rep. Details are shown in \S\ref{sec:tessellation}.
 
 \begin{figure}
   \centering
   % Requires \usepackage{graphicx}
-  \includegraphics[width=1.7in]{p-reps}\\
-  \caption{P-rep of triangles. The yellow triangle is represented by three bounding planes (green) and the supporting plane where the triangle lies.}\label{fig:p-reps}
+  \includegraphics[width=1.7in]{sgen}\\
+  \caption{Triangle-triangle intersections made by different triangle pairs may (a) overlap or (b) intersect with each other. (c) Such situation introduces extra vertex which is intersection of triangles from three different meshes.}\label{fig:p-reps}
 \end{figure}
 
-As we discussed in Section \ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if P-rep is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations. As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates techniques to gain much performance while keeping exactness. For efficiency, we implement the predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
+\subsubsection{Face classification}
 
-As illustrated in Fig. \ref{fig:p-reps}, using P-rep, each face $f$ with $n$ edges is represented by a supporting plane $\bm{p}_{f,s}$, where the face lies, and a list bounding planes $\{\bm{p}_{f,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_f^i$ is represented by intersection $\bm{p}_{f,s} \cap \bm{p}_{f,b}^i$. Corner vertex $\bm{v}_f^i$ is represented by intersection $\bm{p}_{f,s} \cap \bm{p}_{f,b}^i \cap \bm{p}_{f,b}^{{(i+1)}\bmod{n}}$.
+This step is to choose faces from the intersection-free meshes to generate the final mesh. However, literally computing all the space indicators of each face is unacceptably slow for large CSG mesh. We utilize the geometry connectivity to propagate indicators in a flood-filling way, which is based on the spatial coherence of face indicators. In addition, many methods use barycenters of faces together with point-in-polyhedra test for face classification, which is not exact nor robust with fix-precision float-point arithmetics. Douze et al. \cite{douze2015quickcsg} classifies faces using space indicators of vertices, but failed to deal with coplanar conditions because of coplanar leads to ambiguity of $same$ and $oppo$ in such configurations. Different from them, we classify faces based on the classification results of exactly represented vertices, including input vertices and newly introduced intersection vertices, and carefully deal with coplanar conditions to ensure topology consistency. Details will be shown in \S\ref{sec:classification}.
+
+
+\section{Plane-based Geometry}
+
+
+
+As we discussed in \S\ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if P-rep is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations. As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates techniques to gain much performance while keeping exactness. For efficiency, we implement the predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
+
+
+
+\begin{wrapfigure}{r}[0in]{0in}
+\includegraphics[width=1.4in]{p-reps}
+\end{wrapfigure}
+
+Using P-rep, each face $f$ with $n$ edges is represented by a supporting plane $\bm{p}_{f,s}$, where the face lies, and a list bounding planes $\{\bm{p}_{f,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_f^i$ is represented by intersection $\bm{p}_{f,s} \cap \bm{p}_{f,b}^i$. Corner vertex $\bm{v}_f^i$ is represented by intersection $\bm{p}_{f,s} \cap \bm{p}_{f,b}^i \cap \bm{p}_{f,b}^{{(i+1)}\bmod{n}}$.
+
+
 
 We also introduce some commonly used notations for better presentation in the rest of paper. A plane $\bm{p}$ can be represented by four scalar coefficients $a(\bm{p}), b(\bm{p}), c(\bm{p}), d(\bm{p})$. The normal of $\bm{p}$ is denoted as $\bm{n}(\bm{p})$, which is a normalized vector consisting of the first three plane coefficients. A line $\bm{l}$ can be represented by intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, or in short, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$. A point $\bm{v}$ can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, or in short, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
 
