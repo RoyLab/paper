@@ -402,7 +402,7 @@ Boolean operations have been researched for over three decades since it inceptio
 \end{figure}
 \fi
 
-For exact methods, some \cite{ogayar2015deferred,douze2015quickcsg,zhou2016mesh,xu2013fast,feito2013fast} pursues efficiency but cannot guarantee robustness in degenerate cases. Most of them are implemented by fix-precision float-point arithmetic and numerical errors are inevitable. Douze et al. \cite{douze2015quickcsg} implemented very efficient method that can handle very large meshes. Also, they can perform non-incremental boolean operations: evaluating the final result mesh of CSG all at once instead of decomposing the CSG into a series of incremental boolean operations. However, their method can neither deal with coplanar cases nor guarantee accuracy of topology. In fact, large CSGs are more complex and more likely to contain degenerate cases, and more vulnerable under numerical errors. Efficiency only is far from being practical. 
+For exact methods, some \cite{ogayar2015deferred,douze2015quickcsg,zhou2016mesh,xu2013fast,feito2013fast} pursues efficiency but cannot guarantee robustness in degenerate cases. Most of them are implemented by fix-precision float-point arithmetic and numerical errors are inevitable. Douze et al. \cite{douze2015quickcsg} implemented very efficient method that can handle very large meshes. Also, they can perform non-incremental boolean operations: evaluating the final result mesh of CSG all at once instead of decomposing the CSG into a series of incremental boolean operations. However, their method can neither deal with coplanar cases nor guarantee accuracy of topology. In fact, large CSGs are more complex and more likely to contain degenerate cases, and more vulnerable under numerical errors. Efficiency only is far from being practical.
 %Also, coplanar cases can regularly happens for man-made artifact modeling (Fig. \ref{fig:coplanarexample}) and should not be treated as exceptions for boolean operation methods.
 
 
@@ -448,7 +448,7 @@ The parameter $\lambda_i(s)$ is space indicator with respect to mesh $P_i$. To c
 
 Face classification also suffers from robustness problems. Many methods classify face according to the indicators of its barycenter, which can be computed by point-in-polyhedron test \cite{feito2013fast,campen2010exact}. However, coordinates of barycenters cannot be exactly represented and could generate false classification (Fig. \ref{fig:falseclass}). In addition, for the large amount of faces and input meshes, many methods take the benefits of the local coherence of indicators, classifying neighboring faces together \cite{pavic2010hybrid,feito2013fast,ogayar2015deferred,zhou2016mesh}. Despite of the performance improvement, it can make the robustness problem worse because the false classification may propagate to neighboring faces.
 
-We develop an exact boolean operation method based on the two-step paradigm, being unconditional robust and as fast as possible. 
+We develop an exact boolean operation method based on the two-step paradigm, being unconditional robust and as fast as possible.
 \iffalse
 Our method includes the following features:
 \begin{itemize}
@@ -537,35 +537,35 @@ This step is to choose faces from the intersection-free meshes to generate the f
 
 \section{Plane-based Geometry}
 
-
-
-As we discussed in \S\ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if P-rep is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations. As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates techniques to gain much performance while keeping exactness. For efficiency, we implement the predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
-
+%As we discussed in \S\ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if P-rep is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations. 
 
 
 \begin{wrapfigure}{r}[0in]{0in}
-\includegraphics[width=1.4in]{p-reps}
+\includegraphics[width=1.2in]{p-reps}
+%\caption{Plane-based representation of triangle}
 \end{wrapfigure}
 
-Using P-rep, each face $f$ with $n$ edges is represented by a supporting plane $\bm{p}_{f,s}$, where the face lies, and a list bounding planes $\{\bm{p}_{f,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_f^i$ is represented by intersection $\bm{p}_{f,s} \cap \bm{p}_{f,b}^i$. Corner vertex $\bm{v}_f^i$ is represented by intersection $\bm{p}_{f,s} \cap \bm{p}_{f,b}^i \cap \bm{p}_{f,b}^{{(i+1)}\bmod{n}}$.
+Using Plane-based representation, each face $s$ with $n$ edges is represented by a supporting plane $\bm{p}_{s,sp}$, where the face lies, and a list bounding planes $\{\bm{p}_{s,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_s^i$ is represented by intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i$. Corner vertex $\bm{v}_s^i$ is represented by intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i \cap \bm{p}_{s,b}^{{(i+1)}\bmod{n}}$.
 
 
+Other commonly used notations in this paper are presented here. A plane $\bm{p}$ can be represented by four scalar coefficients $a(\bm{p}), b(\bm{p}), c(\bm{p}), d(\bm{p})$. The normal of $\bm{p}$ is denoted as $\bm{n}(\bm{p})$, which is a normalized vector consisting of the first three plane coefficients. A line $\bm{l}$ can be represented by intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, or in short, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$. A point $\bm{v}$ can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, or in short, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
 
-We also introduce some commonly used notations for better presentation in the rest of paper. A plane $\bm{p}$ can be represented by four scalar coefficients $a(\bm{p}), b(\bm{p}), c(\bm{p}), d(\bm{p})$. The normal of $\bm{p}$ is denoted as $\bm{n}(\bm{p})$, which is a normalized vector consisting of the first three plane coefficients. A line $\bm{l}$ can be represented by intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, or in short, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$. A point $\bm{v}$ can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, or in short, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
+
+As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates to improve performance. For efficiency, we implement all geometry predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
 
 
 \subsection{Conversion}
 
 \label{sec:convert}
 
-We use Campen et al.'s method \cite{campen2010exact} for exact conversion of triangles (represented by three vertices) from vertex-based representation to P-rep. Given that the input vertex coordinate has $L$-bit precision including sign, the precisions of the four plane coefficients are $L_a, L_b, L_c, L_d$, which have to meet the following requirements:
+We use Campen et al.'s method \cite{campen2010exact} for exact conversion of triangles from their vertex-based representation to plane-based representation. Given that the input vertex coordinate has $L$-bit precision including sign, the precisions of the four plane coefficients are $L_a, L_b, L_c, L_d$, which have to satisfy the following requirements:
 \begin{equation}
 \begin{split}
 &L_a=L_b=L_c\ge 2(K-1)+1+1,\\
 &L_d\ge(L_a-1)+(L-1)+2+1.
 \end{split}
 \end{equation}
-Here $K$ is the maximum bits required to represent edge vector components in input meshes. If we use $M$ bits to store each plane coefficient, basically $M$ has to be greater than $L_d$. In our implementation, we actually use a more strong constraint $M \ge L_d+1$. Under this constraint, given a $L$-bit vertex $\bm{v_i}$, we can compute the orientation of plane $p_j$ with respect to $\bm{v_i}$ by the sign $\bm{n}(\bm{p_j})\cdot\bm{v_i} + d(\bm{p_j})$, which can be exactly computed using common float point arithmetic with limited $M$-bit precision. It allows very fast plane orientation predicates which benefits much the early rejection in our intersection computation (\S \ref{section:isect}).
+Here $K$ is the maximum bits required to represent edge vector components in input meshes. If we use $M$ bits to store each plane coefficient, basically $M$ has to be greater than $L_d$. In our implementation, we actually use a more strong constraint $M \ge L_d+1$. Under this constraint, given a $L$-bit vertex $\bm{v_i}$, we can compute the orientation of plane $p_j$ with respect to $\bm{v_i}$ by the sign $\bm{n}(\bm{p_j})\cdot\bm{v_i} + d(\bm{p_j})$, which requires no more than $M$ bits. It allows very fast plane orientation predicates which accelerates the early rejection in our triangle-triangle intersection tests (\S \ref{section:isect}).
 
 
 Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edge in the mesh (relative to the bounding box). If we use IEEE 754 double float point number ($M=53$) and assume $\delta \le 2^{-5.5} \approx 0.022$, the maximum input precision $L$ can reach to 20, which is enough for most application (for standard IEEE 754 single float point number, the precision is 24-bit).
@@ -573,48 +573,48 @@ Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edg
 
 \subsection{Substrates}
 \label{sec:substrates}
-Plane-based geometry predicates include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. Most of them are well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two advanced plane-based predicates---\emph{point ordering on line} and \emph{circular ordering of line}, which are important building blocks of our method.
+Plane-based geometry predicates used in our method include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. Most of them are well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two advanced plane-based predicates, which are also important building blocks of our method.
 
 \vspace{0.5em}
-\noindent \textbf{Linear ordering on points}~~~~
-Given an arbitrary line $\bm{l}$ with two points $\bm{v}_1\colon(\bm{p}_1^0\cap\bm{p}_1^1\cap\bm{p}_1^2)$ and $\bm{v}_2\colon(\bm{p}_2^0\cap\bm{p}_2^1\cap\bm{p}_2^2)$ on it, we need to determine the linear order of the two points along $\bm{l}$ (Fig. \ref{fig:twopointoneline}). To solve this problem, we choose one plane not parallel with $\bm{l}$ from the plane representation of each point. Then we convert this problem into linear order of planes and solve it using the same technique as Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with $\bm{l}$ (the dot product between plane normal and $\bm{l}$ has to be positive) and unqualified planes have to be flipped.
+\noindent \textbf{Linear ordering of points}~~~~
+Given an line $\bm{l}_{ab}$ with two points $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$ and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$ on it, we need to determine the linear order of the two points along $\bm{l}_{ab}$ (Fig. \ref{fig:twopointoneline}). To solve this problem, we choose one plane not parallel with $\bm{l}_{ab}$ from the plane representation of each point. Then we convert this problem into linear order of planes and solve it using the same technique as Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with $\bm{l}_{ab}$ (the dot product between plane normal and $\bm{l}_{ab}$ has to be positive) and unqualified planes have to be flipped.
 
 
 \vspace{0.5em}
 \noindent \textbf{Circular ordering of lines}~~~~
-During face tessellation, we need to know the which edges are neighboring (Fig. \ref{fig:circularorder}), that is, circular ordering of directed lines around a vertex. Lines can be sorted in a divide-and-conquer way based on the relative order of each pair of lines. Therefore, this problem is converted to that given two coplanar lines $\bm{l}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1)$ and $\bm{l}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1)$ with their intersection point $\bm{v}_{ab}$, compute the circular order of the two lines. Supposing the common plane is $\bm{p}_s$, we can compute the order by the sign of $\sin{\theta_{ab}}$, where $\theta_{ab}\in(-\pi,\pi)$ is the angle from $\bm{l}_a$ to $\bm{l}_b$ under the top view of $\bm{p}_s$. And the sign of sine is the same as triple product $\bm{n}(\bm{p}_s) \cdot (\bm{l}_a\times\bm{l}_b)$,
+During face tessellation, we need to know the which edges are neighboring (Fig. \ref{fig:circularorder}), that is, circular ordering of directed lines around a vertex. Lines can be sorted in a divide-and-conquer way based on the relative order of each pair of lines. Therefore, this problem is converted to that given two coplanar lines $\bm{l}_a$ and $\bm{l}_b$ with their intersection point $\bm{v}_{ab}$, compute the circular order of the two lines. Supposing the common plane of $\bm{l}_a$ and $\bm{l}_b$ is $\bm{p}_0$, we can compute the order by the sign of $\sin{\theta_{ab}}$, where $\theta_{ab}\in(-\pi,\pi)$ is the angle from $\bm{l}_a$ to $\bm{l}_b$ under the top view of $\bm{p}_0$. The sign of $\sin{\theta_{ab}}$ is the same as triple product $\bm{n}(\bm{p}_0) \cdot (\bm{l}_a\times\bm{l}_b)$,
 where $\bm{n}$ means the normal direction. However, explicit computing this equation is complicated because both $\bm{l}_a$ and $\bm{l}_b$ are implicitly represented by intersection of planes.
 
-We develop an easier way that requiring no explicit computation of $\bm{l}_a$ and $\bm{l}_b$. We orthogonally decompose $\bm{n}(\bm{p}_a)$ and $\bm{n}(\bm{p}_b)$ along the normal the common plane $\bm{p}_s$:
+We develop an easier way that requiring no explicit computation of $\bm{l}_a$ and $\bm{l}_b$. First, we write the P-reps of two lines as $\bm{l}_a\colon(\bm{p}_0\cap\bm{p}_a)$ and $\bm{l}_b\colon(\bm{p}_0\cap\bm{p}_b)$. Then we orthogonally decompose $\bm{n}(\bm{p}_a)$ and $\bm{n}(\bm{p}_b)$ along the normal the common plane $\bm{p}_0$:
 \begin{equation}
 \begin{split}
 &\bm{n}(\bm{p}_a)= \bm{n}^\parallel(\bm{p}_a) + \bm{n}^\perp(\bm{p}_a)\\
 &\bm{n}(\bm{p}_b)= \bm{n}^\parallel(\bm{p}_b) + \bm{n}^\perp(\bm{p}_b)
 \end{split}
 \end{equation}
-Here superscript `$\parallel$` means the projection on $\bm{p}_s$ and `$\perp$` means orthogonal to $\bm{p}_s$. As we know $\bm{n}^\perp(\bm{p}_a)$ and $\bm{n}^\perp(\bm{p}_b)$ are both parallel to $\bm{n}(\bm{p}_s)$, we get:
+Here superscript `$\parallel$` means the projection on $\bm{p}_s$ and `$\perp$` means orthogonal to $\bm{p}_0$. As we know $\bm{n}^\perp(\bm{p}_a)$ and $\bm{n}^\perp(\bm{p}_b)$ are both parallel to $\bm{n}(\bm{p}_0)$, we get:
 \begin{equation}
 \label{eq:circ1}
-\bm{n}(\bm{p}_s) \cdot (\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)) = \bm{n}(\bm{p}_s) \cdot (\bm{n}^\parallel(\bm{p}_a) \times \bm{n}^\parallel(\bm{p}_b)).
+\bm{n}(\bm{p}_0) \cdot (\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)) = \bm{n}(\bm{p}_0) \cdot (\bm{n}^\parallel(\bm{p}_a) \times \bm{n}^\parallel(\bm{p}_b)).
 \end{equation}
 By simple geometry reasoning, we find that the angle between $\bm{n}^\parallel(\bm{p}_a)$ and $\bm{n}^\parallel(\bm{p}_b)$ is exactly $\theta_{ab}$. So the sign of the right side of equation \ref{eq:circ1} is exactly the sign of $\sin{\theta_{ab}}$. It means we have the following nice conclusion:
 \begin{equation}
 \label{eq:circ2}
-sign(\sin{\theta_{ab}})=  sign(\bm{n}(\bm{p}_s)\cdot(\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)))
+sign(\sin{\theta_{ab}})=  sign(\bm{n}(\bm{p}_0)\cdot(\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)))
 \end{equation}
 
-Since all the three vectors are already explicitly represented, we only have to evaluate the sign of an 3x3 matrix and avoid complicated high precision float-point arithmetic.
+Since all the three vectors on the right side are already explicitly represented, we only have to evaluate the sign of an 3x3 matrix and avoid complicated high precision float-point arithmetic.
 \begin{figure}
   \centering
   % Requires \usepackage{graphicx}
   \includegraphics[width=2.5in]{twopointoneline}\\
-  \caption{{\color{red}{Sketch: config of two point one line comparison}}}\label{fig:twopointoneline}
+  \caption{The configuration of linear ordering of points. Points $\bm{v}_a$ and $\bm{v}_b$ are both on line $\bm{l}_{ab}$. We convert this problem into the plane ordering between $\bm{p}_a$ and $\bm{p}_b$ along $\bm{l}_{ab}$.}\label{fig:twopointoneline}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{circularorder}
-\caption{The configuration of two-line-one-plane comparison. $l_a\colon(p_0, p_a)$ and $l_b\colon(p_0, p_b)$ are coplanar in $p_0$. We want to compute $sign(\vec{n}_0 \cdot (\vec{l}_a \times \vec{l}_b))$.}
+\caption{The configuration of circular ordering of lines. $\bm{l}_a\colon(\bm{p}_0 \cap \bm{p}_a)$ and $\bm{l}_b\colon(\bm{p}_0 \cap \bm{p}_b)$ are coplanar in $\bm{p}_0$.}
 \label{fig:circularorder}
 \end{figure}
 
@@ -622,22 +622,22 @@ Since all the three vectors are already explicitly represented, we only have to 
 \section{Exact Intersection Computation}
 
 \label{section:isect}
-In this step, intersections between faces are computed through triangle-triangle intersection test. We adopt M\"{o}ller's algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, a naive implementation of M\"{o}ller's algorithm may fail to produce correct results because of numerical errors. Therefore, we integrate plane-based geometry representation to make it unconditionally exact and robust. In the following, we first make a quick review of M\"{o}ller's algorithm, and then discuss the way to integrate plane-based geometry. After that, we talk about how to deal with degenerate cases.
+In this step, intersections between faces are computed through triangle-triangle intersection test. We adopt M\"{o}ller's algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, a naive implementation of M\"{o}ller's algorithm may fail to produce correct results because of numerical errors. Therefore, we integrate plane-based geometry to make it unconditionally exact and robust. In the following, we first make a quick review of M\"{o}ller's algorithm, and then discuss the way to embed plane-based geometry. After that, we discuss how to deal with degenerate cases.
 
 \subsection{M\"{o}ller's Vertex-Based Method}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{projection}
-\caption{$Seg_1$ is the intersection between $p^s(t_2)$ and $t_1$. $Seg_2$ is the intersection between $p^s(t_1)$ and $t_2$. The intersection between $t_1$ and $t_2$, which is the line segment in red, is the overlap of $Seg_1$ and $Seg_2$.}
+\caption{$Seg_1$ is the intersection between $\bm{p}_{t_2, sp}$ and $t_1$. $Seg_2$ is the intersection between $\bm{p}_{t_1, sp}$ and $t_2$. The intersection between $t_1$ and $t_2$, which is the line segment in red, is the overlap of $Seg_1$ and $Seg_2$.}
 \label{fig_projection}
 \end{figure}
 
 
 M\"{o}ller's algorithm computes the intersection between two triangles $t_1$ and $t_2$ in three steps as shown in Fig. \ref{fig_projection}:
 \begin{itemize}[leftmargin=0.45cm]
-\item[1)] An early rejection is performed by testing whether $t_1$ intersects $\bm{p}_{t_2, s}$, the supporting plane of $t_2$. The same test is also done between $t_2$ and $\bm{p}_{t_1, s}$.
-\item[2)]The intersection between $t_1$ and $\bm{p}_{t_2, s}$, denoted as $Seg_1$, and the intersection between $t_2$ and $\bm{p}_{t_1, s}$, denoted as $Seg_2$, are separately computed .
+\item[1)] An early rejection is performed by testing whether $t_1$ intersects $\bm{p}_{t_2, sp}$, the supporting plane of $t_2$. The same test is also done between $t_2$ and $\bm{p}_{t_1, sp}$.
+\item[2)]The intersection between $t_1$ and $\bm{p}_{t_2, sp}$, denoted as $Seg_1$, and the intersection between $t_2$ and $\bm{p}_{t_1, sp}$, denoted as $Seg_2$, are separately computed .
  \item[3)]The intersection between $t_1$ and $t_2$ is determined by computing the overlap between $Seg_1$ and $Seg_2$ .
 \end{itemize}
 
@@ -647,12 +647,12 @@ The non-robustness of this algorithm is from computing the coordinates of inters
 \subsection{Plane-Based Intersection}
 
 \label{sec:embed}
-According to the method described in section \ref{sec:convert}, triangle faces $f$ are firstly converted to its P-rep: a supporting plane $\bm{p}_{t, s}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
+According to the method described in \S\ref{sec:convert}, triangle faces $t$ are firstly converted to its P-rep: a supporting plane $\bm{p}_{t, sp}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{sign}
-\caption{We denote the signed distance from point $X$ to plane $S_2$ as $d_X$. All the four conditions of intersection between $t_1$ and $S_2$ (denoted as $Seg_1$) are:  (a) $d_A\cdot d_C<0$, $d_B\cdot d_C<0$; (b) $d_A=0$, $d_B=0$, $d_C\neq 0$; (c) $d_A=0$, $d_B\cdot d_C<0$; (d) $d_A=0$, $d_B\cdot d_C>0$. End points of $Seg_1$ are intersections between $S_2$ and related edge lines of $t_1$ (bold edges).}
+\caption{We denote the signed distance from point $v_i$ to plane $\bm{p}_{t_2, sp}$ as $d_i$. All the four conditions of intersection between $t_1$ and $\bm{p}_{t_2, sp}$ are:  (a) $d_0\cdot d_2<0$, $d_1\cdot d_2<0$; (b) $d_0=0$, $d_1=0$, $d_2\neq 0$; (c) $d_0=0$, $d_1\cdot d_2<0$; (d) $d_0=0$, $d_1\cdot d_2>0$. End points of $Seg_1$ are intersections between $\bm{p}_{t_2, sp}$ and related edges of $t_1$ (red bold lines).}
 \label{fig:isect}
 \end{figure}
 
@@ -661,9 +661,9 @@ According to the method described in section \ref{sec:convert}, triangle faces $
 \begin{itemize}[leftmargin=0.45cm]
   \item[1)] The basic subroutine of the first step is given two faces $t_1$ and $t_2$, computing the orientation of of a face with respect to vertices from the other face. Reviewing the discussion of \S \ref{sec:convert}, under the constraint of $M \ge P+1$, we can compute the predicate within the precision of $M$ bits. This allow us to perform this early rejection efficiently.
       \vspace{0.5em}
-  \item[2)] If $t_1$ and $t_2$ are not coplanar, the end points of $Seg_1$ and $Seg_2$ can be implicitly represented by plane triples. Take $Seg_1$ as an example. $Seg_1$ is the intersection between $t_1$ and $\bm{p}_{t_2, s}$ and the end points of $Seg_1$ are intersections between $\bm{p}_{t_2, s}$ and edges from $t_1$ (denoted as $\bm{e}^i_{t_1}$). Because $\bm{e}^i_{t_1}$ can be represented as $\bm{p}_{t_1, s}\cap \bm{p}^i_{t_1, b}$, the end points of $Seg_1$ can be represented in the form of $\bm{p}_{t_2, s} \cap \bm{p}_{t_1, s} \cap \bm{p}^i_{t_1, b}$. In Fig. \ref{fig:isect}, we list all possible intersecting situations between $t_1$ and $\bm{p}_{t_2, s}$. The two corresponding bounding planes $\bm{p}^i_{t_1, b}$ for each situation are also presented. The coplanar condition will be discussed later in \S \ref{sec:degenerate}.
+  \item[2)] If $t_1$ and $t_2$ are not coplanar, the end points of $Seg_1$ and $Seg_2$ can be implicitly represented by plane triples. Take $Seg_1$ as an example. $Seg_1$ is the intersection between $t_1$ and $\bm{p}_{t_2, sp}$ and the end points of $Seg_1$ are intersections between $\bm{p}_{t_2, sp}$ and edges from $t_1$ (denoted as $\bm{e}^i_{t_1}$). Because $\bm{e}^i_{t_1}$ can be represented as $\bm{p}_{t_1, s}\cap \bm{p}^i_{t_1, b}$, the end points of $Seg_1$ can be represented in the form of $\bm{p}_{t_2, sp} \cap \bm{p}_{t_1, sp} \cap \bm{p}^i_{t_1, b}$. In Fig. \ref{fig:isect}, we list all possible intersecting situations between $t_1$ and $\bm{p}_{t_2, sp}$. The two intersection edges $\bm{e}^i_{t_1}$ for each situation are also presented. The coplanar situation will be discussed later in \S \ref{sec:degenerate}.
       \vspace{0.5em}
- \item[3)] The intersection between $t_1$ and $t_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by sorting the end points of $Seg_1$ and $Seg_2$ along the line $\bm{l}\colon \bm{p}_{t_1, s} \cap \bm{p}_{t_2, s}$. Because end points are all represented using plane triples, we can use the linear order of points discussed in \S \ref{sec:substrates} to sort.
+ \item[3)] The intersection between $t_1$ and $t_2$ is the overlap area of $Seg_1$ and $Seg_2$. It can be easily computed by sorting the end points of $Seg_1$ and $Seg_2$ along the line $\bm{l}\colon \bm{p}_{t_1, sp} \cap \bm{p}_{t_2, sp}$. Because end points are all represented using plane triples, we can use the linear order of points discussed in \S \ref{sec:substrates} to sort.
 \end{itemize}
 
 Each time an intersection is computed, two intersections are generated (one for each triangle) and the newly generated vertices are added into meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this stage, merging coincident vertices even if they come from different input meshes. Because we use P-reps, the comparison of vertices is exact.
@@ -688,13 +688,14 @@ Which two triangles, if intersecting, intersect on a line segment in most situat
 \label{sec:ipoint}
 If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the intersection cannot be represented using our four-component description. Therefore, we simply add the intersection point into the meshes to guarantee correct tessellation, and no intersection is introduced.
 
+\iffalse
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{isolated}
 \caption{Two situations of point intersections. (a) The intersection point is isolated, and there is no adjacent intersection line segment. This situation may cause non-manifold surface in Boolean operation. (b) The intersection point is not isolated. The intersection point can be introduced by other face pairs during intersection tests.}
 \label{fig:isolated}
 \end{figure}
-
+\fi
 
 \subsubsection{Edge intersection}
 
@@ -727,7 +728,7 @@ One thing need to be noticed is that there will be repetitive detection of edge 
 
 Consider two triangle faces $t_1$ and $t_2$ intersect within a common plane. Both $t_1$ and $t_2$ will divide each other into two areas---a convex overlapping area and exclusive parts (Fig. \ref{fig:coplanar}). Obviously, if we tessellate both $t_1$ and $t_2$ according to the boundary of overlapping area, we can guarantee that the tessellated meshes will not cross the boundary of any other meshes. In fact, many methods \cite{feito2013fast,zhou2016mesh} claim that tessellating faces according to this 2D-intersection result is necessary. However, in our method, we do not test whether $t_1$ and $t_2$ really intersect in 2D. We simply omit all coplanar situations, treating them as they do not intersect at all. This simplify our method, making it more robust and fast, while doing no harm to the topology correctness.
 
-The key observation is that intersection in 2D does not create new valid edges. The word `valid` means the edge is necessary or possibly necessary for the final result mesh. We find that each intersection line segment in 2D is on the edges from input meshes. That means we can view 2D intersections as special cases of edge intersection. The only difference is that there can be up to three edge intersections in one 2D intersection (Fig. x). As we have discussed, edge intersection will be detected twice. That means we can rely on the companion triangle faces to detect intersections. There is more extreme case that the companion triangles are coplanar, meaning neither of them will record the intersection. However, in this case, the intersection is not valid. The two sides of the intersection are both retained or both dropped and we do not rely the it for tessellation.
+The key observation is that intersection in 2D does not create new valid edges. The word `valid` means the edge is necessary or possibly necessary for the final result mesh. We find that each intersection line segment in 2D is on the edges from input meshes. That means we can view 2D intersections as special cases of edge intersection. The only difference is that there can be up to three edge intersections in one 2D intersection (Fig. x). As we have discussed, edge intersection will be detected twice. That means we can rely on the companion triangle faces to detect intersections. There is more extreme case that the companion triangles are coplanar, meaning neither of them will record the intersection. However, in this case, the intersection is not valid. The two sides of the intersection are both retained or both dropped and we do not rely it for tessellation.
 
 \section{Deferred Tessellation}
 
