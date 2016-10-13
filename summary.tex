@@ -537,7 +537,7 @@ This step is to choose faces from the intersection-free meshes to generate the f
 
 \section{Plane-based Geometry}
 
-%As we discussed in \S\ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if P-rep is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations. 
+%As we discussed in \S\ref{sec:paradigm}, one of the problem in boolean operations under vertex-based representation is it inevitably introduces new vertices, whose coordinates cannot be exactly represented using fix-precision float-point number. On the other hand, if P-rep is used, no new geometry information needs to be constructed. Therefore, we can use only geometric decision predicates to perform boolean operations.
 
 
 \begin{wrapfigure}{r}[0in]{0in}
@@ -671,31 +671,36 @@ Each time an intersection is computed, two intersections are generated (one for 
 \subsection{Plane-Based Intersection Representation}
 \label{sec:ir}
 
-Once intersections are computed, proper representation is needed to guarantee exact transfer of information and low cost to process. In our method, an intersection line segment $\mathbb{I}$ is represented by our plane-based intersection representation (PBI-rep) as $\{t, \bm{p}_{ext}, (\bm{p}^0, \bm{p}^1),\bm{\Psi}\}$. The first component indicates $\mathbb{I}$ is on triangle $t$, and second one $\bm{p}_{ext}$ indicates $\mathbb{I}$ lies on a line $\bm{l}_{\mathbb{I}}\colon(\bm{p}_{t, s} \cap \bm{p}_{ext})$. The two end points of $\mathbb{I}$ are $\bm{l}_{\mathbb{I}}\cap\bm{p}^0$ and $\bm{l}_{\mathbb{I}}\cap\bm{p}^1$. The last component $\bm{\Psi}$ is a vector that represents the neighborhood of the intersection, which is for fast face classification in later stages. For each component of $\bm{\Psi}$, if $\mathbb{I}$ is on the surface of primitive $P_k$, the $k^{th}$ component $\Psi_{k}$ is the edge or face of $P_k$ where $\mathbb{I}$ lies. Otherwise, $\Psi_{k}=0$, meaning default empty data.
+In our method, intersection between two triangles is denoted as $\bm{\mathcal{I}}\colon\{t, \bm{p}_{ext}, (\bm{p}^0, \bm{p}^1),\bm{\Psi}\}$, which is called plane-based intersection representation (PBI-rep). The first component $t$ indicates $\bm{\mathcal{I}}$ is on triangle $t$, and second one $\bm{p}_{ext}$ indicates $\bm{\mathcal{I}}$ lies on $\bm{p}_{ext}$, which also means it lies on line $\bm{p}_{t, sp} \cap \bm{p}_{ext}$. The two end points of $\bm{\mathcal{I}}$ are $\bm{p}_{t, sp} \cap \bm{p}_{ext}\cap\bm{p}^0$ and $\bm{p}_{t, sp} \cap \bm{p}_{ext}\cap\bm{p}^1$. The last component $\bm{\Psi}$ is a set that represents the neighborhood of the intersection. If $\bm{\mathcal{I}}$ is on the surface of mesh $P_k$, an element $(P_{k}, \Psi_{k})$ is added to $\bm{\Psi}$, where $\Psi_{k}$ is the edge or face of $P_k$ where $\bm{\mathcal{I}}$ lies.
 
-To illustrate, assume two triangle faces $t_1$ and $t_2$, from primitive $P_a$ and $P_b$, intersect on a line segment. Then it generates two intersections for both triangles respectively, denoted as ${\mathbb{I}}_{12}$ and ${\mathbb{I}}_{21}$. For ${\mathbb{I}}_{12}$, the first two components are $t_1$ and $\bm{p}_{t_2, s}$. The computation of the third component is discussed in \S\ref{sec:embed}. The neighborhood $\bm{\Psi}$ is zero for all components except $\Psi_a$ and $\Psi_b$. In most time, $\Psi_a=t_1$ and $\Psi_b=t_2$. However, sometimes, intersections may lie on the primitive edges instead of faces. In that case, $\Psi_a$ and $\Psi_b$ are edges. We postpone this discussion until \S\ref{sec:degenerate}. The computation of ${\mathbb{I}}_{21}$ is similar.
+\begin{figure}[t]
+\centering
+\includegraphics[width=2in]{pbi}
+\caption{Triangle $t_1$ and $t_2$ are from mesh $P_i, P_j$ respectively. They intersect on line segment, generating intersection $\bm{\mathcal{I}}_{12}$ on $t_1$ and $\bm{\mathcal{I}}_{21}$ on $t_2$. The PBI-rep of $\bm{\mathcal{I}}_{12}$ is $\{t_1, \bm{p}_{t_2, sp}, (\bm{p}_{t_2, b}^0, \bm{p}_{t_2, b}^1),\{(P_i, \Psi_i), (P_j, \Psi_j)\}\}$.}
+\label{fig:pbi}
+\end{figure}
+
+For example, in Fig. \ref{fig:pbi}, two triangle faces $t_1$ and $t_2$ from mesh $P_i$ and $P_j$ respectively intersect on a line segment. Then it generates two intersections for each of the two triangles, denoted as ${\bm{\mathcal{I}}}_{12}$ and ${\bm{\mathcal{I}}}_{21}$. For ${\bm{\mathcal{I}}}_{12}$, the first two components are $t_1$ and $\bm{p}_{t_2, sp}$. The computation of the third component has already been discussed in \S\ref{sec:embed}. The neighborhood $\bm{\Psi} = \{(P_i, \Psi_i), (P_j, \Psi_j)\}$. In most time, $\Psi_i=t_1$ and $\Psi_j=t_2$. However, sometimes, intersections may lie on the primitive edges instead of faces. In that case, $\Psi_i$ and $\Psi_j$ are edges (Fig. \ref{fig:twin}). We postpone this discussion until \S\ref{sec:degenerate}. The computation of ${\bm{\mathcal{I}}}_{21}$ is similar.
 
 
 \subsection{Degenerate Case Handling}
 \label{sec:degenerate}
 
-Which two triangles, if intersecting, intersect on a line segment in most situations, they can also intersect on a point or a convex area (coplanar case). Even if line segment is the intersection, the intersection can be on triangle edges or inside triangles. These degenerate situations are troublesome to develop a robust boolean method. In this section, we offer simple but robust way to deal with all the degenerations and conceal the complexity of intersections behind the concise intersection representation in \S\ref{sec:ir}.
-
+While two triangles, if intersecting, intersect on a line segment in most situations, they can also intersect on a point or a convex area (coplanar case). Even if the intersection is a line segment, the intersection can be on triangle edges. These degenerate situations prevent us from performing robust boolean operations. In this section, we offer simple but effective way to deal with all these degenerations and conceal the complexity of intersections behind the concise PBI-rep. 
 
 %The criterion of whether an intersection help tessellation is by its necessity: if the intersection is not presented, whether some faces from the linked halfedge will cross the boundary of primitives. The word 'cross' do not only include the situation that a face is partly outside and partly inside of a primitive, but also can mean that a face is partly inside (outside) and part on the boundary of the primitive.
-
-\subsubsection{Point intersection}
-\label{sec:ipoint}
-If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the intersection cannot be represented using our four-component description. Therefore, we simply add the intersection point into the meshes to guarantee correct tessellation, and no intersection is introduced.
-
-\iffalse
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{isolated}
-\caption{Two situations of point intersections. (a) The intersection point is isolated, and there is no adjacent intersection line segment. This situation may cause non-manifold surface in Boolean operation. (b) The intersection point is not isolated. The intersection point can be introduced by other face pairs during intersection tests.}
+\caption{Two situations of point intersections. (a) $\bm{v}_{iso}$ is isolated, and there is no adjacent intersection line segment. We need to add the $\bm{v}_{iso}$ to triangle $t_1$. (b) $\bm{v}_{non-iso}$ is not isolated. We do not need to add $\bm{v}_{non-iso}$ into $t_1$ because it can be added by other triangle pairs which intersect on line segments. However, for simplicity, we add the intersection point into $t_1$ in both situations.}
 \label{fig:isolated}
 \end{figure}
-\fi
+
+\subsubsection{Point intersection}
+\label{sec:ipoint}
+If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the intersection cannot be represented using our four-component description. Therefore, we simply add the intersection point into the related triangles to guarantee correct tessellation, and no intersection is introduced.
+
+
 
 \subsubsection{Edge intersection}
 
@@ -705,9 +710,9 @@ If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the inte
 % whose edge? need to be further explained and better defined. an edge intersection divide edge in a triangle and will be duplicated in the other
 
 
-When intersection line segment lies on an edge (Fig. \ref{fig:twin}). we call it \emph{edge intersection}. The only difference between edge intersection and the general case is the neighborhood representation $\Psi$. The space near edge intersection is decided by both face in the two side of the intersected edge, instead of just one triangle face (Fig. X). Therefore, supposing intersection is on the edge from mesh $P_k$, the neighborhood $\Psi_k$ is then an edge. Note that an intersection can be on edges from different meshes. Then there are more than one component of $\bm{\Psi}$ are edges.
+When intersection line segment lies on an edge (Fig. \ref{fig:twin}). we call it \emph{edge intersection}. The only difference between edge intersection and the general case is the neighborhood representation $\Psi$. The space near edge intersection is decided by both face in the two side of the intersected edge, instead of just one triangle face (Fig. X). Therefore, supposing intersection is on the edge $\bm{e}_{k, i}$ of mesh $P_k$, then the neighborhood $\Psi_k = \bm{e}_{k, i}$. Note that an intersection can be on edges from different meshes. Then there are more than one component of $\bm{\Psi}$ are edges (Fig. \ref{fig:twin}d).
 
-One thing need to be noticed is that there will be repetitive detection of edge intersections. In Fig. \ref{fig:twin}a, the same intersection on $t_1$ will be detected twice with both $t_2$ and $t_2^{\star}$. We solve this duplication together with other interactions among intersections in \S\ref{sec:tessellation}. We call such $t_2$ and $t_2^{\star}$ as \emph{companion triangles} in an edge intersection, a concept which will be referred again in the discussion of coplanar cases.
+Another thing needs to be noticed is that there will be repetitive detection of edge intersections. In Fig. \ref{fig:twin}a, the same intersection on $t_1$ will be detected twice with both $t_2$ and $t_2^{\star}$. We solve this duplication together with other interactions among intersections in \S\ref{sec:tessellation}. We call such $t_2$ and $t_2^{\star}$ as \emph{companion triangles} in an edge intersection, a concept which will be referred again in the discussion of coplanar cases.
 
 \begin{figure}[t]
 \centering
@@ -726,45 +731,52 @@ One thing need to be noticed is that there will be repetitive detection of edge 
 \label{fig:coplanar}
 \end{figure}
 
-Consider two triangle faces $t_1$ and $t_2$ intersect within a common plane. Both $t_1$ and $t_2$ will divide each other into two areas---a convex overlapping area and exclusive parts (Fig. \ref{fig:coplanar}). Obviously, if we tessellate both $t_1$ and $t_2$ according to the boundary of overlapping area, we can guarantee that the tessellated meshes will not cross the boundary of any other meshes. In fact, many methods \cite{feito2013fast,zhou2016mesh} claim that tessellating faces according to this 2D-intersection result is necessary. However, in our method, we do not test whether $t_1$ and $t_2$ really intersect in 2D. We simply omit all coplanar situations, treating them as they do not intersect at all. This simplify our method, making it more robust and fast, while doing no harm to the topology correctness.
+Consider two triangle faces $t_1$ and $t_2$ intersect within a common plane. Both $t_1$ and $t_2$ will divide each other into two areas---a convex overlapping area and exclusive parts (Fig. \ref{fig:coplanar}). Apparantly, if we tessellate both $t_1$ and $t_2$ according to the boundary of overlapping area, we can guarantee that the tessellated meshes will not cross the boundary of any other meshes. In fact, many methods \cite{feito2013fast,zhou2016mesh} claim that tessellating faces according to this 2D-intersection result is necessary. However, in our method, we do not test whether $t_1$ and $t_2$ really intersect in 2D. We treat them as they do not intersect at all. In this way, we simplify our method, making it more robust and fast, while doing no harm to the topology correctness.
 
-The key observation is that intersection in 2D does not create new valid edges. The word `valid` means the edge is necessary or possibly necessary for the final result mesh. We find that each intersection line segment in 2D is on the edges from input meshes. That means we can view 2D intersections as special cases of edge intersection. The only difference is that there can be up to three edge intersections in one 2D intersection (Fig. x). As we have discussed, edge intersection will be detected twice. That means we can rely on the companion triangle faces to detect intersections. There is more extreme case that the companion triangles are coplanar, meaning neither of them will record the intersection. However, in this case, the intersection is not valid. The two sides of the intersection are both retained or both dropped and we do not rely it for tessellation.
+The key observation is that intersection in 2D does not create new valid edges. The word `valid` means the edge is necessary or possibly necessary for the final result mesh. We find that each intersection line segment in 2D is on the edges from input meshes. That means we can view 2D intersection as a special case of edge intersection. The only difference is that there can be up to three edge intersections in one 2D intersection (Fig. \ref{fig:coplanar}). As we have discussed, edge intersection will be detected twice. That means we can rely on the companion triangle faces to detect intersections. However, if the companion triangles are also coplanar, neither of the two triangles will record the intersection. In fact, we do not need to worry about this, because in this case, the intersection is not valid. The two sides of the intersection are both retained or both dropped and we do not need it for tessellation.
 
 \section{Deferred Tessellation}
 
 
 
 \label{sec:tessellation}
-After intersection computation, tessellation is performed on each intersecting triangle face and generate the intersection-free hybrid mesh. We call this stage as deferred tessellation because the tessellation happens until all valid intersections are computed. Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrained Delaunay Triangulation (CDT) to perform deferred tessellation. They treat triangle faces as convex triangulation zones and intersections as constraints.
+After intersection computation, tessellation is performed on each intersecting triangle face and generate our intersection-free meshes. We call this stage as deferred tessellation because the tessellation happens until all valid intersections are computed.
 
-Our first try is to implement a robust CDT and apply to our method. However, we fail because of the dilemma of precision and efficiency. CDT algorithms \cite{chew1989constrained,preparata2012computational} usually require coordinates projection or intersection detection between arbitrary connections of vertices within triangulation zone. Because vertices may be implicitly represented in our method, these geometry predicates are hard to guarantee computation efficiency and precision simultaneously. Moreover, when there are more than two primitives, simply applying CDT omits the complexity of intersections between meshes. The intersections may intersect each other, introducing new vertices and splitting original intersection line segments (Fig. x). This breaks the assumption of most CDT algorithms and may lead to incorrect output topology.
+In previous work, Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrained Delaunay Triangulation (CDT) to perform deferred tessellation. They treat triangle faces as convex triangulation zones and intersections as constraints. Our first try is to implement a robust plane-based CDT. However, CDT algorithms \cite{chew1989constrained,preparata2012computational} usually require coordinates projection or intersection detection between arbitrary connections of vertices within triangulation zone. Because vertices may be implicitly represented in our method, these geometry predicates are hard to guarantee computation efficiency and precision simultaneously. Moreover, when there are more than two primitives, simply applying CDT omits the complexity of intersections between meshes. The intersections may intersect each other, introducing new vertices and splitting original intersection line segments (Fig. \ref{fig:iisect}). This breaks the assumption of most CDT algorithms and may lead to incorrect output topology.
 
-To solve these problems, we first perform intersection refinement to eliminate any crossing or overlapping between intersections. After that, we perform conservative tessellation based on plane-based geometry, ensuring unconditional topology correctness. The word `conservative` means we tessellate face into polygons, not triangles. During tessellation, we organize intersections and generate an \emph{tess-graph}, which is a graph-like description of intersections. At last, we extract subfaces from tess-graph of each triangle face and construct the intersection-free hybrid meshes.
+\begin{figure}[t]
+\centering
+\includegraphics[width=2in]{iisect}
+\caption{suppose? actual?}
+\label{fig:iisect}
+\end{figure}
+
+To solve these problems, we first perform intersection refinement to eliminate any crossing or overlapping between intersections. After that, we perform conservative tessellation based on \emph{tess-graph}, ensuring unconditional topology correctness. An tess-graph is a graph-like description of intersections on a certain face. The word `conservative` means we tessellate face into polygons, not triangles. This is because if triangles are required, we need construct new bounding planes for these new triangles, which violating our principle of no geometry construction (Fig. x).
 
 \subsection{Intersection Refinement}
 
 
 The intersection vertices are not only introduced by intersection between an edge and a triangle, but also introduced by intersections of three triangles. It is not enough to find all of them by only triangle-triangle intersection tests. Also, because of degenerate cases, there will be other forms of intersections involving three or even more triangles. To make tessellation easier and more robust, we have to refine these intersections and all unusual conditions have to be removed before it.
 
-Intersection refinement is performed in a local scope. For each intersecting face $t_i$, we collect all intersections on $t$ as a set $\bm{\Gamma}(t)=\{\mathbb{I}_{t}^i, i=0,1,2,...\}\cup\{\mathbb{I}_{t}^{e_i},i=0,1,2\}$ and refine them together. The set $\{\mathbb{I}_{t}^{e_i},i=0,1,2\}$ is the PBI-reps of the three edges of $t$. We treat edges as intersections for simplicity in this stage. The neighborhood component $\bm{\Psi}(\mathbb{I}_{t}^{e_i})$ is set as $\bm{0}$. Other components of $\mathbb{I}_{t}^{e_i}$ are straightforward to determine. Refinement on $\bm{\Gamma}(t)$ is done using only plane-based geometry predicates by the following three steps:
+Intersection refinement is performed in a local scope. For each intersecting face $t_i$, we collect all intersections on $t$ as a set $\bm{\Gamma}(t)=\{\bm{\mathcal{I}}_{t}^i, i=0,1,2,...\}\cup\{\bm{\mathcal{I}}_{t}^{e_i},i=0,1,2\}$ and refine them together. The set $\{\bm{\mathcal{I}}_{t}^{e_i},i=0,1,2\}$ is the PBI-reps of the three edges of $t$. We treat edges as intersections for simplicity in this stage. The neighborhood component $\bm{\Psi}(\bm{\mathcal{I}}_{t}^{e_i})$ is set as $\bm{0}$. Other components of $\bm{\mathcal{I}}_{t}^{e_i}$ are straightforward to determine. Refinement on $\bm{\Gamma}(t)$ is done using only plane-based geometry predicates by the following three steps:
 
 \vspace{0.5em}
 \noindent \textbf{Collinear splitting}~~~~
-Each intersection $\mathbb{I}_{t}^x$ are testing whether they are collinearly overlapping with other intersections. If yes, $\mathbb{I}_{t}^x$ is split by the end points of overlapping intersections (Fig. x). Because $\mathbb{I}_{t}^x$ may collinearly overlap more than one other intersection, the splitting may be deferred until all splitting points are found. The subroutine linear order of points (\S\ref{sec:substrates}) is used to sort these splitting points along $\mathbb{I}_{t}^x$. The PBI-reps of split segments inherit their father's except the second component the end points.
+Each intersection $\bm{\mathcal{I}}_{t}^x$ are testing whether they are collinearly overlapping with other intersections. If yes, $\bm{\mathcal{I}}_{t}^x$ is split by the end points of overlapping intersections (Fig. x). Because $\bm{\mathcal{I}}_{t}^x$ may collinearly overlap more than one other intersection, the splitting may be deferred until all splitting points are found. The subroutine linear order of points (\S\ref{sec:substrates}) is used to sort these splitting points along $\bm{\mathcal{I}}_{t}^x$. The PBI-reps of split segments inherit their father's except the second component the end points.
 
 \vspace{0.5em}
 \noindent \textbf{Coincidence elimination}~~~~
 We merge coincidence intersections which have the same end points. Intersections are undirected so intersections with inverse end points are also coincident. The PBI-rep of the new intersection is inherited from either of the old one's except the neighborhood component $\bm{\Psi}$. We follow the merging rules below:
 \begin{equation}
-  \Psi_k(\mathbb{I}_{t}^{12})=\left\{
+  \Psi_k(\bm{\mathcal{I}}_{t}^{12})=\left\{
    \begin{array}{l}
-   \Psi_k(\mathbb{I}_{t}^1)\mbox{ or }\Psi_k(\mathbb{I}_{t}^2),\ \mbox{ if } \Psi_k(\mathbb{I}_{t}^1)=\Psi_k(\mathbb{I}_{t}^2) \\
-   \Psi_k(\mathbb{I}_{t}^1),\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{ if } \Psi_k(\mathbb{I}_{t}^2)=0  \\
-   \Psi_k(\mathbb{I}_{t}^2),\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{ if } \Psi_k(\mathbb{I}_{t}^1)=0  \\
+   \Psi_k(\bm{\mathcal{I}}_{t}^1)\mbox{ or }\Psi_k(\bm{\mathcal{I}}_{t}^2),\ \mbox{ if } \Psi_k(\bm{\mathcal{I}}_{t}^1)=\Psi_k(\bm{\mathcal{I}}_{t}^2) \\
+   \Psi_k(\bm{\mathcal{I}}_{t}^1),\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{ if } \Psi_k(\bm{\mathcal{I}}_{t}^2)=0  \\
+   \Psi_k(\bm{\mathcal{I}}_{t}^2),\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{ if } \Psi_k(\bm{\mathcal{I}}_{t}^1)=0  \\
    \end{array}
   \right.
 \end{equation}
-, where $\mathbb{I}_{t}^1$ and $\mathbb{I}_{t}^2$ are old intersections and $\mathbb{I}_{t}^{12}$ is the new one.
+, where $\bm{\mathcal{I}}_{t}^1$ and $\bm{\mathcal{I}}_{t}^2$ are old intersections and $\bm{\mathcal{I}}_{t}^{12}$ is the new one.
 
 
 \vspace{0.5em}
@@ -807,12 +819,12 @@ s_0\to s_1\to s_2\to s_3\to ...
 \end{equation}
 
 
-Our hybrid meshes facilitate this process by accelerating the indicator propagation. Given adjacent faces $s_1$ and $s_2$, it is straightforward to know whether $\bm{\Lambda}(s_1)$ and $\bm{\Lambda}(s_2)$ are different. The two indicator vectors are the same unless the shared edge $e_{12}$ lies on the boundary of some meshes, and it means there is an intersection $\mathbb{I}(e_{12})$ stored on $e_{12}$. For a certain indicator $\lambda_k$, it always stands:
+Our hybrid meshes facilitate this process by accelerating the indicator propagation. Given adjacent faces $s_1$ and $s_2$, it is straightforward to know whether $\bm{\Lambda}(s_1)$ and $\bm{\Lambda}(s_2)$ are different. The two indicator vectors are the same unless the shared edge $e_{12}$ lies on the boundary of some meshes, and it means there is an intersection $\bm{\mathcal{I}}(e_{12})$ stored on $e_{12}$. For a certain indicator $\lambda_k$, it always stands:
 \begin{equation}
 \label{eq:eq1}
-{\lambda_k}(s_1) = {\lambda_k}(s_2),\ \ \  \mbox{if }\Psi_k(\mathbb{I}(e_{12}))= 0.
+{\lambda_k}(s_1) = {\lambda_k}(s_2),\ \ \  \mbox{if }\Psi_k(\bm{\mathcal{I}}(e_{12}))= 0.
 \end{equation}
-Even if $\Psi_k(\mathbb{I}(e_{12})) \neq 0$, both $\lambda_k(t_1)$ and $\lambda_k(t_2)$ can be computed efficiently and exactly according to $\mathbb{I}(e_{12})$ (\S\ref{sec:propagation}). We outline our classification method in Algorithm \ref{code:floodfill}.
+Even if $\Psi_k(\bm{\mathcal{I}}(e_{12})) \neq 0$, both $\lambda_k(t_1)$ and $\lambda_k(t_2)$ can be computed efficiently and exactly according to $\bm{\mathcal{I}}(e_{12})$ (\S\ref{sec:propagation}). We outline our classification method in Algorithm \ref{code:floodfill}.
 
 \begin{algorithm}
 \caption{Fast Face Classification}
@@ -833,8 +845,8 @@ Even if $\Psi_k(\mathbb{I}(e_{12})) \neq 0$, both $\lambda_k(t_1)$ and $\lambda_
         \If {$s_i$ has been classified}
             \State continue
         \EndIf
-        \If {there are PBI-reps $\{{\mathbb{I}}_k\}$ on $e(s_i, s)$}
-            \State compute $\boldsymbol{\Lambda}(s_i)$ by $\boldsymbol{\Lambda}(s)$ and $\{{\mathbb{I}}_k\}$
+        \If {there are PBI-reps $\{{\bm{\mathcal{I}}}_k\}$ on $e(s_i, s)$}
+            \State compute $\boldsymbol{\Lambda}(s_i)$ by $\boldsymbol{\Lambda}(s)$ and $\{{\bm{\mathcal{I}}}_k\}$
             \State \Call{propagate} { $s_i$ , $\boldsymbol{\Lambda}(s_i)$}
         \Else
             \State \Call{propagate} { $s_i$ , $\boldsymbol{\Lambda}(s)$}
@@ -874,16 +886,16 @@ Given the partial order $on \succ in$ and $on \succ out$, our key observation is
 , where $\lambda_k(x)$ means the indicator of $x$ against a certain primitive $P_k$. This relation can be inferred from continuous space assumption and the definition of intersection-free mesh (def. \ref{eq:ifmdef}). It tells us when we perform $v_e\to e$ and $e_s\to s$, we decide whether the $on$ indicator change to $in$ or $out$ or remain $on$. When we perform $s\to e_s$, we decide whether $in$ and $out$ indicators change to $on$. In addition, considering the orientation of face, we also need to figure out whether the $on$ indicators change to $same$ or $oppo$ during $e_s\to s$ operation.
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{s\to e_s}$}~~~~ When $\lambda_k(e_s)=on$, there will be PBI-rep $\mathbb{I}(e_s)$ attached to $e_s$ and the related neighborhood $\Psi_k(\mathbb{I}(e_s))$ must be nonzero, since it is on the surface of mesh $P_k$:
+\noindent\textbf{$\bm{s\to e_s}$}~~~~ When $\lambda_k(e_s)=on$, there will be PBI-rep $\bm{\mathcal{I}}(e_s)$ attached to $e_s$ and the related neighborhood $\Psi_k(\bm{\mathcal{I}}(e_s))$ must be nonzero, since it is on the surface of mesh $P_k$:
 \begin{equation}
 \label{eq:eq1}
-\lambda_k(e_s)=on,\ \ \  \mbox{iff. }\Psi_k(\mathbb{I}(e_s))\neq 0.
+\lambda_k(e_s)=on,\ \ \  \mbox{iff. }\Psi_k(\bm{\mathcal{I}}(e_s))\neq 0.
 \end{equation}
-So all we need is to iterate over all nonzero components of $\bm{\Psi}(\mathbb{I}(e_s))$ and change corresponding indicators to $on$.
+So all we need is to iterate over all nonzero components of $\bm{\Psi}(\bm{\mathcal{I}}(e_s))$ and change corresponding indicators to $on$.
 
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{e_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(e_s) \neq on$, then $\lambda_k(e_s)=\lambda_k(s)$. When $\lambda_k(e_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\mathbb{I}(e_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\mathbb{I}(e_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\mathbb{I}(e_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $e_s$. If $\Psi_k(\mathbb{I}(e_s))$ is an edge, we can still build BSP using the opposite two faces along $e_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $s$ that near $e_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $v_x$ from the half plane $\bm{p}_{s, sp}^+$, which is on the supporting plane of $s$ and on the positive side of bounding plane $\bm{p}_{s, b}^{e_s}$ (Fig. x). For polygons, there is at least one such $v_x$ among the vertices of $s$. We find that the BSP is so simple that indicators $\lambda_k$ of all points on $\bm{p}_{s, sp}^+$ are the same. Since $\bm{p}_{s, sp}^+ \cap s \neq \varnothing$, we can compute $\lambda_k(s)$ by figuring out $\lambda_k(v_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $v_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
+\noindent\textbf{$\bm{e_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(e_s) \neq on$, then $\lambda_k(e_s)=\lambda_k(s)$. When $\lambda_k(e_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\bm{\mathcal{I}}(e_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\bm{\mathcal{I}}(e_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\bm{\mathcal{I}}(e_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $e_s$. If $\Psi_k(\bm{\mathcal{I}}(e_s))$ is an edge, we can still build BSP using the opposite two faces along $e_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $s$ that near $e_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $v_x$ from the half plane $\bm{p}_{s, sp}^+$, which is on the supporting plane of $s$ and on the positive side of bounding plane $\bm{p}_{s, b}^{e_s}$ (Fig. x). For polygons, there is at least one such $v_x$ among the vertices of $s$. We find that the BSP is so simple that indicators $\lambda_k$ of all points on $\bm{p}_{s, sp}^+$ are the same. Since $\bm{p}_{s, sp}^+ \cap s \neq \varnothing$, we can compute $\lambda_k(s)$ by figuring out $\lambda_k(v_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $v_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
 
 \vspace{0.5em}
 \noindent\textbf{$\bm{v_e\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(v_e)=on$, we first check whether $\lambda_k(e) = on$ by (\ref{eq:eq1}). If not, we need to find where $v_e$ lies on the surface of $P_k$ and determine the neighborhood of $v_e$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${e_s\to s}$ to determine the high dimensional $\lambda_k(e)$. We use the other vertex of $e$ to be the sample point $v_x$ for the BSP classification.
@@ -900,7 +912,7 @@ We develop an classification method that is unconditionally robust and exact bas
 
 Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersection on one of $t_i$'s edge, we denote the three corners it as $v_{b*}^{0}(t_i), v_{b*}^{1}(t_i), v_b^2(t_i),$ where the subscript $*$ means the vertices are on the edge where $\boldsymbol\Gamma$ lies. We also denote the context component of $\boldsymbol\Gamma$ as $C_{P_h \backslash P_j}$, meaning $t_i$ is from primitive $P_j$ and intersects primitive $P_h$. From previous discussion (section \ref{sec:ir}){\color{red}{may be more than one}}, we know there are two types of intersection context---face neighborhood and edge neighborhood. In both conditions, the one or two faces involving in the context split the space into two in and out space by its (their) orientation(s). We will see that under such division (denoted as $\boldsymbol{D}(C_{P_h \backslash P_j})$), we can compute $\lambda(t_i, P_j)$ exactly.
 
-Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\mathbb{I}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\mathbb{I}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\mathbb{I}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
+Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\bm{\mathcal{I}}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\bm{\mathcal{I}}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\bm{\mathcal{I}}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
 \fi
 
