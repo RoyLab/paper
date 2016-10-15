@@ -433,16 +433,16 @@ The boolean operation of triangle meshes is in essence a process of face selecti
 
 During the intersection computation, input faces are tested in pairs to compute their intersections. Each input meshes are tessellated according to the intersection results, making every face be either inside, outside or on the boundary of other primitives. The tessellated meshes are what we called \emph{intersection-free meshes}. Unfortunately, under fix-precision float-point arithmetic, intersection tests are error-prone: first, degenerate cases of intersection are hard to detect; second, when there are intersections, new vertices are introduced into the geometry, whose coordinates cannot be exactly represented by fix-precision float-point numbers.
 
-During face classification, we evaluate whether a given face $s$ belongs to the final geometry according to the n-primitive boolean function $f$ :
+During face classification, we evaluate whether a given face $\bm{s}$ belongs to the final geometry according to the n-primitive boolean function $f$ :
 \begin{equation}
 \lambda_f(s) = f(\boldsymbol{\Lambda}(s)) = f(\lambda_1(s), \lambda_2(s), \cdots, \lambda_n(s)).
 \end{equation}
-The parameter $\lambda_i(s)$ is space indicator with respect to mesh $P_i$. To compute $\lambda_f(s)$ and classify $s$, one has to know the space indicators with respect to all the primitives (denoted as $\boldsymbol{\Lambda}(s)$). A space indicator has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normals (\emph{same}) or opposite normals (\emph{oppo}). The rules of boolean function evaluation are described in \cite{douze2015quickcsg,feito2013fast}.
+The parameter $\lambda_i(s)$ is space indicator with respect to mesh $P_i$. To compute $\lambda_f(s)$ and classify $\bm{s}$, one has to know the space indicators with respect to all the primitives (denoted as $\boldsymbol{\Lambda}(s)$). A space indicator has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normals (\emph{same}) or opposite normals (\emph{oppo}). The rules of boolean function evaluation are described in \cite{douze2015quickcsg,feito2013fast}.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{falseclass}
-\caption{In a 2D view, face $s$ is on the surface of mesh $P$. However, because we use barycenter $v_c(s)$ to compute the indicator  and the coordinates of $v_c(s)$ contain round-off error, we might falsely classify $s$ as outside of $P$.}
+\caption{In a 2D view, face $\bm{s}$ is on the surface of mesh $P$. However, because we use barycenter $v_c(s)$ to compute the indicator  and the coordinates of $v_c(s)$ contain round-off error, we might falsely classify $\bm{s}$ as outside of $P$.}
 \label{fig:falseclass}
 \end{figure}
 
@@ -523,12 +523,14 @@ Our triangle-triangle intersection test is largely based on M\"{o}ller's algorit
 
 Once all intersections between triangles are detected, we need to tessellate the input meshes and construct the intersection-free meshes. In many methods like \cite{ogayar2015deferred}, constraint Delaunay triangulation (CDT) is applied to perform tessellation. However, for a CSG with more than two meshes, intersections may overlap or intersect with each other, and cannot be used for constraints of CDT directly. In addition, as our intersections are represented by planes, implementation of CDT are complex and inefficient, as most CDT algorithms (e.g. \cite{chew1989constrained}, \cite{de1992line}) is not designed to handle planes and requires explicit coordinates. Therefore, we first perform intersection refinement to resolve intersecting intersections. After that, we construct a graph-like structure suitable for P-rep intersections, called \emph{tess-graph}, to guide the exact tessellation of each face. After all faces are tessellated, we get our intersection-free hybrid meshes, where 'hybrid' means the meshes are represented by both B-rep and P-rep. Details are shown in \S\ref{sec:tessellation}.
 
+\iffalse
 \begin{figure}
   \centering
   % Requires \usepackage{graphicx}
   \includegraphics[width=1.7in]{sgen}\\
   \caption{Triangle-triangle intersections made by different triangle pairs may (a) overlap or (b) intersect with each other. (c) Such situation introduces extra vertex which is intersection of triangles from three different meshes.}\label{fig:p-reps}
 \end{figure}
+\fi
 
 \subsubsection{Face classification}
 
@@ -545,7 +547,7 @@ This step is to choose faces from the intersection-free meshes to generate the f
 %\caption{Plane-based representation of triangle}
 \end{wrapfigure}
 
-Using Plane-based representation, each face $s$ with $n$ edges is represented by a supporting plane $\bm{p}_{s,sp}$, where the face lies, and a list bounding planes $\{\bm{p}_{s,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_s^i$ is represented by intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i$. Corner vertex $\bm{v}_s^i$ is represented by intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i \cap \bm{p}_{s,b}^{{(i+1)}\bmod{n}}$.
+Using Plane-based representation, each face $\bm{s}$ with $n$ edges is represented by a supporting plane $\bm{p}_{s,sp}$, where the face lies, and a list bounding planes $\{\bm{p}_{s,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_s^i$ is represented by intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i$. Corner vertex $\bm{v}_s^i$ is represented by intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i \cap \bm{p}_{s,b}^{{(i+1)}\bmod{n}}$.
 
 
 Other commonly used notations in this paper are presented here. A plane $\bm{p}$ can be represented by four scalar coefficients $a(\bm{p}), b(\bm{p}), c(\bm{p}), d(\bm{p})$. The normal of $\bm{p}$ is denoted as $\bm{n}(\bm{p})$, which is a normalized vector consisting of the first three plane coefficients. A line $\bm{l}$ can be represented by intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, or in short, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$. A point $\bm{v}$ can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, or in short, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
@@ -686,7 +688,7 @@ For example, in Fig. \ref{fig:pbi}, two triangle faces $t_1$ and $t_2$ from mesh
 \subsection{Degenerate Case Handling}
 \label{sec:degenerate}
 
-While two triangles, if intersecting, intersect on a line segment in most situations, they can also intersect on a point or a convex area (coplanar case). Even if the intersection is a line segment, the intersection can be on triangle edges. These degenerate situations prevent us from performing robust boolean operations. In this section, we offer simple but effective way to deal with all these degenerations and conceal the complexity of intersections behind the concise PBI-rep. 
+While two triangles, if intersecting, intersect on a line segment in most situations, they can also intersect on a point or a convex area (coplanar case). Even if the intersection is a line segment, the intersection can be on triangle edges. These degenerate situations prevent us from performing robust boolean operations. In this section, we offer simple but effective way to deal with all these degenerations and conceal the complexity of intersections behind the concise PBI-rep.
 
 %The criterion of whether an intersection help tessellation is by its necessity: if the intersection is not presented, whether some faces from the linked halfedge will cross the boundary of primitives. The word 'cross' do not only include the situation that a face is partly outside and partly inside of a primitive, but also can mean that a face is partly inside (outside) and part on the boundary of the primitive.
 \begin{figure}[t]
@@ -747,7 +749,7 @@ In previous work, Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrain
 \begin{figure}[t]
 \centering
 \includegraphics[width=2in]{iisect}
-\caption{suppose? actual?}
+\caption{suppose? actual?plane-triples}
 \label{fig:iisect}
 \end{figure}
 
@@ -756,17 +758,19 @@ To solve these problems, we first perform intersection refinement to eliminate a
 \subsection{Intersection Refinement}
 
 
-The intersection vertices are not only introduced by intersection between an edge and a triangle, but also introduced by intersections of three triangles. It is not enough to find all of them by only triangle-triangle intersection tests. Also, because of degenerate cases, there will be other forms of intersections involving three or even more triangles. To make tessellation easier and more robust, we have to refine these intersections and all unusual conditions have to be removed before it.
+The intersection vertices are not only introduced by intersection between an edge and a triangle, but also introduced by intersections of three triangles. In order to find all intersection vertices, it is not enough by only triangle-triangle intersection tests. To make tessellation easier and more robust, we have to refine these intersections and resolve the intersections between intersections.
 
-Intersection refinement is performed in a local scope. For each intersecting face $t_i$, we collect all intersections on $t$ as a set $\bm{\Gamma}(t)=\{\bm{\mathcal{I}}_{t}^i, i=0,1,2,...\}\cup\{\bm{\mathcal{I}}_{t}^{e_i},i=0,1,2\}$ and refine them together. The set $\{\bm{\mathcal{I}}_{t}^{e_i},i=0,1,2\}$ is the PBI-reps of the three edges of $t$. We treat edges as intersections for simplicity in this stage. The neighborhood component $\bm{\Psi}(\bm{\mathcal{I}}_{t}^{e_i})$ is set as $\bm{0}$. Other components of $\bm{\mathcal{I}}_{t}^{e_i}$ are straightforward to determine. Refinement on $\bm{\Gamma}(t)$ is done using only plane-based geometry predicates by the following three steps:
+Intersection refinement is performed in a local scope. For each intersecting face $t$ from mesh $P_t$, we collect all intersections on $t$ into a set $\bm{\Gamma}(t)=\{\bm{\mathcal{I}}_{t}^i, i=0,1,2,...\}\cup\{\bm{\mathcal{I}}_{t}^{\bm{e}_i},i=0,1,2\}$ and refine them together. The set $\{\bm{\mathcal{I}}_{t}^{\bm{e}_i},i=0,1,2\}$ is the PBI-reps of the three edges of $t$. We treat edges as special intersections for simplicity, since edges also participate in tessellation. The neighborhood components of the edge $\bm{\Psi}(\bm{\mathcal{I}}_{t}^{\bm{e}_i})$ is set as $\{(P_t, \bm{e}_i )\}$. Other components of $\bm{\mathcal{I}}_{t}^{\bm{e}_i}$ can be determined by the P-reps of $\bm{e}_i$. The refinement on $\bm{\Gamma}(t)$ is done using only plane-based geometry predicates by the following three steps (Fig. x):
 
 \vspace{0.5em}
 \noindent \textbf{Collinear splitting}~~~~
-Each intersection $\bm{\mathcal{I}}_{t}^x$ are testing whether they are collinearly overlapping with other intersections. If yes, $\bm{\mathcal{I}}_{t}^x$ is split by the end points of overlapping intersections (Fig. x). Because $\bm{\mathcal{I}}_{t}^x$ may collinearly overlap more than one other intersection, the splitting may be deferred until all splitting points are found. The subroutine linear order of points (\S\ref{sec:substrates}) is used to sort these splitting points along $\bm{\mathcal{I}}_{t}^x$. The PBI-reps of split segments inherit their father's except the second component the end points.
+Each intersection $\bm{\mathcal{I}}_{t}^x$ are testing whether they are collinearly overlapping with other intersections. If yes, $\bm{\mathcal{I}}_{t}^x$ is split by the end points of overlapping intersections (Fig. x). Because $\bm{\mathcal{I}}_{t}^x$ may collinearly overlap more than one other intersection, the splitting may be deferred until all splitting points are found. The subroutine linear order of points (\S\ref{sec:substrates}) is used to sort these splitting points along $\bm{\mathcal{I}}_{t}^x$. The PBI-reps of split segments inherit their father's except the third component which identifies the end points.
 
 \vspace{0.5em}
 \noindent \textbf{Coincidence elimination}~~~~
-We merge coincidence intersections which have the same end points. Intersections are undirected so intersections with inverse end points are also coincident. The PBI-rep of the new intersection is inherited from either of the old one's except the neighborhood component $\bm{\Psi}$. We follow the merging rules below:
+We merge coincidence intersections which have the same end points. Intersections are undirected so intersections with inverse end points are also coincident. The PBI-rep of the new intersection is inherited from either of the old one's except the neighborhood component $\bm{\Psi}$. The value element of the new neighborhood is the union of the two old ones'.
+\iffalse 
+ We follow the merging rules below:
 \begin{equation}
   \Psi_k(\bm{\mathcal{I}}_{t}^{12})=\left\{
    \begin{array}{l}
@@ -776,12 +780,14 @@ We merge coincidence intersections which have the same end points. Intersections
    \end{array}
   \right.
 \end{equation}
+
 , where $\bm{\mathcal{I}}_{t}^1$ and $\bm{\mathcal{I}}_{t}^2$ are old intersections and $\bm{\mathcal{I}}_{t}^{12}$ is the new one.
+\fi
 
 
 \vspace{0.5em}
 \noindent \textbf{Crossing intersection resolving}~~~~
-After the process of two previous steps, there are no overlapping intersections in $\bm{\Gamma}(t)$. We check whether any pair of intersections intersect each other. The definition of \emph{intersect} does not include the situation that two intersections share end points. In Fig. x, we illustrate the only two situations. In both situations, one intersection is split by other, and the same splitting routine is used as in collinear splitting.
+After the process of two previous steps, there are no overlapping intersections in $\bm{\Gamma}(t)$. We check whether any pair of intersections intersect each other. The definition of \emph{intersect} does not include the situation that two intersections share end points. In Fig. x, we illustrate the two valid situations. In both situations, one intersection is split by the other, and the same splitting routine is used as in collinear splitting.
 
 %\vspace{0.5em}
 %There is one more thing that we give intersections generated (by merging or splitting) from the PBI-reps of edges  the positive directions. That means all intersections lies on triangle edges have a positive direction. Direction is defined by the direction of edge the intersection lies on.
@@ -808,48 +814,51 @@ When all faces are tessellated, meshes are intersection-free. We further attach 
 \section{Exact Face Classification}
 
 \label{sec:classification}
-We traverse each face in the hybrid meshes, and classify which one belongs to the final mesh. Classification is done by evaluating the indicator vector of each face. The basic idea of our classification method is to utilize the space coherence of face indicator vectors to reuse the classification results. Also, because we store the PBI-reps which contains neighborhood information in the edges which intersect other meshes, the search space of point-in-polyhedron test is limited to only a few faces, which makes the indicator computation very fast. Also, by using P-reps, our classification method can deal with any degenerate cases.
+We traverse each face in the intersection-free meshes, and classify which one belongs to the final mesh. Classification is done by evaluating the indicator vector of each face. The basic idea of our classification method is to utilize the space coherence of face indicator vectors to reuse the classification results. Because we store the PBI-reps which contains neighborhood information in the edges which intersect other meshes, the search space of point-in-polyhedron test is limited to only a few faces, which makes the indicator computation very fast. Also, by using P-reps, our classification method can deal with any degenerate cases.
 
 \subsection{Framework}
 
-The space coherence of indicator vectors means neighboring faces could share the same indicator vector, or most components of indicator vectors. Therefore, we start from a seed face $s_0$ with its indicator vector $\bm{\Lambda}(s_0)$ known, and propagate to other faces in a flood-filling manner. The trace of indicator propagation is:
+The space coherence of indicator vectors means neighboring faces could share the same indicator vector, or most components of indicator vectors. Therefore, we start from a seed face $\bm{s}_0$ with its indicator vector $\bm{\Lambda}(\bm{s}_0)$ known, and propagate to other faces in a flood-filling manner. The trace of indicator propagation is:
 \begin{equation}
 \label{eq:trace}
-s_0\to s_1\to s_2\to s_3\to ...
+\bm{s}_0\to \bm{s}_1\to \bm{s}_2\to \bm{s}_3\to ...
 \end{equation}
 
 
-Our hybrid meshes facilitate this process by accelerating the indicator propagation. Given adjacent faces $s_1$ and $s_2$, it is straightforward to know whether $\bm{\Lambda}(s_1)$ and $\bm{\Lambda}(s_2)$ are different. The two indicator vectors are the same unless the shared edge $e_{12}$ lies on the boundary of some meshes, and it means there is an intersection $\bm{\mathcal{I}}(e_{12})$ stored on $e_{12}$. For a certain indicator $\lambda_k$, it always stands:
+Our hybrid meshes facilitate this process by accelerating the indicator propagation. Given adjacent faces $\bm{s}_1$ and $\bm{s}_2$, it is straightforward to know whether $\bm{\Lambda}(\bm{s}_1)$ and $\bm{\Lambda}(\bm{s}_2)$ are different. The two indicator vectors are the same unless the shared edge $\bm{e}_{12}$ lies on the boundary of some meshes, and it means there is an intersection (denoted as $\bm{\mathcal{I}}(\bm{e}_{12})$) stored on $\bm{e}_{12}$. The neighborhood of $\bm{\mathcal{I}}(\bm{e}_{12})$ indicates which components of indicator vector differ between $\bm{s}_1$ and $\bm{s}_2$.
+ \iffalse
+ Namely, for a certain indicator $\lambda_k$ of $\bm{s}_1$ and $\bm{s}_2$, it always stands:
 \begin{equation}
 \label{eq:eq1}
-{\lambda_k}(s_1) = {\lambda_k}(s_2),\ \ \  \mbox{if }\Psi_k(\bm{\mathcal{I}}(e_{12}))= 0.
+{\lambda_k}(\bm{s}_1) = {\lambda_k}(\bm{s}_2),\ \ \  \mbox{if }\Psi_k(\bm{\mathcal{I}}(e_{12}))= 0.
 \end{equation}
-Even if $\Psi_k(\bm{\mathcal{I}}(e_{12})) \neq 0$, both $\lambda_k(t_1)$ and $\lambda_k(t_2)$ can be computed efficiently and exactly according to $\bm{\mathcal{I}}(e_{12})$ (\S\ref{sec:propagation}). We outline our classification method in Algorithm \ref{code:floodfill}.
+\fi
+If there is a neighborhood $(P_k, \Psi_k) \in \bm{\Psi}(\bm{\mathcal{I}}(\bm{e}_{12}))$, both $\lambda_k(\bm{s}_1)$ and $\lambda_k(\bm{s}_2)$ can be computed efficiently and exactly according to $\Psi_k$ (\S\ref{sec:propagation}). We outline our classification method in Algorithm \ref{code:floodfill}.
 
 \begin{algorithm}
 \caption{Fast Face Classification}
 \label{code:floodfill}
-\textbf{Input: } IFH meshes $\bm{P'}$, a boolean function $f$
+\textbf{Input: } Intersection-free hybrid meshes, boolean function $f$
 
-\textbf{Output: } Classification $f(\bm{\Lambda}(s_i))$, for all faces $s_i$ from $\bm{P'}$
+\textbf{Output: } Classification $f(\bm{\Lambda}(\bm{s}_i))$ for all faces $\bm{s}_i$
 
 
 \begin{algorithmic}[1]
-\State Select a proper seed face $s_0$
-\State Compute the first indicator vector $\boldsymbol{\Lambda}(s_0)$
-\State \Call{propagate} { $s_0$ , $\boldsymbol{\Lambda}(s_0)$}
+\State Select a proper seed face $\bm{s}_0$
+\State Compute the seed indicator vector $\boldsymbol{\Lambda}(\bm{s}_0)$
+\State \Call{propagate} { $\bm{s}_0$ , $\boldsymbol{\Lambda}(\bm{s}_0)$}
 \State
-\Function{propagate}{ $s$ , $\boldsymbol{\Lambda}(s)$}
+\Function{propagate}{ $\bm{s}$ , $\boldsymbol{\Lambda}(s)$}
     \State Compute $f(\boldsymbol{\Lambda}(s))$
-    \For {each neighboring face $s_i$}
-        \If {$s_i$ has been classified}
+    \For {each neighboring face $\bm{s}_{s, i}$}
+        \If {$\bm{s}_i$ has been classified}
             \State continue
         \EndIf
-        \If {there are PBI-reps $\{{\bm{\mathcal{I}}}_k\}$ on $e(s_i, s)$}
-            \State compute $\boldsymbol{\Lambda}(s_i)$ by $\boldsymbol{\Lambda}(s)$ and $\{{\bm{\mathcal{I}}}_k\}$
-            \State \Call{propagate} { $s_i$ , $\boldsymbol{\Lambda}(s_i)$}
+        \If {there are PBI-reps ${\bm{\mathcal{I}}}_k$ on $\bm{e}(\bm{s}_{s, i}, s)$}
+            \State compute $\boldsymbol{\Lambda}(\bm{s}_{s, i})$ by $\boldsymbol{\Lambda}(s)$ and ${\bm{\mathcal{I}}}_k$
+            \State \Call{propagate} { $\bm{s}_{s, i}$ , $\boldsymbol{\Lambda}(\bm{s}_{s, i})$}
         \Else
-            \State \Call{propagate} { $s_i$ , $\boldsymbol{\Lambda}(s)$}
+            \State \Call{propagate} { $\bm{s}_{s, i}$ , $\boldsymbol{\Lambda}(s)$}
         \EndIf
     \EndFor
 \EndFunction
@@ -861,44 +870,44 @@ Even if $\Psi_k(\bm{\mathcal{I}}(e_{12})) \neq 0$, both $\lambda_k(t_1)$ and $\l
 
 Our classification method starts from computing the seed indicator vector using point-in-polyhedron test \cite{ogayar2005point}. Conventionally, the barycenter of the face is used for the test to compute the indicator vector of the whole face. This is because the whole face is classified as a whole, and every inner point will have the same indicator vector. However, the coordinates of the inner points cannot be exactly represented by float point numbers, which may lead to wrong predicates, especially when it is an on-boundary case. Therefore, we use the original vertices, whose exact coordinates are known, for point-in-polyhedron test. For this reason, only tessellated faces with at least one original vertex can be the seed face. The point-in-polyhedron test is guaranteed to be exact. On the other hand, efficiency is not so important as there will not be many such tests. If ray-trace algorithms (e.g., \cite{frisken2002simple}) are used, the octree constructed during space division can be used for acceleration \cite{havran1999summary}.
 
-However, using point on the boundary instead of an inner one has another problem. Given a face $s$ (may not be triangle) and one of its vertex $v_b^i(s)$, the vertex indicator $\boldsymbol{\Lambda}(v_{i}(s), P_k)$ may cause ambiguity to deduce the face indicator $\boldsymbol{\Lambda}(s, P_k)$. In {\color{red}{Fig. ?}}, $\boldsymbol{\Lambda}(v_b^1(s), P_k) = on$, then $\boldsymbol{\Lambda}(s, P_k)$ can be any of the four conditions. We solve this problem by trying other vertices in $s$ for ambiguous indicators. If all vertices indicators are $on$ and the ambiguity cannot be resolved, the current face is not proper for being the seed and we select a new one instead.
+However, using point on the boundary instead of an inner one has another problem. Given a face $\bm{s}$ (may not be triangle) and one of its vertex $v_b^i(s)$, the vertex indicator $\boldsymbol{\Lambda}(v_{i}(s), P_k)$ may cause ambiguity to deduce the face indicator $\boldsymbol{\Lambda}(s, P_k)$. In {\color{red}{Fig. ?}}, $\boldsymbol{\Lambda}(v_b^1(s), P_k) = on$, then $\boldsymbol{\Lambda}(s, P_k)$ can be any of the four conditions. We solve this problem by trying other vertices in $\bm{s}$ for ambiguous indicators. If all vertices indicators are $on$ and the ambiguity cannot be resolved, the current face is not proper for being the seed and we select a new one instead.
 
 \fi
 
 \subsection{Indicator Propagation}
 \label{sec:propagation}
-Now, our meshes consist of vertices, edges and faces. Classification is required to perform on face level. However, polyhedron in-out test is performed based on points. Conventionally, face inner point such as barycenter is used to compute the indicator of the whole face. This is because in intersection-free meshes, face is classified as a whole, and every inner point will have the same indicator as the face's. However, the coordinates of inner points cannot be exactly represented by float point numbers, which may lead to wrong predicates, especially when the face lies on the surface of other mesh (Fig. x). Therefore, we use the vertices, whose exact representations are known, for indicator computation.
+Meshes consist of vertices, edges and faces. Classification is required to perform on the face level. However, polyhedron in-out test is performed based on points. Gaps exist between the them. Conventionally, face barycenter is used to compute the indicator of the whole face. This is because in intersection-free meshes, face is classified as a whole, and every face inner point will have the same indicator as the face's. However, the computation of inner point coordinates requires geometry construction, which introduces errors without exact arithmetic. Therefore, we use the vertices instead, whose exact representations are known, for indicator computation.
 
-%For example, given a face $s$ and one of its vertex $v^i(s)$, if $\lambda_k(v^i(s))=on$, $\lambda_k(s)$ can be any of $on$, $in$ or $out$ (see {\color{red}{Fig. ?}})
-However, there are two gaps between face indicator and vertex indicator. First, the indicator of vertex does not always equal to indicator of face. Second, face indicator has two conditions in $on$ case, $same$ and $oppo$, because the face has its orientation.
+%For example, given a face $\bm{s}$ and one of its vertex $v^i(s)$, if $\lambda_k(v^i(s))=on$, $\lambda_k(s)$ can be any of $on$, $in$ or $out$ (see {\color{red}{Fig. ?}})
+However, there are two gaps between face indicator and vertex indicator. First, the indicator of vertex does not always equal to indicator of face. Second, face indicator has two conditions in $on$ case---$same$ and $oppo$, because the face has its orientation.
 
-To solve these problems, we discuss our indicator trace (\ref{eq:trace}) in finer granularity. In the beginning, we start from a seed vertex $v_0$ on seed face $s_0$. We assume indicator vector $\bm{\Lambda}(v_0)$ is known. Then we use $\bm{\Lambda}(v_0)$ to compute $\bm{\Lambda}(s_0)$. In addition, we add the edge layer into the trace. Then it changes to:
+To overcome the gaps, we discuss our indicator trace (\ref{eq:trace}) in finer granularity. In the beginning, we start from a seed vertex $\bm{v}_0$ on seed face $\bm{s}_0$. We assume indicator vector $\bm{\Lambda}(\bm{v}_0)$ is known. Then we use $\bm{\Lambda}(\bm{v}_0)$ to compute $\bm{\Lambda}(\bm{s}_0)$. In addition, we add the edge layer into the trace. Then it changes to:
 \begin{equation}
-v_0\to e_0\to s_0\to e_1\to s_1\to e_2\to s_2\to ...
+\bm{v}_0\to \bm{e}_0\to \bm{s}_0\to \bm{e}_1\to \bm{s}_1\to \bm{e}_2\to \bm{s}_2\to ...
 \end{equation}
-, where $v, e$ means vertex and edge respectively. We find that there are three kinds of basic operations in the trace: $v_e\to e$, $e_s\to s$ and $s\to e_s$, where $v_e$ means the vertex is the end point of $e$, and $e_s$ means the edge is the edge of $s$.
+, where $\bm{v}, \bm{e}$ means vertex and edge respectively. We find that there are three kinds of basic operations in the trace: $\bm{v}_{\bm{e}}\to \bm{e}$, $\bm{e}_s\to \bm{s}$ and $\bm{s}\to \bm{e}_s$, where $\bm{v}_{\bm{e}}$ means the end point of $\bm{e}$, and $\bm{e}_s$ means the edge of $\bm{s}$.
 
 Given the partial order $on \succ in$ and $on \succ out$, our key observation is that the following relation always stands for indicators:
 \begin{equation}
 \label{eq:porder}
-\lambda_k(v_{e_s}) \succeq \lambda_k(e_s) \succeq \lambda_k(s)
+\lambda_k(\bm{v}_{\bm{e}_s}) \succeq \lambda_k(\bm{e}_s) \succeq \lambda_k(s)
 \end{equation}
-, where $\lambda_k(x)$ means the indicator of $x$ against a certain primitive $P_k$. This relation can be inferred from continuous space assumption and the definition of intersection-free mesh (def. \ref{eq:ifmdef}). It tells us when we perform $v_e\to e$ and $e_s\to s$, we decide whether the $on$ indicator change to $in$ or $out$ or remain $on$. When we perform $s\to e_s$, we decide whether $in$ and $out$ indicators change to $on$. In addition, considering the orientation of face, we also need to figure out whether the $on$ indicators change to $same$ or $oppo$ during $e_s\to s$ operation.
+, where $\lambda_k(x)$ means the indicator of $x$ against a certain primitive $P_k$. This relation can be inferred from continuous space assumption and the definition of intersection-free mesh. It tells us when we perform $\bm{v}_{\bm{e}}\to \bm{e}$ and $\bm{e}_{\bm{s}}\to \bm{s}$, we decide whether the $on$ indicator change to $in$ or $out$ or remain $on$. When we perform $\bm{s}\to \bm{e}_s$, we decide whether $in$ and $out$ indicators change to $on$. In addition, considering the orientation of face, we also need to figure out whether the $on$ indicators change to $same$ or $oppo$ during $\bm{e}_s\to s$ operation.
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{s\to e_s}$}~~~~ When $\lambda_k(e_s)=on$, there will be PBI-rep $\bm{\mathcal{I}}(e_s)$ attached to $e_s$ and the related neighborhood $\Psi_k(\bm{\mathcal{I}}(e_s))$ must be nonzero, since it is on the surface of mesh $P_k$:
+\noindent\textbf{$\bm{s\to \bm{e}_s}$}~~~~ When $\lambda_k(\bm{e}_s)=on$, there will be PBI-rep $\bm{\mathcal{I}}(\bm{e}_s)$ attached to $\bm{e}_s$ and the related neighborhood $\Psi_k(\bm{\mathcal{I}}(\bm{e}_s))$ must be nonzero, since it is on the surface of mesh $P_k$:
 \begin{equation}
 \label{eq:eq1}
-\lambda_k(e_s)=on,\ \ \  \mbox{iff. }\Psi_k(\bm{\mathcal{I}}(e_s))\neq 0.
+\lambda_k(\bm{e}_s)=on,\ \ \  \mbox{iff. }\Psi_k(\bm{\mathcal{I}}(\bm{e}_s))\neq 0.
 \end{equation}
-So all we need is to iterate over all nonzero components of $\bm{\Psi}(\bm{\mathcal{I}}(e_s))$ and change corresponding indicators to $on$.
+So all we need is to iterate over all nonzero components of $\bm{\Psi}(\bm{\mathcal{I}}(\bm{e}_s))$ and change corresponding indicators to $on$.
 
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{e_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(e_s) \neq on$, then $\lambda_k(e_s)=\lambda_k(s)$. When $\lambda_k(e_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\bm{\mathcal{I}}(e_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\bm{\mathcal{I}}(e_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\bm{\mathcal{I}}(e_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $e_s$. If $\Psi_k(\bm{\mathcal{I}}(e_s))$ is an edge, we can still build BSP using the opposite two faces along $e_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $s$ that near $e_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $v_x$ from the half plane $\bm{p}_{s, sp}^+$, which is on the supporting plane of $s$ and on the positive side of bounding plane $\bm{p}_{s, b}^{e_s}$ (Fig. x). For polygons, there is at least one such $v_x$ among the vertices of $s$. We find that the BSP is so simple that indicators $\lambda_k$ of all points on $\bm{p}_{s, sp}^+$ are the same. Since $\bm{p}_{s, sp}^+ \cap s \neq \varnothing$, we can compute $\lambda_k(s)$ by figuring out $\lambda_k(v_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $v_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
+\noindent\textbf{$\bm{\bm{e}_s\to s}$}~~~~From eq. \ref{eq:porder}, we know if $\lambda_k(\bm{e}_s) \neq on$, then $\lambda_k(\bm{e}_s)=\lambda_k(s)$. When $\lambda_k(\bm{e}_s) = on$, we figure out $\lambda_k(s)$ using $\Psi_k(\bm{\mathcal{I}}(\bm{e}_s))$. From eq. \ref{eq:eq1}, we know $\Psi_k(\bm{\mathcal{I}}(\bm{e}_s)) \neq 0$ and can be either a triangle face or an edge. If $\Psi_k(\bm{\mathcal{I}}(\bm{e}_s))$ is a face, we can build a trivial BSP \cite{thibault1987set} using the face on the space near $\bm{e}_s$. If $\Psi_k(\bm{\mathcal{I}}(\bm{e}_s))$ is an edge, we can still build BSP using the opposite two faces along $\bm{e}_s$. In both cases, the BSP can be used to compute $\lambda_k(s)$ if we can sample a point from $\bm{s}$ that near $\bm{e}_s$. Unfortunately, we cannot guarantee to find such a point with precise coordinates. Instead, we choose a point $\bm{v}_x$ from the half plane $\bm{p}_{s, sp}^+$, which is on the supporting plane of $\bm{s}$ and on the positive side of bounding plane $\bm{p}_{s, b}^{\bm{e}_s}$ (Fig. x). For polygons, there is at least one such $\bm{v}_x$ among the vertices of $\bm{s}$. We find that the BSP is so simple that indicators $\lambda_k$ of all points on $\bm{p}_{s, sp}^+$ are the same. Since $\bm{p}_{s, sp}^+ \cap s \neq \varnothing$, we can compute $\lambda_k(s)$ by figuring out $\lambda_k(\bm{v}_x)$. Also, if we assign each BSP splitting plane a normal by the normal of triangle it contains, we can use it to decide the orientation ($same$ or $oppo$) when $\bm{v}_x$ is on a splitting plane, which means $\lambda_k(s)=on$.
 
 \vspace{0.5em}
-\noindent\textbf{$\bm{v_e\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(v_e)=on$, we first check whether $\lambda_k(e) = on$ by (\ref{eq:eq1}). If not, we need to find where $v_e$ lies on the surface of $P_k$ and determine the neighborhood of $v_e$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${e_s\to s}$ to determine the high dimensional $\lambda_k(e)$. We use the other vertex of $e$ to be the sample point $v_x$ for the BSP classification.
+\noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(e) = on$ by (\ref{eq:eq1}). If not, we need to find where $\bm{v}_{\bm{e}}$ lies on the surface of $P_k$ and determine the neighborhood of $\bm{v}_{\bm{e}}$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${\bm{e}_s\to s}$ to determine the high dimensional $\lambda_k(e)$. We use the other vertex of $e$ to be the sample point $\bm{v}_x$ for the BSP classification.
 
 
 \iffalse
@@ -910,9 +919,9 @@ Feito et. al. \cite{feito2013fast} had noticed that intersection neighborhood ca
 
 We develop an classification method that is unconditionally robust and exact based on the idea of using intersection neighborhood information. The neighborhood information is stored in the context component of I-reps during previous stages . In the following, we discuss the conditions that the face to be classified is a triangle. If the face is not a triangle, we select a triangle slice of the face instead, as the whole face is guaranteed to be classified together. Note that the chosen slice should contain the edge where the I-reps lie, by which we compute the new indicators.
 
-Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersection on one of $t_i$'s edge, we denote the three corners it as $v_{b*}^{0}(t_i), v_{b*}^{1}(t_i), v_b^2(t_i),$ where the subscript $*$ means the vertices are on the edge where $\boldsymbol\Gamma$ lies. We also denote the context component of $\boldsymbol\Gamma$ as $C_{P_h \backslash P_j}$, meaning $t_i$ is from primitive $P_j$ and intersects primitive $P_h$. From previous discussion (section \ref{sec:ir}){\color{red}{may be more than one}}, we know there are two types of intersection context---face neighborhood and edge neighborhood. In both conditions, the one or two faces involving in the context split the space into two in and out space by its (their) orientation(s). We will see that under such division (denoted as $\boldsymbol{D}(C_{P_h \backslash P_j})$), we can compute $\lambda(t_i, P_j)$ exactly.
+Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersection on one of $t_i$'s edge, we denote the three corners it as $\bm{v}_{b*}^{0}(t_i), \bm{v}_{b*}^{1}(t_i), \bm{v}_b^2(t_i),$ where the subscript $*$ means the vertices are on the edge where $\boldsymbol\Gamma$ lies. We also denote the context component of $\boldsymbol\Gamma$ as $C_{P_h \backslash P_j}$, meaning $t_i$ is from primitive $P_j$ and intersects primitive $P_h$. From previous discussion (section \ref{sec:ir}){\color{red}{may be more than one}}, we know there are two types of intersection context---face neighborhood and edge neighborhood. In both conditions, the one or two faces involving in the context split the space into two in and out space by its (their) orientation(s). We will see that under such division (denoted as $\boldsymbol{D}(C_{P_h \backslash P_j})$), we can compute $\lambda(t_i, P_j)$ exactly.
 
-Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\bm{\mathcal{I}}$. The basic idea is to choose one point $v_x(t_i)$ on $t_i$ close enough to $\bm{\mathcal{I}}$ to compute $\lambda(v_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $v_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $v_b^2(t_i)$, which is not so close to $\bm{\mathcal{I}}$ instead. To illustrate, assume there is another point $v_{x'}(t_i)$ inside of $t_i$ that is very close to $v_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(v_x(t_i), P_j) = \lambda(v_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(v_{x'}(t_i), P_j)$ and $\lambda(v_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(v_b^2(t_i), P_j)$ is equal to $\lambda(v_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(v_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
+Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\bm{\mathcal{I}}$. The basic idea is to choose one point $\bm{v}_x(t_i)$ on $t_i$ close enough to $\bm{\mathcal{I}}$ to compute $\lambda(\bm{v}_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $\bm{v}_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $\bm{v}_b^2(t_i)$, which is not so close to $\bm{\mathcal{I}}$ instead. To illustrate, assume there is another point $\bm{v}_{x'}(t_i)$ inside of $t_i$ that is very close to $\bm{v}_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(\bm{v}_x(t_i), P_j) = \lambda(\bm{v}_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(\bm{v}_{x'}(t_i), P_j)$ and $\lambda(\bm{v}_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(\bm{v}_b^2(t_i), P_j)$ is equal to $\lambda(\bm{v}_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(\bm{v}_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
 \fi
 
@@ -930,7 +939,7 @@ Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$
 \vspace{0.5em}\noindent There is another problem that the tess-graph may not be a connected graph. We avoid this problem by inserting fake-intersections into the tess-graph. An fake intersection links the vertex of face (on the outer connected component) with the vertex on the inner connected component. The intersection refinement has to be performed again if the fake intersections cross any other intersections. To guarantee the fake intersection has a valid PBI-rep, we require the vertex from inner connected component generated by edge-face intersection, which means it is introduced during triangle-triangle intersection test. In this way, we can find an exact plane with the fake intersection on it (Fig. x).
 
 \vspace{0.5em}
-\noindent\textbf{Seed indicator generation}~~~~In \S\ref{sec:propagation}, we claim that our flood-filling starts from a seed vertex $v_0$. While the indicator vector of the seed $\bm{\Lambda}(v_0)$ can be generated by point-in-polyhedron test \cite{ogayar2005point} with the octree as acceleration structure \cite{frisken2002simple}, we have simpler strategies by using vertex with known indicators as the seed. We choose the `peak vertex` with the max x coordinate as the seed. In this way, $\lambda_k(v_0)$ is either $out$ ($in$, if complement is applied on mesh) or $on$. The $on$ indicators are easy to determine in most time. Though sometimes exception occur because of multi-coplanar situation, this will not happen if we carefully choose the right peak vertex whose neighbor faces are not coplanar (Fig. x).
+\noindent\textbf{Seed indicator generation}~~~~In \S\ref{sec:propagation}, we claim that our flood-filling starts from a seed vertex $\bm{v}_0$. While the indicator vector of the seed $\bm{\Lambda}(\bm{v}_0)$ can be generated by point-in-polyhedron test \cite{ogayar2005point} with the octree as acceleration structure \cite{frisken2002simple}, we have simpler strategies by using vertex with known indicators as the seed. We choose the `peak vertex` with the max x coordinate as the seed. In this way, $\lambda_k(\bm{v}_0)$ is either $out$ ($in$, if complement is applied on mesh) or $on$. The $on$ indicators are easy to determine in most time. Though sometimes exception occur because of multi-coplanar situation, this will not happen if we carefully choose the right peak vertex whose neighbor faces are not coplanar (Fig. x).
 
 \vspace{0.5em}\noindent The indicator vectors can propagate not only among single meshes, but can also between different meshes by the vertices and edges they share. Therefore in most time, we only need one single seed vertex for classification. However, if there are lonely meshes that do not intersect with other meshes, we need to new seeds. The indicators of the second and later seeds can only be computed by point-in-polyhedron tests.
 
@@ -943,11 +952,11 @@ Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$
 
 \vspace{0.5em}
 \noindent\textbf{Indicator up-propagation}~~~~
-In \S\ref{sec:propagation}, we point out that up-propagation (from low dimension to high dimension, $v_e\to e$ and $e_s\to s$, etc.) can be done by using sample points. Here we give use a heuristic method to prove our claim in $e_s\to s$. Extension to $v_e\to e$ should not take much effort.
+In \S\ref{sec:propagation}, we point out that up-propagation (from low dimension to high dimension, $\bm{v}_{\bm{e}}\to e$ and $\bm{e}_s\to s$, etc.) can be done by using sample points. Here we give use a heuristic method to prove our claim in $\bm{e}_s\to s$. Extension to $\bm{v}_{\bm{e}}\to e$ should not take much effort.
 
-\vspace{0.5em}\noindent We prove $\lambda_k(v_x)=\lambda_k(v_{\delta})$ in the BSP of $e_s$'s neighborhood, where $ v_x$ is the sample point from $\bm{p}_{s, sp}^+$ and $v_{\delta}$ is from the neighborhood $U(e_s, \delta)$. If $\lambda_k(v_x) \neq on$, then
+\vspace{0.5em}\noindent We prove $\lambda_k(\bm{v}_x)=\lambda_k(\bm{v}_{\delta})$ in the BSP of $\bm{e}_s$'s neighborhood, where $ \bm{v}_x$ is the sample point from $\bm{p}_{s, sp}^+$ and $\bm{v}_{\delta}$ is from the neighborhood $U(\bm{e}_s, \delta)$. If $\lambda_k(\bm{v}_x) \neq on$, then
 
-Given $v_{x'}(t_i)$ can be arbitrarily close to $v_b^2(t_i)$, if $\lambda(v_b^2(t_i), P_j) = in | out$, the equality holds because of the continuity of space. If $\lambda(v_b^2(t_i), P_j) = on$, we divide the proof of equality into two parts according to the type of intersection context. If $C_{P_h \backslash P_j}$ is face neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ is a single face, say, $t_0^c$. We have already know that the other two corners $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on $s_0$. Since $\lambda(v_b^2(t_i), P_j) = on$, we know $v_b^2(t_i)$ is on $t_0^c$, too. There comes the conclusion that the whole triangle $t_i$ is coplanar with $t_0^c$. Therefore, $v_{x'}(t_i)$ is on $t_0^c$ and $\lambda(v_{x'}(t_i), P_j) = on$, too. On the other hand, if $C_{P_h \backslash P_j}$ is edge neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ are two neighboring faces (denoted as $t_1^c, t_2^c$). We know that both $v_{b*}^{0}(t_i)$ and $v_{b*}^{1}(t_i)$ are on the shared edge $e(v_{b*}^{0}(t_i), v_{b*}^{1}(t_i))$. It means both vertices are on both $t_1^c$ and $t_2^c$. Using the same deduction of the first condition, we can conclude $\lambda(v_{x'}(t_i), P_j) = on$ whenever $\lambda(v_b^2(t_i), P_j) = on$.
+Given $\bm{v}_{x'}(t_i)$ can be arbitrarily close to $\bm{v}_b^2(t_i)$, if $\lambda(\bm{v}_b^2(t_i), P_j) = in | out$, the equality holds because of the continuity of space. If $\lambda(\bm{v}_b^2(t_i), P_j) = on$, we divide the proof of equality into two parts according to the type of intersection context. If $C_{P_h \backslash P_j}$ is face neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ is a single face, say, $t_0^c$. We have already know that the other two corners $\bm{v}_{b*}^{0}(t_i)$ and $\bm{v}_{b*}^{1}(t_i)$ are on $\bm{s}_0$. Since $\lambda(\bm{v}_b^2(t_i), P_j) = on$, we know $\bm{v}_b^2(t_i)$ is on $t_0^c$, too. There comes the conclusion that the whole triangle $t_i$ is coplanar with $t_0^c$. Therefore, $\bm{v}_{x'}(t_i)$ is on $t_0^c$ and $\lambda(\bm{v}_{x'}(t_i), P_j) = on$, too. On the other hand, if $C_{P_h \backslash P_j}$ is edge neighboring type, $\boldsymbol{D}(C_{P_h \backslash P_j})$ are two neighboring faces (denoted as $t_1^c, t_2^c$). We know that both $\bm{v}_{b*}^{0}(t_i)$ and $\bm{v}_{b*}^{1}(t_i)$ are on the shared edge $e(\bm{v}_{b*}^{0}(t_i), \bm{v}_{b*}^{1}(t_i))$. It means both vertices are on both $t_1^c$ and $t_2^c$. Using the same deduction of the first condition, we can conclude $\lambda(\bm{v}_{x'}(t_i), P_j) = on$ whenever $\lambda(\bm{v}_b^2(t_i), P_j) = on$.
 
 \vspace{0.5em}
 \noindent\textbf{Proof of Robustness}
@@ -973,11 +982,14 @@ In our method, we claim the inputs are triangle meshes mainly to avoid plane fit
 
 
 \vspace{0.5em}
-\noindent\textbf{Classification acceleration}~~~~If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(s_x)$ from $\boldsymbol{\Lambda}(s_x)$ for every face $s_x$ can be costly. Thanks to the indicator space coherence, we can save the computation time by caching the evaluation result $f(\boldsymbol{\Lambda}(s_x))$ during flood-filling.
+\noindent\textbf{Classification acceleration}~~~~If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(\bm{s}_x)$ from $\boldsymbol{\Lambda}(\bm{s}_x)$ for every face $\bm{s}_x$ can be costly. Thanks to the indicator space coherence, we can save the computation time by caching the evaluation result $f(\boldsymbol{\Lambda}(\bm{s}_x))$ during flood-filling.
 
-The basic cache strategy is to cache final result, that is, the value of $\lambda_f(s_x)$. We know indicator vector will not change if there is no intersections during propagation. That means the final classification $\lambda_f(s_x)$ will not change, too. Thus, those faces sharing the same indicator vector can be classified as a whole.
+The basic cache strategy is to cache final result, that is, the value of $\lambda_f(\bm{s}_x)$. We know indicator vector will not change if there is no intersections during propagation. That means the final classification $\lambda_f(\bm{s}_x)$ will not change, too. Thus, those faces sharing the same indicator vector can be classified as a whole.
 
-Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(s_x)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(s_x)=out$, $\lambda_2(s_x)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often only intersects with a few other primitives $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
+Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(\bm{s}_x)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(\bm{s}_x)=out$, $\lambda_2(\bm{s}_x)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often only intersects with a few other primitives $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_k}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
+
+\vspace{0.5em}
+\noindent\textbf{Extend to piece-wise wind number mesh}~~~~Recent works claim that the piece-wise wind number (PWN) are more powerful to identify the inside and outside of meshes \cite{zhou2016mesh}. Our method is straightforward to apply PWN because we can use the neighborhoods of intersections to compute the PWN of each point easily. By using PWN, we can extend our input from regular set mesh without self-intersection to so-called PWN mesh that allows deficiencies such as self-intersection and multi-component. However, the cost of this extension is that we have to check every triangle pairs for intersections, even if they are from the same input mesh. Considering this cost, we prefer a pre-computation to resolve topology deficiencies only on those input meshes that we think that might be 'unclean'.
 
 \iffalse
 \vspace{0.5em}
