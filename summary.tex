@@ -442,7 +442,7 @@ The parameter $\lambda_i(\bm{s})$ is space indicator with respect to mesh $P_i$.
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.5in]{falseclass}
-\caption{In a 2D view, face $\bm{s}$ is on the surface of mesh $P$. However, because we use barycenter $v_c(\bm{s})$ to compute the indicator  and the coordinates of $v_c(\bm{s})$ contain round-off error, we might falsely classify $\bm{s}$ as outside of $P$.}
+\caption{In a 2D view, face $\bm{s}$ from $P_2$ is on the surface of mesh $P_1$. However, because we use face barycenter $\bm{v}_c$ to compute the indicator, the coordinates of $\bm{v}_c$ contain round-off error and move to $\bm{v}'_c$, we might falsely classify $\bm{s}$ as outside of $P_2$.}
 \label{fig:falseclass}
 \end{figure}
 
@@ -543,7 +543,7 @@ This step is to choose faces from the intersection-free meshes to generate the f
 
 
 \begin{wrapfigure}{r}[0in]{0in}
-\includegraphics[width=1.2in]{p-reps}
+\includegraphics[width=1.5 in]{p-reps}
 %\caption{Plane-based representation of triangle}
 \end{wrapfigure}
 
@@ -677,7 +677,7 @@ In our method, intersection between two triangles is denoted as $\bm{\mathcal{I}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=2in]{pbi}
+\includegraphics[width=3.5in]{pbirep}
 \caption{Triangle $t_1$ and $t_2$ are from mesh $P_i, P_j$ respectively. They intersect on line segment, generating intersection $\bm{\mathcal{I}}_{12}$ on $t_1$ and $\bm{\mathcal{I}}_{21}$ on $t_2$. The PBI-rep of $\bm{\mathcal{I}}_{12}$ is $\{t_1, \bm{p}_{t_2, sp}, (\bm{p}_{t_2, b}^0, \bm{p}_{t_2, b}^1),\{(P_i, \Psi_i), (P_j, \Psi_j)\}\}$.}
 \label{fig:pbi}
 \end{figure}
@@ -718,8 +718,8 @@ Another thing needs to be noticed is that there will be repetitive detection of 
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=3.5in]{twin}
-\caption{Six situations of edge intersections. The first three subgraphs are edge-face intersections. The last three ones are edge-edge intersections. (a) Triangles are located in two sides, cross condition. (b) Triangles are located in the same sides, invalid condition. (c) One of the triangles are coplanar, coplanar condition. (d) Double twin intersections, cross condition. (e) Double twin intersections, coplanar condition. (f) Double twin intersections, coplanar condition.}
+\includegraphics[width=3.5in]{edgeisect}
+\caption{Six situations of edge interse ctions. The first three subgraphs are edge-face intersections. The last three ones are edge-edge intersections. (a) Triangles are located in two sides, cross condition. (b) Triangles are located in the same sides, invalid condition. (c) One of the triangles are coplanar, coplanar condition. (d) Double twin intersections, cross condition. (e) Double twin intersections, coplanar condition. (f) Double twin intersections, coplanar condition.}
 \label{fig:twin}
 \end{figure}
 
