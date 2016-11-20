@@ -769,7 +769,7 @@ Each intersection $\bm{\mathcal{I}}_{t}^x$ are testing whether they are collinea
 \vspace{0.5em}
 \noindent \textbf{Coincidence elimination}~~~~
 We merge coincidence intersections which have the same end points. Intersections are undirected so intersections with inverse end points are also coincident. The PBI-rep of the new intersection is inherited from either of the old one's except the neighborhood component $\bm{\Psi}$. The value element of the new neighborhood is the union of the two old ones'.
-\iffalse 
+\iffalse
  We follow the merging rules below:
 \begin{equation}
   \Psi_k(\bm{\mathcal{I}}_{t}^{12})=\left\{
@@ -905,6 +905,19 @@ Given the partial order $on \succ in$ and $on \succ out$, our key observation is
 \noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(\bm{e}) = on$ by checking the neighborhood component of the intersection on $\bm{e}$. If not, we need to find where $\bm{v}_{\bm{e}}$ lies on the surface of $P_k$ and determine the neighborhood of $\bm{v}_{\bm{e}}$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${\bm{e}_{\bm{s}}\to \bm{s}}$ to determine the high dimension indicator $\lambda_k(\bm{e})$. We use the other end point of $\bm{e}$ to be the sample point for the BSP classification.
 
 
+\subsection{Classification Acceleration}
+\label{sec:acc}
+If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(\bm{s}_i)$ from $\boldsymbol{\Lambda}(\bm{s}_i)$ for every face $\bm{s}_i$ can be costly. Thanks to the indicator space coherence, we can save the computation time by caching the evaluation result $f(\boldsymbol{\Lambda}(\bm{s}_i))$ during flood-filling.
+
+The basic cache strategy is to cache final result, that is, the value of $\lambda_f(\bm{s}_i)$. We know indicator vector will not change if there is no intersections on the edge during propagation. That means the final classification $\lambda_f(\bm{s}_i)$ will not change, too. Thus, those faces sharing the same indicator vector can be classified as a whole.
+
+Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(\bm{s}_i)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often intersects with only a few other meshes $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_x}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
+
+
+\subsection{Deferred Tessellation}
+We find for a CSG with many meshes, a large percentage of intersections are not necessary to produce the final result (Fig. \ref{}). Thus tessellating according to every detected intersections is not necessary. Using the accelerating strategy in \S\ref{sec:acc}, we can use the intersections information of faces to give an early prediction of whether the face have to be tessellated.
+
+
 \iffalse
 \subsection{Implementation}
 
@@ -919,12 +932,57 @@ Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersec
 Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\bm{\mathcal{I}}$. The basic idea is to choose one point $\bm{v}_x(t_i)$ on $t_i$ close enough to $\bm{\mathcal{I}}$ to compute $\lambda(\bm{v}_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $\bm{v}_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $\bm{v}_b^2(t_i)$, which is not so close to $\bm{\mathcal{I}}$ instead. To illustrate, assume there is another point $\bm{v}_{x'}(t_i)$ inside of $t_i$ that is very close to $\bm{v}_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(\bm{v}_x(t_i), P_j) = \lambda(\bm{v}_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(\bm{v}_{x'}(t_i), P_j)$ and $\lambda(\bm{v}_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(\bm{v}_b^2(t_i), P_j)$ is equal to $\lambda(\bm{v}_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(\bm{v}_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
 \fi
+\section{Experiments}
 
-\section{Discussion}
+\begin{table*}[ht]
+\caption{Computation Time Statistics (Seconds)}
+\label{tab:performance}
+\centering
+\begin{tabular}{*{13}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\hline
+\multirow{2}{*}{No.} & \multirow{2}{*}{Figure} & \multicolumn{3}{c|}{Face Num.$^\nabla$} & \multirow{2}{*}{\tabincell{c}{Primitive\\Count}} & \multirow{2}{*}{\tabincell{c}{CGAL}} & \multirow{2}{*}{\tabincell{c}{Maya}} & \multirow{2}{*}{\tabincell{c}{Cork/Carve}} & \multirow{2}{*}{\tabincell{c}{QuickCSG}}& \multicolumn{4}{c}{Our Approach}\\
+\cline{3-5} \cline{11-14}
+ & & Total & Min & Max &&&&&& Total$^\circ$ & Step 1 & Step 2 & Step 3\\
+\hline \hline
+1 & \ref{fig:models}(a) & 37.6K & 180 & 1.6K & 201 & 1350 & 49.9 & - & 15.9 & \textbf{3.13}  & 0.328 & 1.69 & 0.922 \\
+2 & \ref{fig:models}(a) & 146K & 180 & 1.6K & 801  & TLE & 1400 & TLE & Fail* & \textbf{12.8}  & 1.36 & 6.41 & 4.00 \\
+3 & \ref{fig:models}(b) & 377K & 2.56K & 346K & 7 & TLE & 224.5 & 45.7 & 11.7 & \textbf{1.44} & 0.438 & 0.062 & 0.563 \\
+4 & \ref{fig:models}(c) & 79.2K & 12 & 38.2K & 4  & 97.6 & Fail & 3.58 & 1.69 & \textbf{0.563}  & 0.187 & 0.141 & 0.172 \\
+5 & \ref{fig:models}(d) & 36K & 800 & 2.4K & 29 & 34.1 & 7.03 & 18.7 & 4.05 & \textbf{0.313} & 0.094 & 0.094 & 0.081 \\
+6 & \ref{fig:models}(e) & 597K & 96.9K & 500K & 2 & TLE & 38.3 & 26.4 & 5.63 & \textbf{2.13} & 0.563 & 0.031 & 0.984 \\
+7 & \ref{fig:models}(f) & 170K & 69.7K & 100K & 2  & 218 & 7.45 & 13.8 & 2.39 & \textbf{0.891} & 0.328 & 0.125 & 0.266 \\
+8 & \ref{fig:models}(g) & 362K & 6.91K & 276K & 22 & TLE & 344 & 256 & 19.2 & \textbf{1.80} & 0.766 & 0.172 & 0.593 \\
+9 & \ref{fig:budda} & 2.16M & 1.08M & 1.08M & 2 & Fail & Fail & MLE$^\bullet$ & Fail & \textbf{11.3} & 5.55 & 1.36 & 3.01 \\
+\hline
+\end{tabular}
+\begin{flushleft}
+$^{\nabla}$~~\emph{Min} (\emph{Max}) means the minimum (maximum) number of faces of a single primitive.
+
+$^{\circ}$~~The total computation time of our method includes the construction of half-edge structure and the three steps in Section \ref{sec:overview}.
+
+\end{flushleft}
+\end{table*}
+
+We implemented the proposed method in C++ and tested a series of models on a laptop with Intel Core i5 1.5GHz CPU and 8GB RAM. To prove both the efficiency and robustness, we perform boolean evaluation on various CSGs with different complexity. Extreme degenerate cases such as self-union are also tested.
+
+We compared our method with several previous works with available implementations, including CGAL \cite{cgal:hk-bonp3-15a}, Maya \cite{Maya2015,barki2015exact},"Cork" \cite{Cork}, "QuickCSG" \cite{douze2015quickcsg}, "Carve" \cite{Carve}, and online service of Campen and Kobbelt's plane-based method \cite{campen2010exact,WebBSP}.
+
 
 \vspace{0.5em}
+\noindent\textbf{Coplanar and self-union}~~~~
+Our method is unconditionally robust for regular set meshes. Even extreme degenerate cases will not cause invalid output. To prove that, we tested the self-union of several models and some CSG with coplanar faces. We find that our method always produces visually correct results. QuickCSG and Cork failed to produce the result in most of these cases, because they cannot deal with coplanar faces. Even after perturbation, the result meshes are still full with deficiencies (holes, boundary edges, etc.). For the bunny model, we found our result face count was slightly deviation from the original mesh. This is because the original mesh contains self-intersection in the bunny chest (the green faces).
 
-\subsection{Essential Subroutines}
+\vspace{0.5em}
+\noindent\textbf{Binary boolean operations}~~~~
+The most common situation of CSG evaluation is to perform boolean operations one by one, since many designers are used to change the model progressly. While our method can evaluate multiple boolean operations once for all, we compared the performance of binary boolean operations to prove the efficiency. Table \ref{tab:performance} shows the evaluation time of different methods. We can clearly see our method is very fast that is only slightly slower than the fastest non-robust QuickCSG. Other robust methods such as Maya and CGAL are much slower because both of them use the arbitrary precision arithmetic. It should be noted that in some cases (), most time is spent on octree construction. It means other stages which involve plane-based geometry take only a small percentage of time, proving the efficiency of our plane-based geometry.
+
+
+\vspace{0.5em}
+\noindent\textbf{CSGs with many primitives}~~~~
+To identify the ability of evaluating large CSG, we also test some CSG with tens or hundreds of meshes. Maya and CGAL cannot perform multiple boolean operations, so we can only give the comparison of incremental boolean evaluation. We 
+
+
+\section{Essential Subroutines}
 \label{sec:esubroutine}
 
 \vspace{0.5em}
@@ -958,7 +1016,7 @@ Given $\bm{v}_{x'}(t_i)$ can be arbitrarily close to $\bm{v}_b^2(t_i)$, if $\lam
 
 \fi
 
-\subsection{Extensions}
+\section{Extensions}
 
 \vspace{0.5em}
 \noindent\textbf{Converting to float-point number}~~~~
@@ -975,14 +1033,6 @@ In our method, we claim the inputs are triangle meshes mainly to avoid plane fit
 
 \vspace{0.5em}\noindent The only different part is intersection computation. The first step of M\"{o}ller's triangle-triangle intersection method is to test each edge-plane pair respectively. This idea can be extended to polygon intersections. Then we can get two plane-face intersections $Seg1$ and $Seg2$, except that in polygon cases, $Seg1$ and $Seg2$ are two sets of line segments, instead of single segments. Later processes are the same.
 
-
-\vspace{0.5em}
-\noindent\textbf{Classification acceleration}~~~~If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(\bm{s}_i)$ from $\boldsymbol{\Lambda}(\bm{s}_i)$ for every face $\bm{s}_i$ can be costly. Thanks to the indicator space coherence, we can save the computation time by caching the evaluation result $f(\boldsymbol{\Lambda}(\bm{s}_i))$ during flood-filling.
-
-The basic cache strategy is to cache final result, that is, the value of $\lambda_f(\bm{s}_i)$. We know indicator vector will not change if there is no intersections on the edge during propagation. That means the final classification $\lambda_f(\bm{s}_i)$ will not change, too. Thus, those faces sharing the same indicator vector can be classified as a whole.
-
-Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(\bm{s}_i)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often intersects with only a few other meshes $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_x}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
-
 \vspace{0.5em}
 \noindent\textbf{Extend to piece-wise wind number mesh}~~~~Recent works claim that the piece-wise wind number (PWN) are more powerful to identify the inside and outside of meshes \cite{zhou2016mesh}. Our method is straightforward to apply PWN because we can use the neighborhoods of intersections to compute the PWN of each point easily. By using PWN, we can extend our input from regular set mesh without self-intersection to so-called PWN mesh that allows deficiencies such as self-intersection and multi-component. However, the cost of this extension is that we have to check every triangle pairs for intersections, even if they are from the same input mesh. Considering this cost, we prefer a pre-computation to resolve topology deficiencies only on those input meshes that we think that might be 'unclean'.
 
@@ -992,7 +1042,6 @@ Also, we can perform intermediate results cache. We noticed that the boolean exp
 Another way to avoid useless intersection computation is to use lazy intersection technique
 \fi
 
-\section{Experiments}
 
 \section{Summary}
 
