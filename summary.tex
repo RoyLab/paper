@@ -553,14 +553,10 @@ Using Plane-based representation, each face $\bm{s}$ with $n$ edges is represent
 Other commonly used notations in this paper are presented here. A plane $\bm{p}$ can be represented by four scalar coefficients $a(\bm{p}), b(\bm{p}), c(\bm{p}), d(\bm{p})$. The normal of $\bm{p}$ is denoted as $\bm{n}(\bm{p})$, which is a normalized vector consisting of the first three plane coefficients. A line $\bm{l}$ can be represented by intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, or in short, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$. A point $\bm{v}$ can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, or in short, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
 
 
-As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates to improve performance. For efficiency, we implement all geometry predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
+We use Campen et al.'s method \cite{campen2010exact} for exact conversion of triangles from their vertex-based representation to plane-based representation. During the conversion, the coordinates of input vertices is rounded to certain precision which is dependent on the precision used to represent plane coefficients during boolean operation. If IEEE 754 double precision float-point number is used, 20-bit precision is allowed, which is enough for most CAD applications. As the precision of input coordinates is finite, we can determine in advance the upper boundary of precision needed to perform a precise decision, with which we can use fixed precision predicates to improve performance. For efficiency, we implement all geometry predicates using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
 
-
-\subsection{Conversion}
-
-\label{sec:convert}
-
-We use Campen et al.'s method \cite{campen2010exact} for exact conversion of triangles from their vertex-based representation to plane-based representation. Given that the input vertex coordinate has $L$-bit precision including sign, the precisions of the four plane coefficients are $L_a, L_b, L_c, L_d$, which have to satisfy the following requirements:
+\iffalse
+Given that the input vertex coordinate has $L$-bit precision including sign, the precisions of the four plane coefficients are $L_a, L_b, L_c, L_d$, which have to satisfy the following requirements:
 \begin{equation}
 \begin{split}
 &L_a=L_b=L_c\ge 2(K-1)+1+1,\\
@@ -571,11 +567,10 @@ Here $K$ is the maximum bits required to represent edge vector components in inp
 
 
 Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edge in the mesh (relative to the bounding box). If we use IEEE 754 double float point number ($M=53$) and assume $\delta \le 2^{-5.5} \approx 0.022$, the maximum input precision $L$ can reach to 20, which is enough for most application (for standard IEEE 754 single float point number, the precision is 24-bit).
+\fi
 
-
-\subsection{Substrates}
 \label{sec:substrates}
-Plane-based geometry predicates used in our method include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. Most of them are well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two advanced plane-based predicates, which are also important building blocks of our method.
+Plane-based geometry predicates used in our method include checking coincidence and co-orientation of planes, orientation of a plane with respect to a point, and whether three planes intersect in a unique point, etc. Most of them are well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two advanced predicates, which are also important building blocks of our method.
 
 \vspace{0.5em}
 \noindent \textbf{Linear ordering of points}~~~~
@@ -605,17 +600,17 @@ By simple geometry reasoning, we find that the angle between $\bm{n}^\parallel(\
 sign(\sin{\theta_{ab}})=  sign(\bm{n}(\bm{p}_0)\cdot(\bm{n}(\bm{p}_a) \times \bm{n}(\bm{p}_b)))
 \end{equation}
 
-Since all the three vectors on the right side are already explicitly represented, we only have to evaluate the sign of an 3x3 matrix and avoid complicated high precision float-point arithmetic.
+Since all the three vectors on the right side are already explicitly represented, we only have to evaluate the sign of an 3$\times$3 matrix and avoid complicated high precision float-point arithmetic.
 \begin{figure}
   \centering
   % Requires \usepackage{graphicx}
-  \includegraphics[width=2.5in]{twopointoneline}\\
-  \caption{The configuration of linear ordering of points. Points $\bm{v}_a$ and $\bm{v}_b$ are both on line $\bm{l}_{ab}$. We convert this problem into the plane ordering between $\bm{p}_a$ and $\bm{p}_b$ along $\bm{l}_{ab}$.}\label{fig:twopointoneline}
+  \includegraphics[width=3.5in]{twopointoneline}\\
+  \caption{The configuration of linear ordering of points. Points $\bm{v}_a$ and $\bm{v}_b$ are both on line $\bm{l}_{ab}$. We convert this problem into the plane ordering of $\bm{p}_a$ and $\bm{p}_b$ along $\bm{l}_{ab}$.}\label{fig:twopointoneline}
 \end{figure}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=2.5in]{circularorder}
+\includegraphics[width=3.5in]{circularorder}
 \caption{The configuration of circular ordering of lines. $\bm{l}_a\colon(\bm{p}_0 \cap \bm{p}_a)$ and $\bm{l}_b\colon(\bm{p}_0 \cap \bm{p}_b)$ are coplanar in $\bm{p}_0$.}
 \label{fig:circularorder}
 \end{figure}
@@ -649,7 +644,7 @@ The non-robustness of this algorithm is from computing the coordinates of inters
 \subsection{Plane-Based Intersection}
 
 \label{sec:embed}
-According to the method described in \S\ref{sec:convert}, triangle faces $t$ are firstly converted to its P-rep: a supporting plane $\bm{p}_{t, sp}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
+Given a triangle face $t$, it is firstly converted to its P-rep: a supporting plane $\bm{p}_{t, sp}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
 
 \begin{figure}[t]
 \centering
@@ -661,7 +656,7 @@ According to the method described in \S\ref{sec:convert}, triangle faces $t$ are
 
 
 \begin{itemize}[leftmargin=0.45cm]
-  \item[1)] The basic subroutine of the first step is given two faces $t_1$ and $t_2$, computing the orientation of of a face with respect to vertices from the other face. Reviewing the discussion of \S \ref{sec:convert}, under the constraint of $M \ge P+1$, we can compute the predicate within the precision of $M$ bits. This allow us to perform this early rejection efficiently.
+  \item[1)] The basic subroutine of the first step is given two faces $t_1$ and $t_2$, computing the orientation of of a face with respect to vertices from the other face. We find that since the exact coordinates of each triangle corners are known, we can compute the point-plane orientation within the precision of plane coefficients---namely, using simple fix float-point arithmetic. This allow us to perform this early rejection efficiently.
       \vspace{0.5em}
   \item[2)] If $t_1$ and $t_2$ are not coplanar, the end points of $Seg_1$ and $Seg_2$ can be implicitly represented by plane triples. Take $Seg_1$ as an example. $Seg_1$ is the intersection between $t_1$ and $\bm{p}_{t_2, sp}$ and the end points of $Seg_1$ are intersections between $\bm{p}_{t_2, sp}$ and edges from $t_1$ (denoted as $\bm{e}^i_{t_1}$). Because $\bm{e}^i_{t_1}$ can be represented as $\bm{p}_{t_1, s}\cap \bm{p}^i_{t_1, b}$, the end points of $Seg_1$ can be represented in the form of $\bm{p}_{t_2, sp} \cap \bm{p}_{t_1, sp} \cap \bm{p}^i_{t_1, b}$. In Fig. \ref{fig:isect}, we list all possible intersecting situations between $t_1$ and $\bm{p}_{t_2, sp}$. The two intersection edges $\bm{e}^i_{t_1}$ for each situation are also presented. The coplanar situation will be discussed later in \S \ref{sec:degenerate}.
       \vspace{0.5em}
@@ -691,16 +686,19 @@ For example, in Fig. \ref{fig:pbi}, two triangle faces $t_1$ and $t_2$ from mesh
 While two triangles, if intersecting, intersect on a line segment in most situations, they can also intersect on a point or a convex area (coplanar case). Even if the intersection is a line segment, the intersection can be on triangle edges. These degenerate situations prevent us from performing robust boolean operations. In this section, we offer simple but effective way to deal with all these degenerations and conceal the complexity of intersections behind the concise PBI-rep.
 
 %The criterion of whether an intersection help tessellation is by its necessity: if the intersection is not presented, whether some faces from the linked halfedge will cross the boundary of primitives. The word 'cross' do not only include the situation that a face is partly outside and partly inside of a primitive, but also can mean that a face is partly inside (outside) and part on the boundary of the primitive.
+
+\iffalse
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{isolated}
-\caption{Two situations of point intersections. (a) $\bm{v}_{iso}$ is isolated, and there is no adjacent intersection line segment. We need to add the $\bm{v}_{iso}$ to triangle $t_1$. (b) $\bm{v}_{non-iso}$ is not isolated. We do not need to add $\bm{v}_{non-iso}$ into $t_1$ because it can be added by other triangle pairs which intersect on line segments. However, for simplicity, we add the intersection point into $t_1$ in both situations.}
+%\caption{Two situations of point intersections. (a) $\bm{v}_{iso}$ is isolated, and there is no adjacent intersection line segment. We need to add the $\bm{v}_{iso}$ to triangle $t_1$. (b) $\bm{v}_{non-iso}$ is not isolated. We do not need to add $\bm{v}_{non-iso}$ into $t_1$ because it can be added by other triangle pairs which intersect on line segments. However, for simplicity, we add the intersection point into $t_1$ in both situations.}
 \label{fig:isolated}
 \end{figure}
+\fi
 
 \subsubsection{Point intersection}
 \label{sec:ipoint}
-If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the intersection cannot be represented using our four-component description. Therefore, we simply add the intersection point into the related triangles to guarantee correct tessellation, and no intersection is introduced.
+If two triangles intersect on a single point (e.g., Fig. \ref{fig:isect}d), the intersection cannot be represented using our four-component description since the line segment collapses into a single point. In these cases, we simply add the intersection point into the related triangles to guarantee correct tessellation, and no intersection is introduced.
 
 
 
@@ -712,7 +710,7 @@ If two triangles intersect on a single point (Fig. \ref{fig:isolated}), the inte
 % whose edge? need to be further explained and better defined. an edge intersection divide edge in a triangle and will be duplicated in the other
 
 
-When intersection line segment lies on an edge (Fig. \ref{fig:twin}). we call it \emph{edge intersection}. The only difference between edge intersection and the general case is the neighborhood representation $\Psi$. The space near edge intersection is decided by both face in the two side of the intersected edge, instead of just one triangle face (Fig. X). Therefore, supposing intersection is on the edge $\bm{e}_{k, i}$ of mesh $P_k$, then the neighborhood $\Psi_k = \bm{e}_{k, i}$. Note that an intersection can be on edges from different meshes. Then there are more than one component of $\bm{\Psi}$ are edges (Fig. \ref{fig:twin}d).
+When intersection line segment lies on an edge (Fig. \ref{fig:twin}). we call it \emph{edge intersection}. The speciality of edge intersection is the neighborhood representation $\Psi$. The space near edge intersection is divided by both face in the two side of the intersected edge, instead of just one triangle face (Fig. X). Therefore, supposing intersection is on the edge $\bm{e}_{k, i}$ of mesh $P_k$, we denote the neighborhood as $\Psi_k = \bm{e}_{k, i}$. Note that an intersection can be on edges from different meshes. Then there are more than one component of $\bm{\Psi}$ are edges (Fig. \ref{fig:twin}d).
 
 Another thing needs to be noticed is that there will be repetitive detection of edge intersections. In Fig. \ref{fig:twin}a, the same intersection on $t_1$ will be detected twice with both $t_2$ and $t_2^{\star}$. We solve this duplication together with other interactions among intersections in \S\ref{sec:tessellation}. We call such $t_2$ and $t_2^{\star}$ as \emph{companion triangles} in an edge intersection, a concept which will be referred again in the discussion of coplanar cases.
 
@@ -735,7 +733,14 @@ Another thing needs to be noticed is that there will be repetitive detection of 
 
 Consider two triangle faces $t_1$ and $t_2$ intersect within a common plane. Both $t_1$ and $t_2$ will divide each other into two areas---a convex overlapping area and exclusive parts (Fig. \ref{fig:coplanar}). Apparantly, if we tessellate both $t_1$ and $t_2$ according to the boundary of overlapping area, we can guarantee that the tessellated meshes will not cross the boundary of any other meshes. In fact, many methods \cite{feito2013fast,zhou2016mesh} claim that tessellating faces according to this 2D-intersection result is necessary. However, in our method, we do not test whether $t_1$ and $t_2$ really intersect in 2D. We treat them as they do not intersect at all. In this way, we simplify our method, making it more robust and fast, while doing no harm to the topology correctness.
 
-The key observation is that intersection in 2D does not create new valid edges. The word `valid` means the edge is necessary or possibly necessary for the final result mesh. We find that each intersection line segment in 2D is on the edges from input meshes. That means we can view 2D intersection as a special case of edge intersection. The only difference is that there can be up to three edge intersections in one 2D intersection (Fig. \ref{fig:coplanar}). As we have discussed, edge intersection will be detected twice. That means we can rely on the companion triangle faces to detect intersections. However, if the companion triangles are also coplanar, neither of the two triangles will record the intersection. In fact, we do not need to worry about this, because in this case, the intersection is not valid. The two sides of the intersection are both retained or both dropped and we do not need it for tessellation.
+The key observation is that intersections in 2D are either duplicated added or invalid. The word `valid` means the intersections will appear as an edge in the final mesh. Namely, faces of intersection neighborhood have different classification results:
+\begin{equation}
+\lambda_f(\bm{s^i}) = f(\bm{\Lambda}(\bm{s}_i)) = constant, \bm{s}^i \in \mathcal{N}(\mathcal{I})
+\end{equation}
+, where $f$ is the CSG function, and $\bm{s}^i \in \mathcal{N}(\mathcal{I})$ is the neighboring faces of intersection $\mathcal{I}$. In principle, the validation of intersection is not known until classification stage. However, we can perform an early rejection to eliminate intersections that are invalid in certain.
+
+
+We find that each intersection line segment in 2D is on the edges from input meshes. That means we can view 2D intersection as a special case of edge intersection. The only difference is that there can be up to three edge intersections in one 2D intersection (Fig. \ref{fig:coplanar}). As we have discussed, edge intersection will be detected twice. That means we can rely on the companion triangle faces to detect intersections. However, if the companion triangles are also coplanar, neither of the two triangles will record the intersection. Fortunately, in this case, the intersection is not valid. The two sides of the intersection have the same indicators and are both retained or both dropped and we do not need it for tessellation.
 
 \section{Deferred Tessellation}
 
@@ -905,7 +910,7 @@ Given the partial order $on \succ in$ and $on \succ out$, our key observation is
 \noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(\bm{e}) = on$ by checking the neighborhood component of the intersection on $\bm{e}$. If not, we need to find where $\bm{v}_{\bm{e}}$ lies on the surface of $P_k$ and determine the neighborhood of $\bm{v}_{\bm{e}}$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${\bm{e}_{\bm{s}}\to \bm{s}}$ to determine the high dimension indicator $\lambda_k(\bm{e})$. We use the other end point of $\bm{e}$ to be the sample point for the BSP classification.
 
 
-\subsection{Classification Acceleration}
+\subsection{Acceleration by Caching}
 \label{sec:acc}
 If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(\bm{s}_i)$ from $\boldsymbol{\Lambda}(\bm{s}_i)$ for every face $\bm{s}_i$ can be costly. Thanks to the indicator space coherence, we can save the computation time by caching the evaluation result $f(\boldsymbol{\Lambda}(\bm{s}_i))$ during flood-filling.
 
@@ -914,8 +919,12 @@ The basic cache strategy is to cache final result, that is, the value of $\lambd
 Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(\bm{s}_i)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often intersects with only a few other meshes $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_x}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
 
 
-\subsection{Deferred Tessellation}
-We find for a CSG with many meshes, a large percentage of intersections are not necessary to produce the final result (Fig. \ref{}). Thus tessellating according to every detected intersections is not necessary. Using the accelerating strategy in \S\ref{sec:acc}, we can use the intersections information of faces to give an early prediction of whether the face have to be tessellated.
+\subsection{Tessellating on Classification}
+We find for a CSG with many meshes, a large percentage of intersections are invalid (see \S\ref{sec:degenerate} for 'invalid'). Tessellation according to these invalid intersections is not necessary. To avoid unnecessary tessellation, we can give an early prediction of which intersections are invalid by intersections information of faces, but have to embed the tessellation stage into the classification stage, which we call it 'tessellating on classification'.
+
+In most situations, a certain faces $\bm{s}$ only intersect with a few other meshes $\Theta(\bm{s})$. We can use the same cache strategy in \S\ref{sec:acc} to shrink the original CSG into a smaller one by the common indicators of $\{P_i\}\backslash\Theta(\bm{s})$, where $\{P_i\}$ means all the primitive meshes. After the shrinking, the primitive meshes of the CSG must be from $\Theta(\bm{s})$. If any mesh in $\Theta(\bm{s})$ does not appear in the shrinked CSG, it means the indicator of that mesh does not change the classification result, which in another word, intersections on $\bm{s}$ from that mesh are invalid and do not affect the classification of any subfaces of $\bm{s}$. If the shrinked CSG is trivial which does not contain any primitives, it means $\bm{s}$ does not need tessellation. In this way, we save the computation time, and simplify the topology of the final result mesh. Because we can only shrink the CSG for $\bm{s}$ when we classify it---before that the indicators of meshes from $\{P_i\}\backslash\Theta(\bm{s})$ are not known---we do not perform tessellation until we do the classification.
+
+
 
 
 \iffalse
@@ -932,54 +941,6 @@ Given a face $t_i$ to be classified and an I-rep $\boldsymbol\Gamma$ of intersec
 Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$, the space division $\boldsymbol{D}(C_{P_h \backslash P_j})$ is homogeneous with the space division by $P_j$ in neighborhood of $\bm{\mathcal{I}}$. The basic idea is to choose one point $\bm{v}_x(t_i)$ on $t_i$ close enough to $\bm{\mathcal{I}}$ to compute $\lambda(\bm{v}_x(t_i), P_j)$, and then compute $\lambda(t_i, P_j)$ accordingly. However, the problem is that we cannot find such a $\bm{v}_x(t_i)$ that can be represented exactly, which means robust classification cannot be performed. Fortunately, we observe that we can choose $\bm{v}_b^2(t_i)$, which is not so close to $\bm{\mathcal{I}}$ instead. To illustrate, assume there is another point $\bm{v}_{x'}(t_i)$ inside of $t_i$ that is very close to $\bm{v}_b^2(t_i)$ ({\color{red}{Fig. x}}). Because all inner points of $t_i$ have the same indicator, $\lambda(\bm{v}_x(t_i), P_j) = \lambda(\bm{v}_{x'}(t_i), P_j)$. On the other hand, we find that $\lambda(\bm{v}_{x'}(t_i), P_j)$ and $\lambda(\bm{v}_b^2(t_i), P_j)$ are always equal under division $\boldsymbol{D}(C_{P_h \backslash P_j})$ ({\color{red}{see Appendix \ref{app:profind}}}). Therefore, $\lambda(\bm{v}_b^2(t_i), P_j)$ is equal to $\lambda(\bm{v}_x(t_i), P_j)$ under $\boldsymbol{D}(C_{P_h \backslash P_j})$, and are coherent with $\lambda(t_i, P_j)$ under the division of whole primitive $P_j$. One additional thing is that when $\lambda(\bm{v}_2(t_i), P_j)=on$, then $\lambda(t_i, P_j)$ can be either $same$ or $oppo$. The normal orientation test have to be performed to eliminate such ambiguity.
 
 \fi
-\section{Experiments}
-
-\begin{table*}[ht]
-\caption{Computation Time Statistics (Seconds)}
-\label{tab:performance}
-\centering
-\begin{tabular}{*{13}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
-\hline
-\multirow{2}{*}{No.} & \multirow{2}{*}{Figure} & \multicolumn{3}{c|}{Face Num.$^\nabla$} & \multirow{2}{*}{\tabincell{c}{Primitive\\Count}} & \multirow{2}{*}{\tabincell{c}{CGAL}} & \multirow{2}{*}{\tabincell{c}{Maya}} & \multirow{2}{*}{\tabincell{c}{Cork/Carve}} & \multirow{2}{*}{\tabincell{c}{QuickCSG}}& \multicolumn{4}{c}{Our Approach}\\
-\cline{3-5} \cline{11-14}
- & & Total & Min & Max &&&&&& Total$^\circ$ & Step 1 & Step 2 & Step 3\\
-\hline \hline
-1 & \ref{fig:models}(a) & 37.6K & 180 & 1.6K & 201 & 1350 & 49.9 & - & 15.9 & \textbf{3.13}  & 0.328 & 1.69 & 0.922 \\
-2 & \ref{fig:models}(a) & 146K & 180 & 1.6K & 801  & TLE & 1400 & TLE & Fail* & \textbf{12.8}  & 1.36 & 6.41 & 4.00 \\
-3 & \ref{fig:models}(b) & 377K & 2.56K & 346K & 7 & TLE & 224.5 & 45.7 & 11.7 & \textbf{1.44} & 0.438 & 0.062 & 0.563 \\
-4 & \ref{fig:models}(c) & 79.2K & 12 & 38.2K & 4  & 97.6 & Fail & 3.58 & 1.69 & \textbf{0.563}  & 0.187 & 0.141 & 0.172 \\
-5 & \ref{fig:models}(d) & 36K & 800 & 2.4K & 29 & 34.1 & 7.03 & 18.7 & 4.05 & \textbf{0.313} & 0.094 & 0.094 & 0.081 \\
-6 & \ref{fig:models}(e) & 597K & 96.9K & 500K & 2 & TLE & 38.3 & 26.4 & 5.63 & \textbf{2.13} & 0.563 & 0.031 & 0.984 \\
-7 & \ref{fig:models}(f) & 170K & 69.7K & 100K & 2  & 218 & 7.45 & 13.8 & 2.39 & \textbf{0.891} & 0.328 & 0.125 & 0.266 \\
-8 & \ref{fig:models}(g) & 362K & 6.91K & 276K & 22 & TLE & 344 & 256 & 19.2 & \textbf{1.80} & 0.766 & 0.172 & 0.593 \\
-9 & \ref{fig:budda} & 2.16M & 1.08M & 1.08M & 2 & Fail & Fail & MLE$^\bullet$ & Fail & \textbf{11.3} & 5.55 & 1.36 & 3.01 \\
-\hline
-\end{tabular}
-\begin{flushleft}
-$^{\nabla}$~~\emph{Min} (\emph{Max}) means the minimum (maximum) number of faces of a single primitive.
-
-$^{\circ}$~~The total computation time of our method includes the construction of half-edge structure and the three steps in Section \ref{sec:overview}.
-
-\end{flushleft}
-\end{table*}
-
-We implemented the proposed method in C++ and tested a series of models on a laptop with Intel Core i5 1.5GHz CPU and 8GB RAM. To prove both the efficiency and robustness, we perform boolean evaluation on various CSGs with different complexity. Extreme degenerate cases such as self-union are also tested.
-
-We compared our method with several previous works with available implementations, including CGAL \cite{cgal:hk-bonp3-15a}, Maya \cite{Maya2015,barki2015exact},"Cork" \cite{Cork}, "QuickCSG" \cite{douze2015quickcsg}, "Carve" \cite{Carve}, and online service of Campen and Kobbelt's plane-based method \cite{campen2010exact,WebBSP}.
-
-
-\vspace{0.5em}
-\noindent\textbf{Coplanar and self-union}~~~~
-Our method is unconditionally robust for regular set meshes. Even extreme degenerate cases will not cause invalid output. To prove that, we tested the self-union of several models and some CSG with coplanar faces. We find that our method always produces visually correct results. QuickCSG and Cork failed to produce the result in most of these cases, because they cannot deal with coplanar faces. Even after perturbation, the result meshes are still full with deficiencies (holes, boundary edges, etc.). For the bunny model, we found our result face count was slightly deviation from the original mesh. This is because the original mesh contains self-intersection in the bunny chest (the green faces).
-
-\vspace{0.5em}
-\noindent\textbf{Binary boolean operations}~~~~
-The most common situation of CSG evaluation is to perform boolean operations one by one, since many designers are used to change the model progressly. While our method can evaluate multiple boolean operations once for all, we compared the performance of binary boolean operations to prove the efficiency. Table \ref{tab:performance} shows the evaluation time of different methods. We can clearly see our method is very fast that is only slightly slower than the fastest non-robust QuickCSG. Other robust methods such as Maya and CGAL are much slower because both of them use the arbitrary precision arithmetic. It should be noted that in some cases (), most time is spent on octree construction. It means other stages which involve plane-based geometry take only a small percentage of time, proving the efficiency of our plane-based geometry.
-
-
-\vspace{0.5em}
-\noindent\textbf{CSGs with many primitives}~~~~
-To identify the ability of evaluating large CSG, we also test some CSG with tens or hundreds of meshes. Maya and CGAL cannot perform multiple boolean operations, so we can only give the comparison of incremental boolean evaluation. We 
 
 
 \section{Essential Subroutines}
@@ -997,6 +958,79 @@ To identify the ability of evaluating large CSG, we also test some CSG with tens
 \vspace{0.5em}\noindent The indicator vectors can propagate not only among single meshes, but can also between different meshes by the vertices and edges they share. Therefore in most time, we only need one single seed vertex for classification. However, if there are lonely meshes that do not intersect with other meshes, we need to new seeds. The indicators of the second and later seeds can only be computed by point-in-polyhedron tests.
 
 %Our method of generating the first indicator vector will fail on extreme conditions when all faces in Linked halfedge are coincident with more than one primitive face (e.g., the union of the same mesh). In order to be robust, we use the high-precision face barycenter with the point-in-polyhedron test to generate the seed indicator vector instead after several failures of choosing a proper seed face.
+
+\section{Experiments}
+
+\begin{table*}[ht]
+\caption{Computation Time Statistics of Binary Boolean Operation (Seconds)}
+\label{tab:performance}
+\centering
+\begin{tabular}{*{9}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\hline
+{No.} & {Figure} & {Triangle Num. 1} & {Triangle Num. 2} &
+CGAL & Maya & Cork & Carve & QuickCSG & Our Method
+\\
+\hline\hline
+1 & budda \& lion & 1.08M & 0.4M & - & - & - & - & 3.44 & 6.88\\
+2 & dragon \& bunny & 277k & 70k & - & - & - & - & - & -\\
+3 & armadillo \& armadillo* & 150k & 150k & - & - & - & - & - & -\\
+4 & horse \& corpse & 150k & 150k & - & - & - & - & - & -\\
+5 & dinasour \& ironman & 150k & 150k & - & - & - & - & - & -\\
+\hline
+\end{tabular}
+\begin{flushleft}
+
+\end{flushleft}
+\end{table*}
+
+\begin{table*}[ht]
+\caption{Computation Time Statistics of Large CSG Evaluation (Seconds)}
+\label{tab:performance}
+\centering
+\begin{tabular}{*{9}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\hline
+{No.} & {Figure} & {Triangle Num.} & {Primitive Num.} &
+CGAL* & Maya* & Cork & Carve & QuickCSG & Our Method
+\\
+\hline\hline
+1 & Sprocket & 1.08M & 0.4M & - & - & - & - & 3.44 & 6.88\\
+2 & ring and ball & 277k & 70k & - & - & - & - & - & -\\
+3 & t1 & 150k & 150k & - & - & - & - & - & -\\
+4 & t2 & 150k & 150k & - & - & - & - & - & -\\
+5 & h & 150k & 150k & - & - & - & - & - & -\\
+6 & Organic & 150k & 150k & - & - & - & - & - & -\\
+7 & 6 Budda & 150k & 150k & - & - & - & - & - & -\\
+8 & Serpent & 150k & 150k & - & - & - & - & - & -\\
+9 & Dithering & 150k & 150k & - & - & - & - & - & -\\
+\hline
+\end{tabular}
+\begin{flushleft}
+$^{\nabla}$~~\emph{Min} (\emph{Max}) means the minimum (maximum) number of faces of a single primitive.
+
+$^{\circ}$~~The total computation time of our method includes the construction of half-edge structure and the three steps in Section \ref{sec:overview}.
+
+\end{flushleft}
+\end{table*}
+
+We implemented the proposed method in C++ and tested a series of models on a laptop with Intel Core i5 1.5GHz CPU and 8GB RAM. To prove both the efficiency and robustness, we perform boolean evaluation on various CSGs with different complexity. Extreme degenerate cases such as self-union are also tested.
+
+We compared our method with several previous works with available implementations, including CGAL \cite{cgal:hk-bonp3-15a}, Maya \cite{Maya2015,barki2015exact},"Cork" \cite{Cork}, "QuickCSG" \cite{douze2015quickcsg}, "Carve" \cite{Carve}, and online service of Campen and Kobbelt's plane-based method \cite{campen2010exact,WebBSP}.
+
+
+\vspace{0.5em}
+\noindent\textbf{Coplanar and self-union}~~~~
+Our method is unconditionally robust for regular set meshes. Even extreme degenerate cases will not cause invalid output. To prove that, we tested the self-union of several models and some CSG with coplanar faces. We find that our method always produces visually correct results. QuickCSG and Cork failed to produce the result in most of these cases, because they cannot deal with coplanar faces. Even after perturbation, their results are still full with deficiencies (holes, boundary edges, etc.). For the bunny model, we found our result face count was slightly deviated from the original mesh. This is because the original mesh contains self-intersection in the bunny chest (the green faces), which causes errors during classification.
+
+\vspace{0.5em}
+\noindent\textbf{Binary boolean operations}~~~~
+The most common situation of CSG evaluation is to perform boolean operations one by one, since many designers are used to modify models progressively. While our method can evaluate multiple boolean operations once for all, we also compared the performance of binary boolean operations to prove the efficiency. Table \ref{tab:performance} shows the evaluation time of different methods. We can clearly see our method is very fast that is only slightly slower than the fastest non-robust QuickCSG. Other robust methods such as Maya and CGAL are much slower because both of them use the arbitrary precision arithmetic. It should be noted that in some cases (), most time is spent on octree construction in our method. It means other stages which involve plane-based geometry take only a small percentage of time, proving the efficiency of our plane-based geometry.
+
+
+\vspace{0.5em}
+\noindent\textbf{CSGs with large number of meshes}~~~~
+To identify the ability of evaluating large CSG, we also test some CSG with tens or hundreds of meshes. Maya and CGAL cannot perform multiple boolean operations, so we can only give the comparison of incremental boolean evaluation for these methods. We see that the computation time of robust methods like CGAL and Maya grows rapidly when the number of meshes grows. On the other hand, our method keeps good performance while stay robust. During our experiments, we noticed Maya gives the correct results in the first few boolean operations, but failed in the later ones. It proves another disadvantage of incremental boolean operation methods: if it cannot guarantee exactness, it will accumulate numerical errors which affects the algorithm stability.
+
+
 
 
 \iffalse
@@ -1034,7 +1068,7 @@ In our method, we claim the inputs are triangle meshes mainly to avoid plane fit
 \vspace{0.5em}\noindent The only different part is intersection computation. The first step of M\"{o}ller's triangle-triangle intersection method is to test each edge-plane pair respectively. This idea can be extended to polygon intersections. Then we can get two plane-face intersections $Seg1$ and $Seg2$, except that in polygon cases, $Seg1$ and $Seg2$ are two sets of line segments, instead of single segments. Later processes are the same.
 
 \vspace{0.5em}
-\noindent\textbf{Extend to piece-wise wind number mesh}~~~~Recent works claim that the piece-wise wind number (PWN) are more powerful to identify the inside and outside of meshes \cite{zhou2016mesh}. Our method is straightforward to apply PWN because we can use the neighborhoods of intersections to compute the PWN of each point easily. By using PWN, we can extend our input from regular set mesh without self-intersection to so-called PWN mesh that allows deficiencies such as self-intersection and multi-component. However, the cost of this extension is that we have to check every triangle pairs for intersections, even if they are from the same input mesh. Considering this cost, we prefer a pre-computation to resolve topology deficiencies only on those input meshes that we think that might be 'unclean'.
+\noindent\textbf{Extend to piece-wise wind number meshes}~~~~Recent works claim that the piece-wise wind number (PWN) are more powerful to identify the inside and outside of meshes \cite{zhou2016mesh}. Our method is straightforward to apply PWN because we can use the neighborhoods of intersections to compute the PWN of each point easily. By using PWN, we can extend our input from regular set mesh without self-intersection to so-called PWN mesh that allows deficiencies such as self-intersection and multi-component. However, the cost of this extension is that we have to check every triangle pairs for intersections, even if they are from the same input mesh. Considering this cost, we prefer a pre-computation to resolve topology deficiencies only on those input meshes that we think that might be 'unclean'.
 
 \iffalse
 \vspace{0.5em}
