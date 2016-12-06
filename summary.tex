@@ -938,6 +938,8 @@ The basic cache strategy is to cache final result, that is, the value of $\lambd
 Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\boldsymbol{\Lambda}(\bm{s}_i)$ is fixed. For example, assume we have a boolean expression $f = P_1\cup (P_2\cap P_3-P_4)$. Given the values of two indicators $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap P_3-P_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. This fact is important because for a large CSG, a certain primitive (denoted as $P_k$) often intersects with only a few other meshes $\Theta(P_k)= \{P_{n_1}, P_{n_2}, \cdots, P_{n_x}\}$. That means all the faces in $P_k$ has the same indicators $\lambda_{i}, P_{i} \notin \Theta(P_k)$. Therefore, we can first determine these fixed indicators and simplify the boolean function, and then use simplified one to compute the final indicator for each faces in $P_k$.
 
 
+
+\iffalse
 \subsection{Tessellating on Classification}
 We find for a CSG with many meshes, a large percentage of intersections are invalid (see \S\ref{sec:degenerate} for 'invalid'). Tessellation according to these invalid intersections is not necessary. To avoid unnecessary tessellation, we can give an early prediction of which intersections are invalid by intersections information of faces, but have to embed the tessellation stage into the classification stage, which we call it 'tessellating on classification'.
 
@@ -945,8 +947,6 @@ In most situations, a certain faces $\bm{s}$ only intersect with a few other mes
 
 
 
-
-\iffalse
 \subsection{Implementation}
 
 \label{sec:individual}
