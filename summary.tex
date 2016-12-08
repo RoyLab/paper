@@ -311,7 +311,7 @@
 \usepackage{multirow}
 \usepackage{slashbox}
 \usepackage{color}
-\usepackage[numbers,sort&compress]{natbib}
+%\usepackage[numbers,sort&compress]{natbib}
 %\usepackage{ulem}
 %\usepackage[numbers,sort&compress]{natbib}
 \renewcommand{\arraystretch}{1.3}
@@ -324,6 +324,11 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{wrapfig}
+
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
@@ -357,7 +362,7 @@
 
 \IEEEtitleabstractindextext{
 \begin{abstract}
-  Constructive solid geometry (CSG) is widely used for computer aided design and manufacturing. However, boolean operations, which compute the boundary representation of CSG, have been suffered from robustness and efficiency problem for more than three decades. In this paper, we propose a fast and exact boolean operation method which is unconditionally robust for regular set solids. We notice that among previous works, plane-based boolean methods are easy to achieve robustness, but hard to be efficient. On the other hand, methods based on B-reps of meshes are fast but not robust unless exact arithmetic is applied. We choose to combine plane-based representations (P-reps) with B-reps, which allows us to take the advantages of both. Our method is globally based on B-reps for its efficiency, and P-rep geometry is applied locally to ensure robustness. Comparison experiments with state-of-the-art techniques show that our method is unconditionally exact and robust, while is competitively efficient with non-robust methods and much faster than the robust ones.
+  Constructive solid geometry (CSG) is widely used for computer aided design and manufacturing. However, boolean operations, which compute the boundary representation of CSG, have been suffered from robustness and efficiency problem for more than three decades. We propose a fast and exact boolean operation method which is unconditionally robust for regular set solids. We notice that among previous works,boolean methods using plane representations (P-reps) of meshes are easy to achieve robustness, but hard to be efficient. On the other hand, methods based on boundary representation (B-reps) of meshes are fast but not robust unless exact arithmetic is applied. Therefore, we choose to combine P-reps with B-reps, which allows us to take the advantages of both. Our method is globally based on B-reps for its efficiency, and P-rep geometry is applied locally to ensure robustness. Comparison experiments with state-of-the-art techniques show that our method is unconditionally exact and robust, while is competitively efficient as non-robust methods.
 \end{abstract}
 
 
@@ -474,11 +479,11 @@ Let $\delta = 2^{K-L-1}$ be the relative length (in max-norm) of the longest edg
 \fi
 
 \label{sec:substrates}
-Plane-based geometry predicates used in our method are mostly well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two predicates related to sorting, which we think are necessary to discussed particularly.
+Plane-based geometry predicates used in our method are mostly well-discussed in previous work \cite{bernstein2009fast,banerjee1996topologically}. In the following, we focus on two predicates related to sorting, which are designed for our method particularly.
 
 \vspace{0.5em}
 \noindent \textbf{Linear ordering of points}~~~~
-Given an line $\bm{l}_{ab}$ with two points $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$ and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$ on it, we need to determine the linear order of the two points along $\bm{l}_{ab}$ (Fig. \ref{fig:twopointoneline}). To solve this problem, we choose one plane not parallel with $\bm{l}_{ab}$ from the plane representation of each point. Then we convert this problem into linear order of planes and solve it using the same technique as Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with $\bm{l}_{ab}$ (the dot product between plane normal and $\bm{l}_{ab}$ has to be positive) and unqualified planes have to be flipped.
+Given an line $\bm{l}_{ab}$ with two points $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$ and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$ on it, we need to determine the linear order of the two points along $\bm{l}_{ab}$ (Fig. \ref{fig:twopointoneline}). To solve this problem, we choose one plane not parallel with $\bm{l}_{ab}$ from the plane representation of each point. Then we convert this problem into linear order of planes, which can be solved by Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with $\bm{l}_{ab}$ (the dot product between plane normal and $\bm{l}_{ab}$ has to be positive) and unqualified planes have to be flipped.
 
 
 \vspace{0.5em}
@@ -547,7 +552,7 @@ Once all intersections between triangles are detected, we need to tessellate the
 This step is to choose faces from the intersection-free meshes to generate the final mesh. However, literally computing all the space indicators of each face is unacceptably slow for large CSG mesh. We utilize the geometry connectivity to propagate indicators in a flood-filling way, which is based on the spatial coherence of face indicators. In addition, many methods use barycenters of faces together with point-in-polyhedra test for face classification, which is not exact nor robust with fix-precision float-point arithmetics. Douze et al. \cite{douze2015quickcsg} classifies faces using space indicators of vertices, but failed to deal with coplanar conditions because of coplanar leads to ambiguity of $same$ and $oppo$ in such configurations. Different from them, we classify faces based on the classification results of exactly represented vertices, including input vertices and newly introduced intersection vertices, and carefully deal with coplanar conditions to ensure topology consistency. Details will be shown in \S\ref{sec:classification}.
 
 
-\section{Exact Intersection Computation}
+\section{Intersection Computation}
 
 \label{section:isect}
 In this step, intersections between faces are computed through triangle-triangle intersection test. We adopt M\"{o}ller's algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, a naive implementation of M\"{o}ller's algorithm may fail to produce correct results because of numerical errors. Therefore, we integrate plane-based geometry to make it unconditionally exact and robust. In the following, we first make a quick review of M\"{o}ller's algorithm, and then discuss the way to embed plane-based geometry. After that, we discuss how to deal with degenerate cases.
@@ -558,7 +563,7 @@ In this step, intersections between faces are computed through triangle-triangle
 \begin{wrapfigure}{r}[0in]{0in}
 \includegraphics[width=1.2in]{octreediff}
 \end{wrapfigure}
-As intersection detection is performed between each pair of faces, localization is necessary to filter invalid pairs beforehand. Many space division methods can be used in this step. We use the adaptive octree for its simplicity and efficiency. Our implementation is akin to the implementation in Ogayar et al.'s method \cite{ogayar2015deferred}. Intersection between triangle faces and octree leaves are efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{normal cell}. Otherwise, it is a \emph{critical cell}, within which the following intersection computation is performed.
+As intersection detection is performed between each pair of faces, localization is necessary for large CSGs to reduce the number of testing pairs. Many space division methods can be used in this step. We use the adaptive octree for its simplicity and efficiency. Our implementation is akin to the implementation in Ogayar et al.'s method \cite{ogayar2015deferred}. Intersection between triangle faces and octree leaves are efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same primitive, we call it a \emph{normal cell}. Otherwise, it is a \emph{critical cell}, within which the following intersection computation is performed.
 
 
 
@@ -691,7 +696,7 @@ However, if the companion triangles are also coplanar, neither of the two triang
 \label{sec:tessellation}
 After intersection computation, tessellation is performed on each intersecting triangle face and generate our intersection-free meshes. We call this stage as deferred tessellation because the tessellation happens until all valid intersections are computed.
 
-In previous work, Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrained Delaunay Triangulation (CDT) to perform deferred tessellation. They treat triangle faces as convex triangulation zones and intersections as constraints. Our first try is to implement a robust plane-based CDT. However, CDT algorithms \cite{chew1989constrained,preparata2012computational} usually require coordinates projection or intersection detection between arbitrary connections of vertices within triangulation zone. Because vertices may be implicitly represented in our method, these geometry predicates are hard to guarantee computation efficiency and precision simultaneously. Moreover, when there are more than two primitives, simply applying CDT omits the complexity of intersections between meshes. The intersections may intersect each other, introducing new vertices and splitting original intersection line segments (Fig. \ref{fig:iisect}a). This breaks the assumption of most CDT algorithms and may lead to incorrect output topology.
+Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrained Delaunay Triangulation (CDT) to perform deferred tessellation. They treat triangle faces as convex triangulation zones and intersections as constraints. Our first try is to implement a robust plane-based CDT. However, CDT algorithms \cite{chew1989constrained,preparata2012computational} require coordinates projection or intersection detection between arbitrary connections of vertices within triangulation zone, which are difficult to be implemented under P-reps. From another perspective, CDT contains geometry constructions---new edges are generated to guarantee each subface is a triangle, which does not fit P-reps. Moreover, when there are more than two primitives, simply applying CDT omits the complexity of intersections between meshes. The intersections may intersect each other, introducing new vertices and splitting original intersection line segments (Fig. \ref{fig:iisect}a). This breaks the assumption of most CDT algorithms and may lead to incorrect output topology.
 
 \begin{figure}[t]
 \centering
@@ -700,7 +705,7 @@ In previous work, Ogayar-Anguita et. al. \cite{ogayar2015deferred} use Constrain
 \label{fig:iisect}
 \end{figure}
 
-To solve these problems, we first perform intersection refinement to eliminate any crossing or overlapping between intersections. After that, we perform conservative tessellation based on \emph{tess-graph}, ensuring unconditional topology correctness. An tess-graph is a graph-like description of intersections on a certain face. The word `conservative` means we tessellate face into polygons, not triangles. This is because if triangles are required, we need construct new bounding planes for these new triangles, which violating our principle of no geometry construction (Fig. \ref{fig:iisect}d).
+To solve these problems, we first perform intersection refinement to eliminate any crossing or overlapping between intersections. After that, we perform conservative tessellation based on \emph{tess-graph}, ensuring unconditional topology correctness. An tess-graph is a graph-like description of intersections on a certain face. The word `conservative` means we . This is because if triangles are required, we need construct new bounding planes for these new triangles, which violating our principle of no geometry construction (Fig. \ref{fig:iisect}d).
 
 \subsection{Intersection Refinement}
 
@@ -870,7 +875,7 @@ We find that the BSP constructed from edge neighborhood is so simple that indica
 \begin{wrapfigure}{r}[0in]{0in}
 \includegraphics[width=1.3 in]{vneighbor}
 \end{wrapfigure}
-\noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(\bm{e}) = on$ by checking the neighborhood component of the intersection on $\bm{e}$. If not, we need to find where $\bm{v}_{\bm{e}}$ lies on the surface of $P_k$ and determine the neighborhood of $\bm{v}_{\bm{e}}$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared. Exceptions are discussion is in \S\ref{sec:esubroutine}. The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${\bm{e}_{\bm{s}}\to \bm{s}}$ to determine the high dimension indicator $\lambda_k(\bm{e})$. We use the other end point of $\bm{e}$ to be the sample point for the BSP classification.
+\noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$}~~~~ While this is yet another propagation from low dimension to high dimension, there is no neighborhood information stored on vertex. If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(\bm{e}) = on$ by checking the neighborhood component of the intersection on $\bm{e}$. If not, we need to find where $\bm{v}_{\bm{e}}$ lies on the surface of $P_k$ and determine the neighborhood of $\bm{v}_{\bm{e}}$. In most cases, it is straightforward since coincident vertices among different intersection-free meshes are shared (see \S\ref{sec:esubroutine} for exception discussion). The neighborhood may be a vertex, an edge or a face. After computing the neighborhood, the same BSP-based classification method is used as in ${\bm{e}_{\bm{s}}\to \bm{s}}$ to determine the high dimension indicator $\lambda_k(\bm{e})$. We use the other end point of $\bm{e}$ to be the sample point for the BSP classification.
 
 
 \subsection{Acceleration by Caching}
@@ -907,10 +912,36 @@ Since the faces involving in $C_{P_h \backslash P_j}$ is part of primitive $P_j$
 
 \section{Results and Discussion}
 
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3in]{perturb}
+\caption{Even after perturbation, the self-union of \emph{bunny} under QuickCSG still suffers from topology problem. The green faces are boundary faces which indicating topology deficiencies.}
+\label{fig:boundaryedge}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3in]{buddalion}
+\caption{ Different results from $Budda\cup Lion$: a) incorrect result by CGAL, b) incorrect result by Cork, c) correct result of our method. }
+\label{fig:buddalion}
+\end{figure}
+
 We implemented the proposed method in C++ and tested a series of models on a laptop with Intel Core i5 1.5GHz CPU and 8GB RAM. To prove both the efficiency and robustness, we perform boolean evaluation on various CSGs with different complexity.To show our advantage, we also compared our method with several previous works with available implementations, including CGAL \cite{cgal:hk-bonp3-15a}, Maya \cite{Maya2015,barki2015exact},"Cork" \cite{Cork}, "QuickCSG" \cite{douze2015quickcsg}, "Carve" \cite{Carve}, and online service of Campen and Kobbelt's plane-based method \cite{campen2010exact,WebBSP}.
 
 
+
 \subsection{Robustness}
+
+
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3in]{dual}
+\caption{a) We cannot easily figure out the correct orientation of the loop. b) When there are more than one connected component, we use auxiliary intersection (red line) to connect the two component. }
+\label{fig:dual}
+\end{figure}
+
 
 \begin{table*}[ht]
 \caption{Computation Time Statistics of Binary Boolean Operation (Seconds)}
@@ -922,11 +953,11 @@ We implemented the proposed method in C++ and tested a series of models on a lap
 CGAL & Maya & Cork & Carve & QuickCSG & Our Method
 \\
 \hline\hline
-1 & Budda $\cup$ Lion & 1.08M & 0.4M & - & - & - & - & 3.44 & 6.88\\
-2 & Dragon $\cup$ Bunny & 100k & 70k & - & - & - & - & 0.334 & 0.636 \\
-3 & Armadillo $\cup$ Armadillo2 & 150k & 150k & - & - & - & - & 0.746 & 1.62\\
-4 & Horse $\cup$ Corpse & - & - & - & - & - & - & - & -\\
-5 & Dinasour $\cup$ Ironman & - & - & - & - & - & - & - & -\\
+1 & Budda $\cup$ Lion & 1.08M & 400k & - & - & - & - & 3.44 & 6.88\\
+2 & Dragon $\cup$ Bunny & 100k & 70k & - & - & - & - & 0.613 &1.70 \\
+3 & Armadillo $\cup$ Armadillo2 & 150k & 150k & 487 & 15.4 & 7.00 & 189 & 0.746 & 1.62\\
+4 & Horse $\cup$ Corpse & 145k & 499k & - & 38.6 & 12.6 & 1.52k & 0.630 & 1.00 \\
+5 & Budda $\cup$ Budda2 & 1.08M & 1.08M & - & - & - & - & 4.84 & -\\
 \hline
 \end{tabular}
 \begin{flushleft}
@@ -941,18 +972,17 @@ CGAL & Maya & Cork & Carve & QuickCSG & Our Method
 \begin{tabular}{*{9}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
 \hline
 {No.} & {Model} & {Triangle Num.} & {Primitive Num.} &
-CGAL* & Maya* & Cork & Carve & QuickCSG & Our Method
+CGAL & Maya & Cork & Carve & QuickCSG & Our Method
 \\
 \hline\hline
-1 & Sprocket & - & 52 & - & - & - & - & 0.059 & -\\
-2 & ring and ball & - & 201 & - & - & - & - & - & -\\
-3 & T1 & - & 50 & - & - & - & - & 0.433 & 10.1\\
-4 & T2 & - & 50 & - & - & - & - & 0.804 & -\\
-5 & H & - & 42 & - & - & - & - & 2.22 & -\\
-6 & Organic & - & 6 & - & - & - & - & 0.590 & -\\
-7 & 6 Budda & - & 6 & - & - & - & - & - & -\\
-8 & Serpent & - & - & - & - & - & - & - & -\\
-9 & Dithering & - & - & - & - & - & - & - & -\\
+1 & Sprocket & 11k & 52 & 211 & ? & - & 4.26 & 0.132 & 0.804\\
+2 & Ring \& Ball & 146k & 801 & - & ? & - & 187 & - & 62.6\\
+3 & T1 & 80k & 50 & 1.00k & ? & 18.5 & 10.4 & 0.388 & 20.2\\
+4 & T2 & 7k & 50 & 2.81k & ? & - & 16.0 & 0.804 & -\\
+5 & H & 33k & 42 & - & ? & - & - & 2.22 & -\\
+6 & Organic & 219k & 6 & - & ? & 14.3 & 63.1 & 0.580 & 2.75\\
+%7 & 6 Budda & - & 43 & - & - & - & - & - & -\\
+%8 & Serpent & - & 5 & - & - & - & - & - & -\\
 \hline
 \end{tabular}
 \begin{flushleft}
@@ -960,66 +990,54 @@ CGAL* & Maya* & Cork & Carve & QuickCSG & Our Method
 \end{table*}
 
 \begin{table*}[ht]
-\caption{Face Number of the Results of Self-Union Evaluation}
+\caption{Results of Self-Union Evaluation}
 \label{tab:selfunion}
 \centering
-\begin{tabular}{*{9}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
+\begin{tabular}{*{8}{c|}c}%*{4}{>{\centering\arraybackslash}p{35pt}}}
 \hline
-{No.} & {Model} & {Orig. Num.} &
-CGAL & Maya & Cork & Carve & QuickCSG & QuickCSG2* & Our Method
+{No.} & {Model} & {Face Num.} &
+CGAL & Maya & Cork & Carve & QuickCSG  & Our Method
 \\
 \hline\hline
-1 & Ball & 360  & - & 360 & - & - & 1 & 360 & 360 \\
-2 & head & 2,716& - & 2,716 & - & - & 5 & 2,716 & 2,716\\
-3 & Bunny & 69,666  & - & 69,664 & - & -& 0 & 69,668 & 69,669\\
-4 & Dragon & 276,972 & - & 0 & - & -& 1 & 276,702 & 277,987 \\
+1 & Ball & 360  & \cmark & \cmark & \xmark & \cmark & \xmark & \cmark \\
+2 & head & 2,716& \cmark & \cmark & \xmark & \cmark & \xmark  & \cmark\\
+3 & Bunny & 69,666  & \xmark & \cmark & \xmark & \cmark & \xmark  & \cmark\\
+4 & Dragon & 276,972 & \xmark & \xmark & \xmark & \xmark & \xmark  & \cmark \\
 \hline
 \end{tabular}
 \begin{flushleft}
-~~~~~~~~~~~~~~~~~~~~~$^{*}$~~We perturb the model by 1e-6 to give QuickCSG the ability to partly solve coplanar cases.
+%~~~~~~~~~~~~~~~~~~~~~$^{*}$~~We perturb the model by 1e-6 to give QuickCSG the ability to partly solve coplanar cases.
 \end{flushleft}
 \end{table*}
 
-Our method is unconditionally robust for regular set meshes. Even extreme degenerate cases will not cause invalid output. To prove that, we tested the self-union of several models and some CSG with coplanar faces. Table \ref{tab:selfunion} compares the difference between input meshes and result meshes by their face number. We find that our method always produces correct or at least near correct results. The slightly deviation of our result from the original one is caused by self-intersection in the original models. QuickCSG failed to produce the result in all coplanar cases, because they cannot deal with coplanar faces. After perturbation, results of QuickCSG are visually OK. However, the topology of their results is messy. We can see hundreds of boundary edges on their results which do not exist in the original model (Fig. \ref{fig:boundaryedge}).
+Our method is unconditionally robust for regular set meshes. Even extreme degenerate cases will not cause invalid output. To prove that, we tested the self-union of several models and some CSG with coplanar faces. Table \ref{tab:selfunion} compares the difference between input meshes and result meshes by their face number. We find that our method always produces correct or at least near correct results. The slightly deviation of our result from the original one is caused by self-intersection in the original models. QuickCSG and Cork failed in all cases, because they cannot deal with coplanar faces. By perturb one of the operant, the results of QuickCSG are visually OK. However, the topology of their results is messy. We can see hundreds of boundary faces on their results which do not exist in the original model (Fig. \ref{fig:boundaryedge}).
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=3in]{null}
-\caption{boundary edges on the models........}
-\label{fig:boundaryedge}
-\end{figure}
 
 \subsection{Performance}
 \vspace{0.5em}
 \noindent\textbf{Binary boolean operations}~~~~
-The most common situation of CSG evaluation is to perform boolean operations one by one, since many designers are used to modify models progressively. While our method can evaluate multiple boolean operations once for all, we also compared the performance of binary boolean operations to prove the efficiency. Table \ref{tab:performance} shows the evaluation time of different methods. We can clearly see our method is very fast that is only slightly slower than the fastest non-robust QuickCSG. Other robust methods such as Maya and CGAL are much slower because both of them use the arbitrary precision arithmetic. It should be noted that in (some) very large CSGs, most time is spent on octree construction in our method. It means other stages which involve plane-based geometry take only a small percentage of time, proving the efficiency of our plane-based geometry.
+The most common situation of CSG evaluation is to perform boolean operations one by one, since many designers are used to modify models progressively. While our method can evaluate multiple boolean operations once for all, we also compared the performance of binary boolean operations to prove the efficiency. Table \ref{tab:performance} shows the evaluation time of different methods. We can clearly see our method is very fast that is only twice as slower than the fastest non-robust QuickCSG. Other robust methods such as Maya and CGAL are much slower because both of them use the arbitrary precision arithmetic. Moreover, these robust methods have very strict requirements on the inputs and fragile with topology deficiencies such as boundary edges or self-intersection. On the contrary, our   We also noticed that in (some) very large CSGs, most time is spent on octree construction in our method. It means other stages which involve plane-based geometry take only a small percentage of time, proving the efficiency of our plane-based geometry.
 
 
 \vspace{0.5em}
 \noindent\textbf{CSGs with large number of meshes}~~~~
-To identify the ability of evaluating large CSG, we also test some CSG with tens or hundreds of meshes. Maya and CGAL cannot perform multiple boolean operations, so we can only give the comparison of incremental boolean evaluation for these methods. We see that the computation time of robust methods like CGAL and Maya grows rapidly when the number of meshes grows. On the other hand, our method keeps good performance while stay robust. During our experiments, we noticed Maya gives the correct results in the first few boolean operations, but failed in the later ones. It proves another disadvantage of incremental boolean operation methods: if it cannot guarantee exactness, it will accumulate numerical errors which affects the algorithm stability.
-
-
-\subsection{Implementation Details}
+To identify the ability of evaluating large CSG, we also test some CSG with tens or hundreds of meshes. Maya and CGAL cannot perform multiple boolean operations, so we can only give the comparison of incremental boolean evaluation for these methods. We see that the computation time of robust methods like CGAL and Maya grows rapidly when the number of meshes grows. On the other hand, our method keeps good performance while stay robust. During our experiments, we noticed Maya gives the correct results in the first few boolean operations, but failed in the later ones. It proves a disadvantage of incremental boolean operation methods: if it cannot guarantee exactness, it will accumulate numerical errors which affects the algorithm stability.
 
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=7in]{null}
-\caption{different models...........}
+\includegraphics[width=7in]{models}
+\caption{***********different models: will be replaced}
 \label{fig:models}
 \end{figure*}
+
+\subsection{Implementation}
+\label{sec:esubroutine}
+
 
 \vspace{0.5em}
 \noindent\textbf{Searching valid loops}~~~~ In \S\ref{sec:tess}, we claim a valid loops on tess-graph has to be correct with its orientation. However, since tess-graph is undirectional, it is not easy to check whether a loop orientation agrees with the face's (Fig. \ref{fig:dual}a). We observe that the graph connections lie on face edges have their unambiguous directions. Starting from these edges, we can guarantee that the loops have the right orientations. After we find a valid loop, more graph connections will have unambiguous directions because one connection can participate two valid loops at most. In such way, the correct orientation will propagate in a flood-filling way.
 
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=3in]{dual}
-\caption{a) We cannot easily figure out the correct orientation of the loop. b) When there are more than one connected component, we use auxiliary intersection (red line) to connect the two component. }
-\label{fig:dual}
-\end{figure}
 
 
 \vspace{0.5em} There is another problem that the tess-graph may not be a connected graph. We avoid this problem by inserting auxiliary intersections into the tess-graph to make it connected. An auxiliary intersection links the vertex of face (denoted as $\bm{v}_i$) on the outer connected component with the vertex on the inner connected component. The intersection refinement has to be performed again if the auxiliary intersections cross any other intersections. To guarantee the auxiliary intersection has a valid PBI-rep, we require the vertex from inner connected component generated by intersection between the face and an edge (denoted as $\bm{e}_j$) from other meshes---all newly introduced vertices during triangle-triangle intersection are this type. In this way, we get three vertices with exact coordinates ($\bm{v}_i$ and the two end points of $\bm{e}_j$) and can construct an exact plane where the auxiliary intersection lies.
@@ -1037,7 +1055,7 @@ The vertices of final mesh in our method are represented in both P-reps and plai
 
 We noticed that for CSGs that contains a lot of meshes within small area (e.g., Table. \ref{tab:performance}, \emph{T1}), the performance of our method is poor. This is because in such situations, our method computes many intersections that will not appear as edges in the final mesh, which leads to unnecessary tessellation. Optimization may be explored to avoid such problem.
 
-The input of our method is limited to regular set meshes. However, recent works claim that the piece-wise wind number (PWN) are more powerful to identify the inside and outside of meshes \cite{zhou2016mesh}.  By using PWN, the input requirements can be extended to so-called PWN mesh that allows deficiencies such as self-intersection and multi-component. Our method is suitable to be extended to PWN meshes because we can use the neighborhoods of intersections to compute the PWN of each point easily. However, the cost of this extension is that we have to check every triangle pairs for intersections, even if they are from the same input mesh.
+The input of our method is limited to regular set meshes. However, recent works claim that the piece-wise wind number (PWN) are more powerful to identify the inside and outside of meshes \cite{zhou2016mesh}.  By using PWN, the input requirements can be extended to so-called PWN meshes that allow deficiencies such as self-intersection and multi-component. It would be interesting to extend our method to PWN method in the future.
 
 
 \section{Summary}
