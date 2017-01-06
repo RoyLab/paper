@@ -1,0 +1,73 @@
+
+\IEEEtitleabstractindextext{
+\begin{abstract}
+  Constructive solid geometry (CSG) is widely used in computer aided design and manufacturing. However, boolean algorithms, which compute the boundary representations of CSG, have suffered from robustness and efficiency problems for more than three decades. We propose a fast and robust boolean operation method which is unconditionally robust for valid solids. Previously reported boolean methods using plane-based representations (P-reps) of polyhedrons are robust, but inefficient. Conversely, methods based on vertex-based representations (V-reps) are fast but not robust, unless exact arithmetic is applied. We choose to combine P-reps with V-reps, which allowed us to use the advantages of both. Our method uses V-reps for efficiency and uses P-reps to ensure robustness. Comparison experiments with the state-of-the-art show that our method is unconditionally robust, and similarly efficient to existing non-robust methods.
+\end{abstract}
+
+
+\begin{IEEEkeywords}
+boolean operations, CSG evaluation, plane-based geometry
+\end{IEEEkeywords}
+
+}
+
+\maketitle
+
+
+\IEEEdisplaynontitleabstractindextext
+\IEEEpeerreviewmaketitle
+
+
+\IEEEraisesectionheading{\section{Introduction}\label{sec:introduction}}
+\IEEEPARstart{C}{onstructive} solid geometry (CSG) has long been a popular modeling tool for computer-aided design and computer-aided manufacturing (CAD / CAM). Complex models are constructed by combining primitives using regularized boolean operations \cite{requicha1977mathematical,tilove1980closure}: union, intersection, and difference. A CSG can be converted into the boundary representation (B-rep) through boolean algorithms. There are two major types of boolean algorithms, which vary according to how they deal with intersections between primitives. Approximate methods \cite{wang2011approximate,pavic2010hybrid,biermann2001approximate} rediscretize the intersection areas, fit vertices approximatively, and rearrange the topology. Conversely, exact methods \cite{ogayar2015deferred,douze2015quickcsg,zhou2016mesh} do not change vertex positions, and maintain as many input elements (such as faces, vertices, and topology) as possible. In many applications, exact methods are preferred for their accuracy. Additionally, the clear mapping between the surfaces of the input and output meshes in exact methods simplifies the inheritance of surface information, such as face colors and materials.
+
+
+
+However, there is always a compromise between robustness and efficiency for exact boolean algorithms.
+Robust methods often require exact arithmetics \cite{barki2015exact,zhou2016mesh}, which is significantly slower than normal floating point arithmetic.
+Other methods only offer \textbf{quasi-robust} \cite{shewchuk1999lecture} implementations by using unreliable techniques, such as epsilon-tweaking \cite{laidlaw1986constructive,feito2013fast,segal1990using} and numerical pertubation on coordinates \cite{douze2015quickcsg}.
+Recently, robust methods have been developed \cite{bernstein2009fast,campen2010exact} based on binary space partition (BSP) merging routines \cite{naylor1990merging,thibault1987set}.
+The robustness of these methods are guaranteed by the theorem of Sugihara and Iri \cite{sugihara1990solid} that boolean operations can be performed without \textbf{constructions} \cite{shewchuk1999lecture} if polyhedrons are represented based on planes instead of vertices.
+By only use \textbf{predicates}, implementations of boolean operations are easier to be robust.
+These BSP-based methods are generally faster than other boolean algorithms using exact arithmetics. However, they still suffer from performance issues because of the complex conversions between vertex-based representations (V-reps) and plane-based representations (P-reps). In addition, the incoherence between V-reps and P-reps requires that extra steps to reconstruct connectivity, leading to complex implementations and worse performance.
+
+
+Inspired by these previous studies, we have developed a robust boolean operation method, which is unconditionally robust given consistent input, and as fast as non-robust methods. In our method, we combine P-reps with V-reps, forming hybrid representations of meshes. To ensure robustness, we avoid constructions throughout our method, and only performing exact predicates. Numerical filters \cite{shewchuk1997adaptive} are applied to guarantee performance. Generally, the V-reps information is used for coarse tests and efficient neighboring face queries, while P-reps information is used for exact predicates.
+
+
+Our method is different from the previous BSP-based methods \cite{bernstein2009fast,campen2010exact}.
+While their methods are largely based on BSP theorem of \cite{naylor1990merging,thibault1987set}, our method is more like V-reps methods such as \cite{feito2013fast,zhou2016mesh} and is significantly faster. Our method is not a simple improvement of V-reps methods, but an efficient and systematical solution for robustness of boolean operations. During intersection computation, we encode the triangle intersections into sets of planes, and then use these planes to determine exact tessellations. Subsequently, we classify each face in the tessellated meshes using local binary space partition (BSP) trees, which also compliment the P-reps to guarantee exactness. In addition, while most existing boolean operations can only process two meshes, our method is varadic \cite{zhou2016mesh}, which can evaluate arbitrary inputs immediately. Thus, our method may reduces computation time in large cases by avoiding repetitive operations. Experiments have shown that our method is much faster than existing robust methods, and only around two times slower than non-robust exact methods.
+
+%Because computations based on P-reps are slower, we develop a set of algorithms
+
+\section{Related Work}
+
+
+Boolean operations have been researched since their inception in the 1980s \cite{requicha1985boolean, laidlaw1986constructive}. Existing methods can be put into two categories: exact methods and approximate methods. Exact methods retain vertex positions, and the topology of the inputs is preserved as much as possible. The coordinates of intersection points between input meshes are computed by input configurations. However, the coordinates cannot be represented exactly using fixed-precision floating point numbers, hence robustness is a significant problem. Conversely, approximate methods rediscretize the input mesh surfaces using techniques such as voxels, octrees, and Layered Depth Images (LDI). These methods generally have better performance and robustness than exact methods, but the loss of precision and geometry information is inevitable.
+
+\subsection{Exact Methods}
+
+
+Some exact methods \cite{ogayar2015deferred,douze2015quickcsg,zhou2016mesh,xu2013fast,feito2013fast}, are optimized for efficiency, but cannot guarantee robustness. They are implemented by fixed-precision floating point arithmetic, so numerical errors are inevitable, which often leads to incorrect results.
+Douze et al. \cite{douze2015quickcsg} developed a very efficient method for handling very large meshes. In addition, their method is varadic, which means it can perform boolean operations with arbitrary number of inputs. However, this method makes general position assumption and cannot deal with coplanar situations. However, large CSGs are more complex, and thus more likely to contain degenerate cases, and more vulnerable to numerical errors.
+
+
+Many researchers have attempted to solve the robustness issues using arbitrary precision arithmetic \cite{banerjee1996topologically, fortune1995polyhedral, keyser2004esolid, granados2003boolean, hachenberger2005boolean} and exact interval computation \cite{fang1993robustness, hu1996robust, segal1990using}. However, these methods are too expensive in terms of computation time and memory. For example, CGAL's \cite{cgal:hk-bonp3-15a} exact-arithmetic implementation \cite{granados2003boolean} of Nef polyhedra \cite{bieri1988elementary} is more than 50 times slower than non-robust boolean operations \cite{bernstein2009fast}.
+
+
+
+\subsection{Approximative Methods}
+
+%Since efficiency, accuracy and robustness are hard to be satisfied at the same time, some method choose to sacrifice accuracy for better efficiency and robustness. Most of such methods are based on conversion to volumetric representations. However, the quality of result mesh depends on the resolution of the volume grid and better quality requires dramatically higher resolution. To accelerate this process, some try to reduce the complexity of the output mesh \cite{varadhan2004topology} and others try to preserve non-intersected areas of the input mesh to avoid redundant tessellation \cite{pavic2010hybrid,wang2011approximate,zhao2011parallel,hable2005blister,ogayar2006gpu}. Also, with the development of general-purpose computing on graphics processing units (GPGPU), many of them utilize the grand computation power of graphics hardware for boolean operations. These methods have good performance and are suitable for interactive applications. However, the fundamental problem of approximate methods is owing to grid-depend nature of volumetric calculations: they inevitably suffers from geometric detail loss and unwieldy topology changes.
+
+Because it is difficult to achieve efficiency, accuracy, and robustness simultaneously, some methods sacrifice accuracy for greater efficiency and robustness. Most such methods are based on volumetric representations of meshes. However, the quality of the resulting mesh depends on the resolution of the volume grid, and better quality require significantly higher resolutions.
+To accelerate this process, some methods reduce the complexity of the output mesh \cite{varadhan2004topology}, whereas others preserve non-intersected areas of the input mesh to avoid redundant tessellation \cite{pavic2010hybrid,wang2011approximate,zhao2011parallel,hable2005blister,ogayar2006gpu}.
+Moreover, with the development of general-purpose computing on graphics processing units (GPGPU), many of them utilize the computational power of graphics hardware for boolean operations. These methods have good performance, and are suitable for interactive applications. However, the fundamental problem of approximate methods arises from the grid-dependent nature of volumetric calculations; they inevitably suffer from geometric detail loss and unwieldy topological changes.
+
+
+\subsection{Plane-Based Methods}
+\label{sec:pbrelated}
+
+%The concept of plane-based representations (P-reps) of polygonal meshes was first described by Sugihara and Iri \cite{sugihara1990solid}. P-reps provide essential benefit for boolean operations that no new geometry primitive has to be constructed to obtain the results---they can be composed of a subset of the planes from the input polyhedra. It means the computation can include only geometry predicates, which are much easier to be implemented exactly and robustly. Based on P-reps, Berstein and Fussell \cite{bernstein2009fast} combined the P-reps with binary space partition (BSP) trees \cite{thibault1987set,naylor1990merging} to develop a boolean operation method which is unconditionally robust under consistent inputs . Compared to B-rep-based methods, their method does not rely on exact arithmetics to be robust. However, the merge of two BSP trees is an $O(mn)$ time complexity process, where $m$ and $n$ are the size of the trees. It makes this method impractical for large meshes. Later, Campen and Kobbelt \cite{campen2010exact} improved their method by localize BSP operations using an octree. The mesh refinement only takes place locally near intersections, which is much faster than Berstein and Fussell's work.
+
+The concept of plane-based representations (P-reps) of polygonal meshes was first described by Sugihara and Iri \cite{sugihara1990solid}. P-reps are beneficial for boolean operations because no new geometric primitive must be constructed to obtain the results��they can be determined from a subset of the planes from the input polyhedra. This means that the computation can include only geometric predicates, which are much easier to implement accurately and robustly. Berstein and Fussell \cite{bernstein2009fast} combined P-reps with binary space partition (BSP) trees \cite{thibault1987set,naylor1990merging} to develop a boolean operation method which is unconditionally robust with consistent inputs. Unlike B-rep methods, this method does not rely on exact arithmetic to be robust. However, the merging of two BSP trees is has $O(mn)$ time complexity, where $m$ and $n$ are the size of the trees. This time complexity makes this method impractical for large meshes. Subsequently, Campen and Kobbelt \cite{campen2010exact} improved this method by localizing BSP operations using an octree. In this method, mesh refinements only take place locally, near intersections, which leads to a much faster method than Berstein and Fussell��s original.
