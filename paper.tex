@@ -323,6 +323,8 @@
 \usepackage{amssymb}
 \usepackage{wrapfig}
 
+\usepackage{amsthm}
+
 \usepackage{amssymb}% http://ctan.org/pkg/amssymb
 \usepackage{pifont}% http://ctan.org/pkg/pifont
 \newcommand{\cmark}{\ding{51}}%
@@ -333,9 +335,12 @@
 \newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
 
 \floatname{algorithm}{Algorithm}
+%\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\newtheorem{theorem}{Theorem}
 
 \begin{document}
-\title{Efficient and Robust Plane-Based Boolean Operations on N Meshes}
+\title{Efficient and Robust Boolean Operations on N Meshes Based on Hybrid Representations}
 \author{%Rui~Wang,~
         %Xudong~Jiang,~
         %Hongbo~Fu,~
@@ -357,6 +362,8 @@
 
 %\markboth{Journal of \LaTeX\ Class Files,~Vol.~13, No.~9, September~2014}%
 %{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Computer Society Journals}
+
+
 
 \input{tex/intro}
 \input{tex/overview}

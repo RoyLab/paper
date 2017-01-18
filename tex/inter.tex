@@ -1,5 +1,64 @@
+\section{Intersection Computation}
 
-\subsection{Plane-Based Intersection}
+\label{section:isect}
+%In this step, intersections between faces are computed through triangle-triangle intersection test. We adopt M\"{o}ller's algorithm \cite{moller1997fast} on account of its efficiency and simplicity. However, a naive implementation of M\"{o}ller's algorithm can introduce numerical errors and may fail to produce correct results. Therefore, we integrate plane-based geometry to make it exact. In the following, we first introduce our space division strategy to reduce the number of intersection test. Then we make a quick review of M\"{o}ller's algorithm, and discuss the way to embed plane-based geometry. After that, we discuss how to deal with degenerate cases.
+
+In this step, the intersections between faces are determined by a triangle-triangle intersection test. We use  M\"{o}ller's algorithm \cite{moller1997fast} because of its efficiency and simplicity. To ensure exact intersection computation, we integrate P-rep based geometry into the algorithm. In the following, we first introduce our space division strategy to reduce the number of intersection tests. Then introduce our P-rep based intersection algorithm. Lastly, we discuss how to deal with degenerate cases.
+
+\subsection{Space Division}
+\begin{wrapfigure}{r}[0in]{0in}
+\includegraphics[width=1.2in]{octreediff}
+\end{wrapfigure}
+
+
+%As intersection detection is performed between each pair of faces, localization is necessary for large CSGs to reduce the number of testing pairs. We use the adaptive octree for this purpose. Our implementation is akin to the implementation in Ogayar et al.'s method \cite{ogayar2015deferred}. Intersection between triangle faces and octree nodes are efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types: if all faces that intersect a leaf belong to the same mesh, we call it a \emph{normal cell}. Otherwise, it is a \emph{critical cell}, within which the following intersection computation is performed.
+
+As intersection detection is performed between each pair of faces, space division is necessary to reduce the number of pairs to be tested. We use an adaptive octree for this purpose. Our implementation is akin to the implementation of Ogayar et al. \cite{ogayar2015deferred}. The intersections between triangle faces and octree nodes are efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types. If all faces that intersect a leaf belong to the same mesh, we regard it as a \emph{normal cell}. Otherwise, it is regarded as a \emph{critical cell}, within which the following intersection computation is performed.
+
+%The difference between our octree and Ogayar et al.'s is that we do not subdivide any normal cell no matter how many faces it contains. This is because subdividing normal cells benefits only the point-in-polyhedron test \cite{frisken2002simple}, which seldom uses in our method. This simplification can save much computing time, especially when intersections between primitives are not complex and located in small regions.
+
+The difference between our octree and that of Ogayar et al. is that we do not subdivide any normal cell, no matter how many faces it contains. Subdividing normal cells is only beneficial for the point-in-polyhedron test \cite{frisken2002simple}, which is seldom used in our method. This simplification saves significant computing time, especially when intersections between primitives are simple, and located in small regions.
+
+\subsection{Plane-Based Intersection Test}
+
+We first make a quick review of M\"{o}ller's V-rep based algorithm. Then we introduce our implicit representations of intersections using planes. After, we discuss how to implement  M\"{o}ller's algorithm using P-rep based geometry.
+
+\subsubsection{Review of V-rep based method}
+
+
+
+M\"{o}ller's algorithm computes the intersection between two triangles $t_1$ and $t_2$ in three steps as shown in Fig. \ref{fig_projection}:
+\begin{itemize}[leftmargin=0.45cm]
+\item[1)] An early rejection is performed by testing whether $t_1$ intersects $\bm{p}_{t_2, sp}$, the supporting plane of $t_2$. The same test is also carried out between $t_2$ and $\bm{p}_{t_1, sp}$.
+\item[2)]The intersection between $t_1$ and $\bm{p}_{t_2, sp}$, denoted as $Seg_1$, and the intersection between $t_2$ and $\bm{p}_{t_1, sp}$, denoted as $Seg_2$, are computed separately.
+ \item[3)]The intersection between $t_1$ and $t_2$ is determined by computing the overlap between $Seg_1$ and $Seg_2$ .
+\end{itemize}
+
+
+
+The non-robustness of this algorithm stems from computing the coordinates of the intersection vertices (the end points of $Seg_1$ and $Seg_2$). Although implementation of this algorithm with arbitrary precision arithmetic produces exact coordinates, it is too costly for boolean operations with large CSGs. We use plane-based geometry to solve this problem, by implicitly representing intersections with planes.
+
+\subsubsection{Plane-based intersection representation}
+\label{sec:ir}
+
+In our method, the intersection with triangle $t$ is stored as $\bm{\mathcal{I}}\colon\{T, \bm{P}_{ext}, \bm{P}_0, \bm{P}_1, \mathcal{N}\}$. This is the plane-based intersection representation (PBI-rep,  see Fig. \ref{fig:pbi}). The first component, $T$, indicates which triangle $\bm{\mathcal{I}}$ lies on.
+$\bm{P}_{ext}$ indicates the plane that $\bm{\mathcal{I}}$ lies on. Note that $T$ is not in $\bm{P}_{ext}$. The first two components indicate that  $\bm{\mathcal{I}}$ lies on the line $T \cap \bm{P}_{ext}$.
+The two end points of $\bm{\mathcal{I}}$ are $T \cap \bm{P}_{ext}\cap\bm{P}_0$ and $T \cap \bm{P}_{ext}\cap\bm{P}_1$.
+The last component, $\mathcal{N}$, represents the neighborhood faces of $\bm{\mathcal{I}}$. $\mathcal{N}$ can be a single face, or a set faces from different input primitives.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=3in]{pbirep2}
+\caption{The geometry of planes in a PBI-rep. The yellow line segment is the intersection represented by $\bm{\mathcal{I}}$.}
+\label{fig:pbi}
+\end{figure}
+
+For example, two triangle faces, $t_1$ and $t_2$, originating from meshes $M_i$ and $M_j$, respectively, intersect. Two intersections are generated, ${\bm{\mathcal{I}}}_{12}$ on $t_1$ and ${\bm{\mathcal{I}}}_{21}$ on $t_2$.
+For ${\bm{\mathcal{I}}}_{12}$, $T = t_1$ and $\bm{P}_{ext}=\bm{p}_{t_2, sp}$. $\bm{P}_0$ and $\bm{P}_1$ are boundary planes of $t_2$, which will be discussed later.
+The last component $\mathcal{N}=t_2$ in general situation. Sometimes, ${\bm{\mathcal{I}}}_{12}$ may lie on the edge of $t_2$ (see Fig. \ref{fig:twin}). This is called \emph{edge intersection}. In this situation, the $\mathcal{N}$ is the set of all faces from $M_j$ adjacent to that edge. Edge intersection is discussed in \S\ref{sec:degenerate}.
+
+
+\subsubsection{Plane-based implementation}
 
 \label{sec:embed}
 %Given a triangle face $t$, we first convert to its P-rep: a supporting plane $\bm{p}_{t, sp}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
@@ -7,13 +66,16 @@
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{sign}
-\caption{We denote the signed distance from point $v_i$ to plane $\bm{p}_{t_2, sp}$ as $d_i$. The four conditions of intersection between $t_1$ and $\bm{p}_{t_2, sp}$ are:  (a) $d_0\cdot d_2<0$, $d_1\cdot d_2<0$; (b) $d_0=0$, $d_1=0$, $d_2\neq 0$; (c) $d_0=0$, $d_1\cdot d_2<0$; (d) $d_0=0$, $d_1\cdot d_2>0$. End points of $Seg_1$ are the intersections between $\bm{p}_{t_2, sp}$ and the related edges of $t_1$ (bold red lines).}
+\caption{We denote the signed distance from point $v_i$ to plane $\bm{p}_{t_2, sp}$ as $d_i$. The four conditions of intersection between $t_1$ and $\bm{p}_{t_2, sp}$ are:
+(a) $d_0\cdot d_2<0$, $d_1\cdot d_2<0$;
+(b) $d_0=0$, $d_1=0$, $d_2\neq 0$;
+(c) $d_0=0$, $d_1\cdot d_2<0$;
+(d) $d_0=0$, $d_1\cdot d_2>0$. End points of $Seg_1$ are the intersections between $\bm{p}_{t_2, sp}$ and the related edges of $t_1$ (bold red lines).}
 %We denote the signed distance from point vi to plane pt2,sp as di. The four conditions of intersection between t1 and pt2,sp are: (a) d0 �� d2 < 0, d1 �� d2 < 0; (b) d0 = 0, d1 = 0, d2 6= 0; (c) d0 = 0, d1 ��d2 < 0; (d) d0 = 0, d1 ��d2 > 0. End points of Seg1 are the intersections between pt2,sp and the related edges of t1 (bold red lines).
 \label{fig:isect}
 \end{figure}
 
-
-Given a triangle face $t$, we first convert it to its P-rep: a supporting plane $\bm{p}_{t, sp}$  surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the three steps of M\"{o}ller��s algorithm as follows.
+To implement M\"{o}ller's algorithm by plane-based geometry, we first convert each triangle to its P-reps: a supporting plane $\bm{p}_{t, sp}$  surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. The substrates of the intersection algorithms are point-plane orientation and linear order of points
 \begin{itemize}[leftmargin=0.45cm]
   %\item[1)] The basic subroutine of the first step is to compute the orientation of of a face with respect to vertices of the other face. We find that since the exact coordinates of each triangle vertices are known, we can compute the point-plane orientation using vertex-based geometry predicates. This allow us to perform this early rejection efficiently.
   \item[1)] The first step is to compute the orientation of a face with respect to the vertices of its paired face. As the exact coordinates of the vertices of each triangle are known, we can compute the point-plane orientation using vertex-based geometric predicates. This allows us to perform this early rejection efficiently.
@@ -30,23 +92,6 @@ Given a triangle face $t$, we first convert it to its P-rep: a supporting plane 
 
 Each time an intersection is computed, two intersections are generated (one for each triangle), and the newly generated vertices are added into their respective meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this step; merging coincident vertices even if they come from different input meshes. Because P-reps are used, the comparisons of the vertices are exact.
 
-\subsection{Plane-Based Intersection Representation}
-\label{sec:ir}
-
-In our method, the intersection with triangle $t$ is stored as $\bm{\mathcal{I}}\colon\{T, \bm{P}_{ext}, (\bm{P}_0, \bm{P}_1), \mathcal{N}\}$. This is the plane-based intersection representation (PBI-rep,  see Fig. \ref{fig:pbi}). The first component, $T$, indicates which triangle $\bm{\mathcal{I}}$ lies on. $\bm{P}_{ext}$ indicates that $\bm{\mathcal{I}}$ lies on $\bm{P}_{ext}$, which also means that it lies on the line $\bm{p}_{t, sp} \cap \bm{P}_{ext}$. The two end points of $\bm{\mathcal{I}}$ are $\bm{p}_{t, sp} \cap \bm{P}_{ext}\cap\bm{P}_0$ and $\bm{p}_{t, sp} \cap \bm{P}_{ext}\cap\bm{P}_1$. The last component, $\mathcal{N}$, represents the neighborhood of the intersection $\bm{\mathcal{I}}$. It indicates that $\bm{\mathcal{I}}$ is the intersection of triangle $t$ with $\mathcal{N}$ from the other mesh, where $\mathcal{N}$ can be either a face, or a set of faces that share the same edges.
-
-%In our method, the intersection with triangle t is stored as I: {T,Pext,(P0,P1),N}.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=3in]{pbirep2}
-\caption{The geometry of planes in a PBI-rep. The yellow line segment is the intersection represented by $\bm{\mathcal{I}}$.}
-\label{fig:pbi}
-\end{figure}
-
-%For example, two triangle faces $t_1$ and $t_2$ from mesh $M_i$ and $M_j$ intersect. Then it generates two intersections--- ${\bm{\mathcal{I}}}_{12}$ on $t_1$ and ${\bm{\mathcal{I}}}_{21}$ on $t_2$. For ${\bm{\mathcal{I}}}_{12}$ on $t_1$, $T = t_1$ and $\bm{P}_{ext}=\bm{p}_{t_2, sp}$. The third component is boundary planes from $t_2$ which has already been discussed in \S\ref{sec:embed}. The last component is $\mathcal{N}=t_2$. Sometimes intersections may lie on the mesh edges instead of faces (Fig. \ref{fig:twin}), which is called 'edge intersection'. In that case, the second component of neighborhood is a set of adjacent faces. We postpone the discussion of edge intersection to \S\ref{sec:degenerate}.
-
-For example, two triangle faces, $t_1$ and $t_2$, originating from meshes $M_i$ and $M_j$, respectively, intersect. Two intersections are generated, ${\bm{\mathcal{I}}}_{12}$ on $t_1$ and ${\bm{\mathcal{I}}}_{21}$ on $t_2$. For ${\bm{\mathcal{I}}}_{12}$ on $t_1$, $T = t_1$ and $\bm{P}_{ext}=\bm{p}_{t_2, sp}$. The third component are the boundary planes of $t_2$, as discussed in \S\ref{sec:embed}. The last component is $\mathcal{N}=t_2$. Sometimes, intersections may lie on the mesh edges instead of their faces (Fig. \ref{fig:twin}). This is called ��edge intersection��. In this case, the second component is a set of adjacent faces. Edge intersection is discussed in \S\ref{sec:degenerate}.
 
 
 \subsection{Handling Degenerate Case }
