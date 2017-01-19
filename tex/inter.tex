@@ -21,9 +21,9 @@ The difference between our octree and that of Ogayar et al. is that we do not su
 
 \subsection{Plane-Based Intersection Test}
 
-We first make a quick review of M\"{o}ller's V-rep based algorithm. Then we introduce our implicit representations of intersections using planes. After, we discuss how to implement  M\"{o}ller's algorithm using P-rep based geometry.
+We first make a quick review of M\"{o}ller's V-rep based algorithm. Then we introduce our implicit representations of intersections using planes. After that, we discuss how to implement  M\"{o}ller's algorithm using P-rep based geometry.
 
-\subsubsection{Review of V-rep based method}
+\subsubsection{Review of M\"{o}ller's algorithm}
 
 
 
@@ -61,8 +61,6 @@ The last component $\mathcal{N}=t_2$ in general situation. Sometimes, ${\bm{\mat
 \subsubsection{Plane-based implementation}
 
 \label{sec:embed}
-%Given a triangle face $t$, we first convert to its P-rep: a supporting plane $\bm{p}_{t, sp}$ surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. We integrate the plane-based geometry into each of the tree steps of M\"{o}ller's algorithm as following:
-
 \begin{figure}[t]
 \centering
 \includegraphics[width=3.5in]{sign}
@@ -71,26 +69,17 @@ The last component $\mathcal{N}=t_2$ in general situation. Sometimes, ${\bm{\mat
 (b) $d_0=0$, $d_1=0$, $d_2\neq 0$;
 (c) $d_0=0$, $d_1\cdot d_2<0$;
 (d) $d_0=0$, $d_1\cdot d_2>0$. End points of $Seg_1$ are the intersections between $\bm{p}_{t_2, sp}$ and the related edges of $t_1$ (bold red lines).}
-%We denote the signed distance from point vi to plane pt2,sp as di. The four conditions of intersection between t1 and pt2,sp are: (a) d0 �� d2 < 0, d1 �� d2 < 0; (b) d0 = 0, d1 = 0, d2 6= 0; (c) d0 = 0, d1 ��d2 < 0; (d) d0 = 0, d1 ��d2 > 0. End points of Seg1 are the intersections between pt2,sp and the related edges of t1 (bold red lines).
 \label{fig:isect}
 \end{figure}
 
-To implement M\"{o}ller's algorithm by plane-based geometry, we first convert each triangle to its P-reps: a supporting plane $\bm{p}_{t, sp}$  surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. The substrates of the intersection algorithms are point-plane orientation and linear order of points
-\begin{itemize}[leftmargin=0.45cm]
-  %\item[1)] The basic subroutine of the first step is to compute the orientation of of a face with respect to vertices of the other face. We find that since the exact coordinates of each triangle vertices are known, we can compute the point-plane orientation using vertex-based geometry predicates. This allow us to perform this early rejection efficiently.
-  \item[1)] The first step is to compute the orientation of a face with respect to the vertices of its paired face. As the exact coordinates of the vertices of each triangle are known, we can compute the point-plane orientation using vertex-based geometric predicates. This allows us to perform this early rejection efficiently.
-      \vspace{0.5em}
-  \item[2)] If $t_1$ and $t_2$ are not coplanar, the end points of $Seg_1$ and $Seg_2$ can be implicitly represented by plane triples. For example, $Seg_1$ is the intersection between $t_1$ and $\bm{p}_{t_2, sp}$ and the end points of $Seg_1$ are the intersections between $\bm{p}_{t_2, sp}$ and the edges of $t_1$ (denoted as $\bm{e}^i_{t_1}, i\in\{0,1,2\}$). Because $\bm{e}^i_{t_1}$ can be represented as $\bm{p}_{t_1, s}\cap \bm{p}^i_{t_1, b}$, the end points of $Seg_1$ can be represented in the form $\bm{p}_{t_2, sp} \cap \bm{p}_{t_1, sp} \cap \bm{p}^i_{t_1, b}$. Fig. \ref{fig:isect} shows all of the possible intersections between $t_1$ and $\bm{p}_{t_2, sp}$ and the corresponding $\bm{e}^i_{t_1}$. The coplanar situation is discussed in \S \ref{sec:degenerate}.
-      % 2)	If t1 and t2 are not coplanar, the end points of Seg1 and Seg2 can be implicitly represented by plane triples. For example, Seg1 is the intersection between t1 and pt2,sp, and
-      \vspace{0.5em}
- \item[3)] The intersection between $t_1$ and $t_2$ is the overlap between of $Seg_1$ and $Seg_2$. It can be computed by sorting the end points of $Seg_1$ and $Seg_2$ along the line $\bm{l}\colon \bm{p}_{t_1, sp} \cap \bm{p}_{t_2, sp}$. Because end points are all represented using plane triples, we can use the linear order of points, discussed in \S \ref{sec:substrates}, to sort them.
+To implement M\"{o}ller's algorithm by plane-based geometry, we first convert each triangle to its P-reps: a supporting plane $\bm{p}_{t, sp}$  surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. The substrates of the intersection algorithms are point-plane orientation \cite{bernstein2009fast} and linear order of points (\S\ref{sec:substrates}), both of which can be implemented by plane-based geometry.
 
-     %3)	The intersection between t1 and t2 is the overlap between Seg1 and Seg2. It can be computed by sorting the
-\end{itemize}
+In the first step, the computation of signed distances involves only the vertices coordinates and the supporting planes of triangles. Therefore, if the early rejections occur, the bounding planes are not needed at all. In addition, according to the conversion method of Campen et al.\cite{campen2010exact}, the supporting plane is represented by four double precision floating point numbers. The precision of first three parameter $L_a$ and the precision of the last parameter $L_d$ hold the relation $L_d = L_a + L + 1$, where $L$ is the precision of coordinates of input vertices. This means we can compute the signed distance exactly within double-precision. With these two facts, our early rejection is as fast as the vertex-based implementation.
 
-%Each time an intersection is computed, two intersections are generated (one for each triangle) and the newly generated vertices are added into meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this step, merging coincident vertices even if they come from different input meshes. Because we use P-reps, the comparison of vertices is exact.
+If $t_1$ and $t_2$ are not coplanar, $Seg_1$ and $Seg_2$ are computed. The end points are intersections between the supporting plane of one triangle and an edge of the other triangle. By computing the bounding planes, the end points can be implicitly represented by plane triples, $\bm{p}_{t_2, sp} \cap \bm{p}_{t_1, sp} \cap \bm{p}^i_{t_1, b}$, where $\bm{p}^i_{t_1, b}$ is the bounding plane of the related edge.
+Fig. \ref{fig:isect} shows all of the possible intersection conditions between $t_1$ and $\bm{p}_{t_2, sp}$. The coplanar situation is discussed in \S \ref{sec:degenerate}.
 
-Each time an intersection is computed, two intersections are generated (one for each triangle), and the newly generated vertices are added into their respective meshes. To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this step; merging coincident vertices even if they come from different input meshes. Because P-reps are used, the comparisons of the vertices are exact.
+To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this step. Because P-reps are used, the coincidence tests of the vertices are exact.
 
 
 
@@ -150,12 +139,6 @@ We find that each intersecting line segment is part of the edges of the input me
 
 %However, if the companion triangles are also coplanar, neither of the two triangles will record the intersection. Fortunately, in this case, the intersection is not valid. The word `valid` means the intersections will appear as an edge in the final mesh, thus is necessary to put into tessellation. Supposing the intersection $\mathcal{I}$ is on $t_1$, this definition equals to:
 
-However, if the companion triangles are also coplanar, neither of the two triangles will record the intersection. Fortunately, in this case the intersection is not valid. In this instance, ��valid�� means that it is necessary to tessellate the intersections, so that the intersections appear as an edge in the final mesh. Supposing the intersection $\mathcal{I}$ is on $t_1$, in which case:
+However, if the companion triangles are also coplanar, neither of the two tests will detect the intersection. Fortunately, the intersection is not necessary in this situation. The neighboring faces of the intersection are all within the same plane. If the intersection is on the surface of the final mesh, the surface in the neighborhood of the intersection is a plane. Therefore, the intersection is not necessary to be an edge in the final model.
 
-\begin{equation}
-% = f(\bm{\Lambda}(\bm{s}_i))
-\lambda_f(\bm{v}_i) \neq constant, \bm{v}_i \in \bm{U}(\mathcal{I}) \cap M_x,
-\end{equation}
-.
-
-%where f is the CSG function, and U(I) is the neighborhood of I in R3.
+Because we do not process coplanar intersections, the coplanar areas may have different tessellations in different primitives. It seems that inconsistent topology can occur in the final mesh. In fact, all of the faces in a coplanar area has the same inclusion label vector, thus are collected or abandoned together. Therefore, if the coplanar area is on the surface of the final mesh, the coplanar area will have exactly the same tessellation as one of these primitives. This strategy will result in simpler topology than forcing the final tessellation to be consistent with all of the primitives.

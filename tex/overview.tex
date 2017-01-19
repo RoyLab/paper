@@ -3,49 +3,35 @@
 
 \label{sec:overview}
 
-Our method is designed for boolean operations on arbitrary number of inputs primitives \cite{requicha1985boolean}. Primitives are regular set solids represented by triangle meshes, which are required to be free of self-intersecting. Geometry connectivity is also required as inputs. Even if there are topological deficiencies, our method still try to give acceptable answer. It is robust and not sensitive to topological deficiencies which are not near the regions where primitives intersect.
+Our method is designed for boolean evaluations on arbitrary number of inputs primitives \cite{requicha1985boolean}. Primitives are triangular solid meshes free of self-intersecting. Geometry connectivity is also required as inputs. Even if there are topological deficiencies, our method still try to give acceptable answer. Our method is not sensitive to topological deficiencies which are not near the regions where primitives intersect.
+
+In the following, we first discuss the causes of non-robustness of boolean methods. Then we analyze the cause of inefficiency of previous plane-based methods and discuss how to avoid these problems. Finally, we give an overview of the proposed method.
 
 
 \subsection{Robustness of Boolean Methods}
 \label{sec:paradigm}
 
-The boolean operation on triangular meshes is, in essence, a process of face selection. Namely, given a boolean expression, the operation preserves those primitive faces that pass the expression to generate the final mesh. Whether a certain face $\bm{s}$ belong to the final mesh is determined by its space indicators and the boolean expression $f$:
+The boolean evaluations on mesh primitives are, in essence, a process of face selection. Namely, given a boolean expression, the operation collect those faces that satisfy the expression to generate the final mesh. Whether a certain face $\bm{s}$ belong to the final mesh is determined by its inclusion labels and the boolean expression $f$:
 \begin{equation}
-\lambda_f(\bm{s}) = f(\boldsymbol{\Lambda}(\bm{s})) = f(\lambda_1(\bm{s}), \lambda_2(\bm{s}), \cdots, \lambda_n(\bm{s})).
+\lambda_f(\bm{s}) = f(\boldsymbol{\Lambda}(\bm{s})) = f(\lambda_1(\bm{s}), \lambda_2(\bm{s}), \cdots, \lambda_n(\bm{s})),
 \end{equation}
-The parameter $\lambda_i(\bm{s})$ is the space indicator with respect to primitive $M_i$. Each space indicator has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normals (\emph{same}) or with opposite normals (\emph{oppo}). To compute $\lambda_f(\bm{s})$, the space indicators with respect to all of the primitives ($\boldsymbol{\Lambda}(\bm{s})$) must be known.
-The evaluation of boolean expression are described in \cite{douze2015quickcsg,feito2013fast}. If and only if $\lambda_f(\bm{s})=same$, $\bm{s}$ is on the suface of the final mesh.
+where $\lambda_i(\bm{s})$ is the inclusion label with respect to primitive $M_i$. Each label has four conditions: completely inside (\emph{in}), completely outside (\emph{out}), on the boundary with consistent normal vector (\emph{same}) or with opposite normal vector (\emph{oppo}). To compute $\lambda_f(\bm{s})$, the labels with respect to all of the primitives (as $\boldsymbol{\Lambda}(\bm{s})$) must be known.
+The evaluation of boolean expression with inclusion labels are discussed in \cite{douze2015quickcsg,feito2013fast}. If and only if $\lambda_f(\bm{s})=same$, $\bm{s}$ is on the surface of the final mesh.
 
 Unfortunately, not all of the input faces can be classified collectively. For some faces near the intersections, only parts of them belong to the final mesh. Therefore, an extra step before face classification is required to detect intersections between meshes. Then input meshes are tessellated according to these intersections to ensure that every face is completely inside, outside, or on the boundary of other input meshes.
 
-%The tessellated meshes are categorized as \emph{intersection-free} meshes.
-
-%The first step is intersection computation. Input faces are tested in pairs to compute their intersections. Each input meshes are tessellated according to the intersection results, making every face be completely inside, outside or on the boundary of other primitives. The tessellated meshes are what we called \emph{intersection-free meshes}. Unfortunately, under fix-precision float-point arithmetic, intersection tests are error-prone: first, degenerate cases of intersection are hard to detect; second, when there are intersections, new vertices are introduced into the geometry, whose coordinates cannot be exactly represented by fix-precision float-point numbers.
-
-Most of the existing boolean methods follow the two-step paradigm---intersection computation and face classificiation, as does our method. Non-robustness comes from three operations of such boolean methods. 1) The intersection between faces may not be exactly computed. 2) Face tessellation produces inconsistent topology. 3) The computation of the face indicators is not consistent with the location of the faces (illustrated in Fig. \ref{fig:falseclass}). These problems all come from the numerical errors during geometric computation. Therefore, if three steps can be performed in exact ways, boolean operations are robust.
-% The first step in our method is computing intersections. Input faces are tested in pairs to determine their intersections. Each of the input meshes are tessellated according to the intersection results, ensuring every face is completely inside, outside, or on the boundary of other primitives. . Unfortunately, intersection tests are error prone when fixed-precision floating point arithmetic is used. First, degenerate intersections are hard to detect. Second, intersections introduce new vertices into the geometry, the coordinates of which cannot be exactly represented by fixed-precision floating point numbers.
-%
-% The second step is face classification. A given face $\bm{s}$ is evaluated to determine whether belongs to the final geometry according to the $n$-primitive boolean function :
-%The second step is face classification. A given face s is evaluated to determine whether it belongs to the final geometry, according to the n-primitive boolean function
-
-
-%The parameter ��i(s) is the space indicator with respect to mesh Mi. To compute ��f(s) and classify s, the space indicators with respect to all of the primitives (��(s)) must be known. Each space indicator has four conditions: completely inside (in), completely outside (out), on the boundary with consistent normals (same), or with opposite normals (oppo). The rules of boolean function evaluation are described in [8], [10].
+Most of the existing boolean methods follow such two-step paradigm---intersection computation and face classification, as does our method. Non-robustness comes from three stages of such boolean methods. 1) The intersection between faces may not be exactly computed. 2) Face tessellation produces inconsistent topology. 3) The computation of the inclusion labels is not consistent with the location of the faces (see Fig. \ref{fig:falseclass}). These problems all come from the numerical errors during geometric computation. Therefore, if these three stages can be performed in exact ways, boolean evaluations are robust.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=2.2in]{boolean-01}
-\caption{In this 2D view, face $\bm{s}$ (the red line segment) of mesh $M_2$ is on the surface of mesh $M_1$. However, because the face barycenter $\bm{v}_{c(\bm{s})}$ is used to compute the indicator, the coordinates of which contain round-off errors, the point could be moved to $\bm{v'}_{c(\bm{s})}$. Thus, $\bm{s}$ may be falsely classified as being outside of $M_1$.}
-%In this 2D view, face s (the red line segment) of mesh M2 is on the surface of mesh M1. However, because the face barycenter vc(s) is used to compute the indicator, the coordinates of which contain round-off errors, the point could be moved to vc0(s). Thus, s may be falsely classified as being outside of M1.
+\caption{In this 2D view, face $\bm{s}$ (the red line segment) of mesh $M_2$ is on the surface of mesh $M_1$. However, because the face barycenter $\bm{v}_{c(\bm{s})}$ is used to compute the labels, the coordinates of which contain round-off errors, the point could be moved to $\bm{v'}_{c(\bm{s})}$. Thus, $\bm{s}$ may be falsely classified as being outside of $M_1$.}
 \label{fig:falseclass}
 \end{figure}
 
-%Face classification also suffers from numerical errors. Many methods classify face according to the indicators of its barycenter using point-in-polyhedron test \cite{feito2013fast,campen2010exact}. However, coordinates of barycenters cannot be exactly represented and could generate false classification (illustrated in Fig. \ref{fig:falseclass}). What makes the problem worse is that for the large amount of faces and input meshes, many methods \cite{pavic2010hybrid,feito2013fast,ogayar2015deferred,zhou2016mesh} take the benefits of the local coherence of indicators, classifying neighboring faces together . Despite of the performance improvement, it can propagate false classification to neighboring faces and lead to wide-range failure.
-
-% Face classification is also prone to numerical errors. Many methods classify a face according to the indicators of its barycenter using a point-in-polyhedron test \cite{feito2013fast,campen2010exact}. However, the coordinates of barycenters cannot be exactly represented, and can cause incorrect classifications (Fig. \ref{fig:falseclass}). This problem is often exacerbated by large inputs (faces and meshes), because many methods \cite{pavic2010hybrid,feito2013fast,ogayar2015deferred,zhou2016mesh} rely on the local coherence of the indicators, so classify neighboring faces together. This can improve performance, but can also propagate false classifications to neighboring faces and lead to broader failures.
-
 
 \subsection{Plane-based booleans}
-Comparing with applying exact arithmetic which is slow, using plane-based geometry \cite{campen2010exact} is more promising to produce efficient exact computations. Therefore, in our method, we use P-reps as the key to avoid numerical errors.
+Comparing with applying exact arithmetic, using plane-based geometry \cite{campen2010exact} is more promising to produce efficient exact computations. Therefore, in our method, we use P-reps as the key to avoid numerical errors.
 
 \label{sec:substrates}
 \subsubsection{Plane-based representation}
@@ -53,35 +39,32 @@ Comparing with applying exact arithmetic which is slow, using plane-based geomet
 
 \begin{wrapfigure}{r}[0in]{0in}
 \includegraphics[width=1.5 in]{p-reps}
-%\caption{Plane-based representation of triangle}
 \end{wrapfigure}
 
 Using P-reps, each face $\bm{s}$ with $n$ edges is represented by a supporting plane $\bm{p}_{s,sp}$ on which the face lies, and a set bounding planes $\{\bm{p}_{s,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_{\bm{s}}^i$ is represented by the intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i$.
-Corner vertex $\bm{v}_s^i$ is represented by
- % $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i \cap \bm{p}_{s,b}^{{(i+1)}\bmod{n}}$
-the intersection of $\bm{p}_{s,sp}$ and two consecutive bounding planes. We use the method of Campen et al. \cite{campen2010exact} for the exact conversion of triangles to their P-reps. For efficiency, the implementation of predicates based planes are computed using filtering techniques proposed by Shewchuk \cite{shewchuk1997adaptive}.
+Vertex $\bm{v}_s^i$ is represented by the intersection of $\bm{p}_{s,sp}$ and two consecutive bounding planes. We use the method of Campen et al. \cite{campen2010exact} for the exact conversion of triangles to their P-reps. The exact plane-based predicates are sped up using numerical filtering techniques by Shewchuk \cite{shewchuk1997adaptive}.
 
 
-Other commonly used notations in this paper are presented here. The normal of a plane $\bm{p}$ is denoted as $\bm{n}(\bm{p})$. A line $\bm{l}$ of P-reps can be represented by the intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, hence, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$.
+Other commonly used notations in this paper are presented below. The normal of a plane $\bm{p}$ is denoted as $\bm{n}(\bm{p})$. A line $\bm{l}$ of P-reps can be represented by the intersection of two planes $(\bm{p}_l^0 \cap \bm{p}_l^1)$, hence, $\bm{l}\colon(\bm{p}_l^0 \cap \bm{p}_l^1)$. The positive direction of the line $\bm{l}$ is defined by $\bm{n}(\bm{p}_l^0) \times \bm{n}(\bm{p}_l^1)$.
 A point $\bm{v}$ of P-reps can be represented by non-trivial plane triples $(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$, hence, $\bm{v}\colon(\bm{p}_v^0 \cap \bm{p}_v^1 \cap \bm{p}_v^2)$.
 
 \subsubsection{Efficient embedding}
 
-Under P-reps, vertex is represented with a much higher precision than under V-reps. As a plane is represented by four parameters, a vertex takes twelve parameters under P-reps compared with only three parameters under V-reps. This makes geometric computations significantly slower under P-reps. Therefore, pure P-rep based boolean methods, such as \cite{sugihara1990solid,banerjee1996topologically}, cannot have efficient implementations. We think an efficient boolean method should not use only P-reps. An hybrid representation may benefit both the efficiency of V-reps and the exactness of P-reps, and plane-based geometric computation should be avoided as much as possible to reduce computation cost.
+Under P-reps, vertex is represented with a much higher precision than under V-reps. A plane is represented by four parameters. Then a vertex takes twelve parameters under P-reps compared with only three parameters under V-reps. This makes geometric computations significantly slower under P-reps. Even though numerical filters can be applied to speed up, pure plane-based methods, such as \cite{sugihara1990solid,banerjee1996topologically}, cannot be as fast as vertex-based methods. On the other hand, a hybrid representation may bring both the efficiency of V-reps and the exactness of P-reps. And plane-based geometric computation should be avoided as much as possible to reduce computation cost.
 
-BSP-based boolean algorithms are substantially based on planes, therefore are suitable to implement with P-reps \cite{bernstein2009fast,campen2010exact}. However, BSP merging is also a pure P-rep based algorithm. Also, BSP structure has additional two drawbacks which make it slow: a) BSP algorithms have bad time complexity, thus are not suitable for large scale computation. b) BSP structure destroy geometry connectivity information, thus algorithms benefiting from connectivity require extra effort to reconstruct connectivity. Therefore, in order to avoid complex conversions between P-reps and V-reps, BSP structure should not substitute V-reps of polyhedrons in total, but should serve as a compliment of V-reps to help plane-based geometric computation. Also, BSP structure has to be localized to minimize its size.
+BSP-based boolean algorithms are substantially based on planes, therefore are suitable to implement with P-reps \cite{bernstein2009fast,campen2010exact}. However, BSP merging is a pure plane-based algorithm. Also, BSP structure has additional two drawbacks which make it slow: a) BSP algorithms have high time complexity. b) BSP structure destroy geometry connectivity information, thus algorithms benefiting from connectivity require extra effort to reconstruct connectivity. Therefore, as an exact but not efficient representation, BSP should not substitute V-reps in total, but can serve as a compliment of V-reps to help plane-based geometric computation. Also, BSP structure has to be localized to minimize its size.
 
-In our method, we use V-reps for coarse tests and fast connectivity queries and P-reps for exact predicates. The framework of our method is based on \cite{ogayar2015deferred}, which is a V-rep based method. P-reps algorithms are embeded into the framework. This embedding is not a simple plane-based implementation of V-rep based algorithms. We develop three efficient algorithms which is optimized under P-reps: triangle-triangle intersection tests, triangle tessellation and polygon classification. These three algorithms are coresponding to the three sources of non-robustness dicussed before. The major difficulty of developing these algorithms is to avoid any computation under high precision, which means our method can be implemented using only common double precision floating point arithmetic. Though BSP-based methods \cite{bernstein2009fast,campen2010exact} also do not use high precision arithmetic, this constrain is harder to satisfy under a vertex-based boolean framework.
+In our method, we use V-reps for coarse tests and fast connectivity queries and P-reps for exact predicates. The framework of our method is based on \cite{ogayar2015deferred}, which is a vertex-based method. Plane-based algorithms are embedded into the processing. This embedding is not a simple plane-based implementation of vertex-based algorithms. We develop three efficient algorithms which is optimized under P-reps: triangle-triangle intersection tests, triangle tessellation and polygon classification. These three algorithms are corresponding to the three sources of non-robustness discussed in \S\ref{sec:paradig}. The major difficulty is to avoid any computation under high precision, which means our method is designed to be implemented using only common double-precision floating-point arithmetic. Though BSP-based methods \cite{bernstein2009fast,campen2010exact} also do not use high precision arithmetic, this constrain is harder to satisfy under a vertex-based framework.
 
 
 \subsubsection{Mapping to three diemensions}
 
-Many V-rep based algorithms, such as tessellation and face classification, is hard to implement using P-reps because they requires projection from three dimensions to planes or lines. Plane-based predicates \cite{bernstein2009fast,banerjee1996topologically} are usually performed under three dimensions, while projections are performed on vertex coordinates which are absent under P-reps. The solution is to find a three dimensional problem, whose projection to low dimension is the problem we want to compute in low dimensions. In the following, we discuss three algorithms using the mapping strategy shown in our method.
+Many vertex-based algorithms, such as 2D triangulation and face classification, is hard to implement under P-reps because they requires projection from three dimensions to planes or lines.  Projections are performed on vertex coordinates which are absent under P-reps. Since plane-based predicates \cite{bernstein2009fast,banerjee1996topologically} are usually performed under three dimensions, we have to find the equivalent three dimensional problem, whose projection to low dimension is the problem we want to compute. In the following, we discuss three such plane-based algorithms used in our method.
 
 \vspace{0.5em}
 \noindent \textbf{Point-line orientation}
 
-\noindent Within a plane $\bm{p}_0$, the point-line orientation is computed by the line parameters and point coordinates under V-reps. Under P-reps, we map this problem to point-plane problem by picking a plane $\bm{p_l}$ which satisfy three requirements: (a) the line is in $\bm{p_l}$. (b) $\bm{p_l}$ is not parallel with $\bm{p}_0$. (c) $\bm{n}(\bm{p}_0) \times \bm{n}(\bm{p_l})$ has the same orientation as the line.
+\noindent Within the plane $\bm{p}_0$, the point-line orientation is computed by the line parameters and point coordinates under V-reps. Under P-reps, we map this problem to point-plane orientation by picking a plane $\bm{p_l}$ which satisfy three requirements: 1) the line is in $\bm{p_l}$. 2) $\bm{p_l}$ is not parallel with $\bm{p}_0$. 3) $\bm{n}(\bm{p}_0) \times \bm{n}(\bm{p_l})$ has the same orientation as the line.
 
 \vspace{0.5em}
 \noindent \textbf{Linear ordering of points}
@@ -92,8 +75,8 @@ Many V-rep based algorithms, such as tessellation and face classification, is ha
   \caption{Geometric configuration of the linear ordering of points. Points $\bm{v}_a$ and $\bm{v}_b$ are both on line $\bm{l}_{ab}$. We convert this problem into the plane ordering of $\bm{p}_a$ and $\bm{p}_b$ along $\bm{l}_{ab}$.}\label{fig:twopointoneline}
 \end{figure}
 
-\noindent Given a line $\bm{l}_{ab}$ with two points on it, $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$, and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$, we need to determine the linear order of the two points along $\bm{l}_{ab}$ (Fig. \ref{fig:twopointoneline}).
-To solve this problem, we choose one plane that is not parallel with $\bm{l}_{ab}$ from the plane representation of each point, then convert this problem into one of determining the linear order of planes, which can be solved using the method of Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with respect to $\bm{l}_{ab}$ (the dot product between the plane normal and $\bm{l}_{ab}$ must be positive); unqualified planes need to be flipped.
+\noindent Given a line $\bm{l}_{ab}$ with two points on it, $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$, and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$, we need to determine the linear order of the two points along $\bm{l}_{ab}$ (see Fig. \ref{fig:twopointoneline}).
+To solve this problem, we choose one plane that is not parallel with $\bm{l}_{ab}$ from the P-rep of each point, then convert this problem into one of determining the linear order of planes, which can be solved using the method of Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with respect to $\bm{l}_{ab}$ (the dot product between the plane normal and $\bm{l}_{ab}$ must be positive), and unqualified planes need to be flipped.
 
 
 \begin{wrapfigure}{r}[0in]{0in}
@@ -102,10 +85,10 @@ To solve this problem, we choose one plane that is not parallel with $\bm{l}_{ab
 \vspace{0.5em}
 \noindent \textbf{Circular ordering of lines}~~~~
 
-\noindent During face tessellation, we need to know which edges are neighbors (Fig. \ref{fig:circularorder}).  This requires circular ordering of directed lines around a vertex. Lines can be sorted in a divide-and-conquer way, based on the relative order of each pair of lines. Thus, this problem is converted to one where, given two lines $\bm{l}_a$ and $\bm{l}_b$ in a plane $\bm{p}_0$ and their intersection point $\bm{v}_{ab}$, circular order of the two lines needs to be computed.
+\noindent During face tessellation, we need to know which intersections are neighbors (see Fig. \ref{fig:circularorder}). This requires circular ordering of directed lines around a vertex. The Lines can be sorted in a divide-and-conquer way, based on the relative order of each pair of lines. Thus, this problem is converted to one where, given two lines $\bm{l}_a$ and $\bm{l}_b$ in a plane $\bm{p}_0$, circular order of the two lines needs to be computed.
 We can compute the order by the sign of $\sin{\theta_{ab}}$, where $\theta_{ab}\in(-\pi,\pi)$ is the angle from $\bm{l}_a$ to $\bm{l}_b$ in the top-view of $\bm{p}_0$.
 
-We know the sign of $\sin{\theta_{ab}}$ is the same as the sign of $\bm{n}(\bm{p}_0) \cdot (\bm{l}_a\times\bm{l}_b)$. However, directly computing this equation requires extra precision to explicitly compute $\bm{l}_a$ and $\bm{l}_b$. Fortunately, we found a efficient solution which only needs to compute the sign of a 3$\times$3 determinants, whose elements are all floating point numbers.
+We know the sign of $\sin{\theta_{ab}}$ is the same as the sign of $\bm{n}(\bm{p}_0) \cdot (\bm{l}_a\times\bm{l}_b)$. However, directly computing this equation requires extra precision to explicitly compute $\bm{l}_a$ and $\bm{l}_b$. Fortunately, we found a efficient solution which only needs to compute the sign of a 3$\times$3 determinants, whose elements are all floating-point numbers.
 
 \begin{theorem}
   \label{theorem1}
@@ -164,8 +147,6 @@ Once all of the intersections between triangles are determined, input meshes are
 Therefore, we choose to tessellate in a more conservative way that do not add any new edges. As a consequence, the subdivided faces are no more triangles. We first perform intersection refinement to resolve intersections between intersections to make them \emph{regularized}. We then construct a graph-like structure, called a \emph{tess-graph}, to guide the exact tessellation of each face. Details are given in \S\ref{sec:tessellation}.
 
 \subsubsection{Face classification}
-
-%This step is to choose faces from the intersection-free meshes to generate the final mesh. However, literally computing the indicator vector of each face is unacceptably slow for large CSGs. We utilize the geometry connectivity stored in B-reps to propagate indicators in a flood-filling manner. In addition, many methods use barycenters of faces together with point-in-polyhedra test for face classification, which is not exact nor robust with fix-precision float-point arithmetics. Different from them, we classify faces based on the classification results of exactly represented vertices, including input vertices and newly introduced intersection vertices, and carefully deal with coplanar conditions to ensure topology consistency. Details will be shown in \S\ref{sec:classification}.
 
 The purpose of this step is to collect faces that pass the CSG expression from the tessellated meshes to generate the final mesh. However, literally computing the inclusion label vector of each face is unacceptably slow for large CSGs. We utilize the connectivity information to propagate inclusion labels in a flood-filling manner. The seed labels used for flood-filling have to be computed beforehand. Typically, a seed face label is deduced by the label of point on that face. However, the point label can be incorrectly computed without exact arithmetic. We exactly computed face label by a local BSP constructed according to the faces of neighborhoods. Our algorithm does not requires exact arithmetic. Also, the constructed BSP is typically small, which resulting in good performance. Details are given in \S\ref{sec:classification}.
 
