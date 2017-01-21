@@ -100,9 +100,7 @@ If two triangles intersect at a single point (e.g., Fig. \ref{fig:isect}d) then 
 \subsubsection{Edge intersection}
 
 
-When a triangle intersects with the edge of other triangle, the generated intersection is referred as \emph{edge intersection}. The neighboring faces of the intersection is the set of all the faces that shared the edge rather than a single face. For example, in Fig. \ref{fig:twin}a, the neighboring faces of the intersection on $t_1$ are $t_2$ and $t^*_2$.
-
-An edge intersection will be repeatedly detected. For example, in Fig. \ref{fig:twin}a, the same intersection on $t_1$ will be detected twice, because $t_1$ intersects both $t_2$ and $t_2^*$ at the same line segment. We solve this duplication in tessellation stage (see \S\ref{sec:tessellation}). We regard $t_2$ and $t_2^*$ as \emph{companion} triangles, because they are the neighboring faces of the same edge intersection. This concept will be referred to again in the discussion of coplanar cases.
+When a triangle intersects with the edge of other triangle, the generated intersection is referred as \emph{edge intersection}. The neighboring faces of the intersection is the set of all the faces that shared the edge rather than a single face. For example, in Fig. \ref{fig:twin}a, the neighboring faces of the intersection on $t_1$ are $t_2$ and $t^*_2$. The same intersection on $t_1$ will be detected twice, because $t_1$ intersects both $t_2$ and $t_2^*$ at the same line segment. In fact, edge intersections are often detected for multiple times. We solve this duplication in tessellation stage (see \S\ref{sec:tessellation}). We regard $t_2$ and $t_2^*$ as \emph{companion} triangles, because they are the neighboring faces of the same edge intersection. This concept will be referred to again in the discussion of coplanar cases.
 
 \begin{figure}[t]
 \centering

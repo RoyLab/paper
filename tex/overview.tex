@@ -20,14 +20,14 @@ The evaluation of boolean expression with inclusion labels are discussed in \cit
 
 Unfortunately, not all of the input faces can be classified collectively. For some faces near the intersections, only parts of them belong to the final mesh. Therefore, an extra step before face classification is required to detect intersections between meshes. Then input meshes are tessellated according to these intersections to ensure that every face is completely inside, outside, or on the boundary of other input meshes.
 
-Most of the existing boolean methods follow such two-step paradigm---intersection computation and face classification, as does our method. Non-robustness comes from three stages of such boolean methods. 1) The intersection between faces may not be exactly computed. 2) Face tessellation produces inconsistent topology. 3) The computation of the inclusion labels is not consistent with the location of the faces (see Fig. \ref{fig:falseclass}). These problems all come from the numerical errors during geometric computation. Therefore, if these three stages can be performed in exact ways, boolean evaluations are robust.
+Most of the existing boolean methods follow such two-step paradigm---intersection computation and face classification, as does our method. Non-robustness comes from three stages of such boolean methods. 1) The intersection between faces may not be exactly computed. 2) Face tessellation produces inconsistent topology. 3) The computation of the inclusion labels is not consistent with the location of the faces. These problems all come from the numerical errors during geometric computation. Therefore, if these three stages can be performed in exact ways, boolean evaluations are robust.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=2.2in]{boolean-01}
-\caption{In this 2D view, face $\bm{s}$ (the red line segment) of mesh $M_2$ is on the surface of mesh $M_1$. However, because the face barycenter $\bm{v}_{c(\bm{s})}$ is used to compute the labels, the coordinates of which contain round-off errors, the point could be moved to $\bm{v'}_{c(\bm{s})}$. Thus, $\bm{s}$ may be falsely classified as being outside of $M_1$.}
-\label{fig:falseclass}
-\end{figure}
+% \begin{figure}[t]
+% \centering
+% \includegraphics[width=2.2in]{boolean-01}
+% \caption{In this 2D view, face $\bm{s}$ (the red line segment) of mesh $M_2$ is on the surface of mesh $M_1$. However, because the face barycenter $\bm{v}_{c(\bm{s})}$ is used to compute the labels, the coordinates of which contain round-off errors, the point could be moved to $\bm{v'}_{c(\bm{s})}$. Thus, $\bm{s}$ may be falsely classified as being outside of $M_1$.}
+% \label{fig:falseclass}
+% \end{figure}
 
 
 \subsection{Plane-based booleans}

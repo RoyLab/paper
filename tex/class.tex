@@ -3,32 +3,17 @@
 \section{Face Classification}
 
 \label{sec:classification}
-%We traverse each face in the intersection-free meshes, and classify which one belongs to the final mesh. Classification is done by evaluating the label vector $\bm{\Lambda}$ of each face. The basic idea of our classification method is to utilize the space coherence of face label vectors to share the classification results among neighboring faces. Also, because we store the neighborhood information in the edges which intersect other meshes, the search space of point-in-polyhedron test is limited to only a few faces. It makes the label computation very fast. Finally, by using P-reps, our classification method is exact can deal with any degenerate cases.
-
-We traverse each face of the primitives, and determine which belong to the final mesh. The faces are classified by evaluating their inclusion label vector. Our classification method utilizes the space coherence of the label vectors, and shares the classification results among neighboring faces. Because we store the neighboring faces in the edges where intersections occur, the label computation is very fast according to the orientation of these neighboring faces.
 
 
-Intersection-free meshes facilitate this process by accelerating the label propagation. From adjacent faces $\bm{s}_1$ and $\bm{s}_2$, it is straightforward to determine whether $\bm{\Lambda}(\bm{s}_1)$ and $\bm{\Lambda}(\bm{s}_2)$ are different. The two label vectors are the same unless the shared edge $\bm{e}_{12}$ lies on the boundary of another mesh. In that cases, neighborhood information, say, $\bm{\mathcal{N}}(\bm{e}_{12}) = \{\mathcal{N}_k\}$, is stored on $\bm{e}_{12}$. Here we use $\bm{\mathcal{N}}$ to indicate that the edge may have more than one neighborhood (see \S\ref{sec:refine}). The neighborhood information indicates which components of the label vector differ between $\bm{s}_1$ and $\bm{s}_2$. If there is neighborhood information from mesh $M_x$, the $x^{th}$ labels $\lambda_x(\bm{s}_1)$ and $\lambda_x(\bm{s}_2)$ differ, and can be computed efficiently and exactly with respect to that neighborhood. We outline our classification method in Algorithm \ref{code:floodfill}.
-
-%The space coherence of label vectors means neighboring faces may have the same label vector, or most components of label vectors. Therefore, we start from a seed face $\bm{s}_0$ with its label vector $\bm{\Lambda}(\bm{s}_0)$ known, and propagate to other faces in a flood-filling manner. The trace of label propagation is:
-
-% The space coherence of label vectors means that neighboring faces may have the same label vector, or most of the components of the label vectors. Therefore, we start from a seed face $\bm{s}_0$ with a known label vector $\bm{\Lambda}(\bm{s}_0)$, and propagate the label to other faces in a flood-filling manner. The trace of the label propagation is:
-
-% \begin{equation}
-% \label{eq:trace}
-% \bm{s}_0\to \bm{s}_1\to \bm{s}_2\to \bm{s}_3\to ...
-% \end{equation}
-
-
-
-%Intersection-free meshes facilitate this process by accelerating the label propagation. From adjacent faces s1 and s2, it is straightforward to determine whether
+We traverse each face of the primitives, and determine which belong to the final mesh. The faces are classified by evaluating their inclusion label vector. Our classification method utilizes the space coherence of the label vectors, and shares the classification results among neighboring faces. Because we store the neighboring faces in the edges where intersections occur, the difference of labels between adjacent faces are computed according to the BSP constructed with these neighboring faces. For arbitrary adjacent faces $\bm{s}_1$ and $\bm{s}_2$, the label vectors $\bm{\Lambda}(\bm{s}_1)$ and $\bm{\Lambda}(\bm{s}_2)$ differ if their shared edge $\bm{e}_{12}$ lies on the surface of any other primitive.
+In that cases, some neighboring faces should be stored on $\bm{e}_{12}$. The owner primitives of these neighboring faces indicate which labels differ. If there are neighboring faces from mesh $M_x$, the labels $\lambda_x(\bm{s}_1)$ and $\lambda_x(\bm{s}_2)$ differ. We outline our classification method in Algorithm \ref{code:floodfill}.
 
 \begin{algorithm}[ht]
 \caption{Fast Face Classification}
 \label{code:floodfill}
-\textbf{Input: } Intersection-free hybrid meshes, boolean function $f$
+\textbf{Input: } Tessellated primitives and boolean expression $f$
 
-\textbf{Output: } Classification $f(\bm{\Lambda}(\bm{s}_i))$ for all faces $\bm{s}_i$
+\textbf{Output: } Classification $f(\bm{\Lambda}(\bm{s}_i))$ of each face $\bm{s}_i$
 
 
 \begin{algorithmic}[1]
@@ -54,90 +39,94 @@ Intersection-free meshes facilitate this process by accelerating the label propa
 \end{algorithm}
 
 
-\subsection{label Propagation}
+\subsection{Label Computation}
 \label{sec:propagation}
 
-
-%Meshes consist of vertices, edges and faces. Classification is required to perform on the face level. However, polyhedron-in-out test is performed based on points. Gaps exist between the them. Conventionally, face barycenter is used to compute the label of the whole face. This is because in intersection-free meshes, face is classified as a whole, and every face inner point will have the same label as the face's. However, the computation of inner point coordinates requires geometry construction, which introduces errors without exact arithmetic. Therefore, we use the face (or subface) vertices instead, whose exact representations are known, for label computation.
-
-Meshes consist of vertices, edges and faces. It is necessary to perform classification at the face level. However, polyhedron-in-out tests are performed on points, where gaps exist between them. Conventionally, the face barycenter is used to compute the label of the whole face because in intersection-free meshes, the face is classified as a whole, and every inner point of the face will have the same label as the whole face. However, the computation of inner point coordinates requires geometric constructions, which introduce errors unless exact arithmetic can be used. Therefore, we use the face (or subface) vertices instead, the exact representations of which are known, for label computation.
+In methods like \cite{feito2013fast,ogayar2015deferred}, the face barycenter is used to compute the inclusion label of the face. This is because the face can be classified as a whole, and all inner points of the face has the same label vector. In methods like \cite{zhou2016mesh}, points inside the cell is used for label computation, and the face labels are decided by the labels of the two sides of the face. However, all these methods require to construct new vertices, whose coordinates require rational numbers to store, or round-off errors may be introduced. Incorrect label computation may occur because of such errors. To avoid this, we use the vertices instead, the exact coordinates of which are known.
 
 \begin{wrapfigure}{r}[0in]{0in}
 \includegraphics[width=1.3 in]{propagate}
 \end{wrapfigure}
 
 
-%However, there are two gaps between face label and face vertex label. First, the label of vertex does not always equal to label of face. Second, face label has two extra classes in $on$ case---$same$ and $oppo$, because the face has its orientation.
+However, there are two discrepancies between the face labels and vertex labels. First, the vertex label is not always equal to the face label. Second, the face label has two subclasses in the $on$ case, $same$ and $oppo$, because the face has an orientation.
+
+To deal with these discrepancies, we start from a seed vertex $\bm{v}_0$, which is one of the end point of an edge $\bm{e}_0$ of a face $\bm{s}_0$. We assume that the label vector $\bm{\Lambda}(\bm{v}_0)$ is known.
+Then we use $\bm{\Lambda}(\bm{v}_0)$ to compute $\bm{\Lambda}(\bm{e}_0)$, and then $\bm{\Lambda}(\bm{s}_0)$. The trace of label propagation is:
+\begin{equation}
+\bm{v}_0\to \bm{e}_0\to \bm{s}_0\to \bm{s}_1\to \bm{s}_2\to ...~~~,
+\end{equation}
+There are three basic operations: $\bm{v}_{\bm{e}}\to \bm{e}$, $\bm{e}_{\bm{s}}\to \bm{s}$ and $\bm{s}_i\to \bm{s}_j$, where $\bm{v}_{\bm{e}}$ is the end point of $\bm{e}$,
+$\bm{s}_{\bm{s}}$ is the edge of $\bm{s}$,
+and $\bm{s}_i$ is adjacent to $\bm{s}_j$.
+
+\begin{theorem}
+  \label{thm:porder}
+  Given the partial orders $on \succ in$ and $on \succ out$, the following relationship is true for labels within the tessellated primitives:
+  \begin{equation}
+    \lambda_k(\bm{v}_{\bm{e}_{\bm{s}}}) \succeq \lambda_k(\bm{e}_{\bm{s}}) \succeq \lambda_k(\bm{s}),
+  \end{equation}
+  where $\lambda_k(x)$ is the label of $x$ for a certain primitive $M_k$.
+\end{theorem}
+
+\begin{proof}
+We prove this theorem by contradiction. When $\lambda_k(\bm{v}_{\bm{e}_{\bm{s}}}) \succeq \lambda_k(\bm{e}_{\bm{s}})$ is not satisfied, it means for a certain label $\lambda_k$, $\lambda_k(\bm{v}_{\bm{e}_{\bm{s}}})$ is $in$ or $out$, but $\lambda_k(\bm{e}_{\bm{s}}) \neq \lambda_k(\bm{v}_{\bm{e}_{\bm{s}}})$.
+Let us assume that $\lambda_k(\bm{v}_{\bm{e}_{\bm{s}}})=in$ and $\lambda_k(\bm{e}_{\bm{s}})=on$ or $out$.
+
+Because $\bm{v}_{\bm{e}_{\bm{s}}}$ is inside of closed regular set (solid) $M_k$, according to the continuity of space, any point in $U(\bm{v}_{\bm{e}_{\bm{s}}})$, which is the neighborhood of $\bm{v}_{\bm{e}_{\bm{s}}}$, should be inside of $M_k$.
+And because $\bm{e}_{\bm{s}}^{\circ}\cap U(\bm{v}_{\bm{e}_{\bm{s}}})$ is not empty (superscript $\circ$ means interior), $\bm{e}_{\bm{s}}$ should be inside of $M_k$, which contradict our assumption.
+\end{proof}
+
+It indicates that when we perform $\bm{v}_{\bm{e}}\to \bm{e}$ and $\bm{e}_{\bm{s}}\to \bm{s}$, from a low-dimension to a high-dimension, we decide whether the $on$ label changes to $in$ or $out$, or remains $on$.
+In addition, when considering the orientation of the face, we also need to determine whether the $on$ labels change to $same$ or $oppo$ during the $\bm{e}_{\bm{s}}\to \bm{s}$ operation.
 
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=3in]{bsps}
 \caption{a) Because the inner sample point includes geometric constructions, we choose the face vertex (orange) instead to compute the face label. b-d) Different types of classification. The simple structure of the neighborhood BSP guarantees the same classification result for all of the points on $\bm{p}_{\bm{s}, sp}^+$. In d), the classification result is $on$ so it is necessary to determine the orientation from the normal of the BSP splitting plane $q$ and the face normal $p$. In this cases, the label should be $oppo$ because $p$ and $q$ are opposite.}
-% a) Because the
 \label{fig:bsps}
 \end{figure}
 
-
-However, there are two discrepancies between the face and face vertex labels. First, the vertex label is not always equal to the face label. Second, the face label has two extra classes in the $on$ case��$same$ and $oppo$��because the face has an orientation.
-
-%To overcome the gaps, we rewrite our label trace (\ref{eq:trace}) in finer granularity. In the beginning, we start from a seed vertex $\bm{v}_0$ on seed face $\bm{s}_0$. We assume label vector $\bm{\Lambda}(\bm{v}_0)$ is known. Then we use $\bm{\Lambda}(\bm{v}_0)$ to compute $\bm{\Lambda}(\bm{s}_0)$. In addition, we add an optional edge layer into the trace. Then it changes to:
-
-To deal with these discrepancies, the label trace (\ref{eq:trace}) is modified for finer granularity. We start from a seed vertex $\bm{v}_0$ on a seed face $\bm{s}_0$. We assume that the label vector $\bm{\Lambda}(\bm{v}_0)$ is known. Then we use $\bm{\Lambda}(\bm{v}_0)$ to compute $\bm{\Lambda}(\bm{s}_0)$. In addition, we add an optional edge layer into the trace:
-
-\begin{equation}
-\bm{v}_0\to \bm{e}_0\to \bm{s}_0\to (\bm{e}_1)\to \bm{s}_1\to (\bm{e}_2)\to \bm{s}_2\to ...,
-\end{equation}
-%where $\bm{v}$ and $\bm{e}$ are the vertex and edge, respectively. The bracket indicates that propagating to the edge is optional, because if the edge does not contain neighborhood information the labels on the two side are the same and we do not need to propagate to the edge. We find that there are three kinds of basic operations in the trace: $\bm{v}_{\bm{e}}\to \bm{e}$, $\bm{e}_{\bm{s}}\to \bm{s}$ and $\bm{s}\to \bm{e}_{\bm{s}}$, where $\bm{v}_{\bm{e}}$ means the end point of $\bm{e}$, and $\bm{e}_{\bm{s}}$ means the edge of $\bm{s}$.
-where $\bm{v}$ and $\bm{e}$ are the vertex and edge, respectively. The bracket indicates that propagating to the edge is optional, because if the edge does not contain neighborhood information the labels on either side are the same, so we do not need to propagate to the edge. There are three basic operations in the trace: $\bm{v}_{\bm{e}}\to \bm{e}$, $\bm{e}_{\bm{s}}\to \bm{s}$ and $\bm{s}\to \bm{e}_{\bm{s}}$, where $\bm{v}_{\bm{e}}$ is the end point of $\bm{e}$, and $\bm{e}_{\bm{s}}$ is the edge of $\bm{s}$.
-
-%Given the partial order $on \succ in$ and $on \succ out$, our key observation is that the following relation always stands for labels within intersection-free meshes:
-Given the partial orders $on \succ in$ and $on \succ out$, the following relationship is true for labels within intersection-free meshes:
-
-\begin{equation}
-\label{eq:porder}
-\lambda_k(\bm{v}_{\bm{e}_{\bm{s}}}) \succeq \lambda_k(\bm{e}_{\bm{s}}) \succeq \lambda_k(\bm{s}),
-\end{equation}
-where $\lambda_k(x)$ is the label of $x$ for a certain primitive $M_k$. This relationship can be inferred from the continuous space assumption and the definition of intersection-free mesh*. It indicates that when we perform $\bm{v}_{\bm{e}}\to \bm{e}$ and $\bm{e}_{\bm{s}}\to \bm{s}$, from a low-dimension to a high-dimension, we decide whether the $on$ label changes to $in$ or $out$, or remains $on$. When we perform $\bm{s}\to \bm{e}_{\bm{s}}$, we decide whether $in$ and $out$ labels are changed to $on$. In addition, when considering the orientation of the face, we also need to determine whether the $on$ labels change to $same$ or $oppo$ during the $\bm{e}_{\bm{s}}\to \bm{s}$ operation.
-
-%where
-
 \vspace{0.5em}
-\noindent\textbf{$\bm{s\to \bm{e}_{\bm{s}}}$}~~~~ We need to determine which labels change to $on$. We know that when $\lambda_k(\bm{e}_{\bm{s}})=on$, there will be neighborhood information related to mesh $M_k$ stored on $\bm{e}_{\bm{s}}$. Therefore, in this operation, we need to traverse all of the neighborhoods of $\bm{e}_{\bm{s}}$ and change the corresponding labels to $on$.
+\noindent\textbf{$\bm{\bm{e}_{\bm{s}}\to \bm{s}}$: } From theorem \ref{thm:porder}, we know that if $\lambda_k(\bm{e}_{\bm{s}}) \neq on$, then $\lambda_k(\bm{e}_{\bm{s}})=\lambda_k(\bm{s})$.
+Conversely, when $\lambda_k(\bm{e}_{\bm{s}}) = on$, we can build a trivial BSP \cite{thibault1987set} using these the neighboring faces which belongs to $M_k$ stored in $\bm{e}_{\bm{s}}$.
+The BSP can be used to compute inclusion state $\lambda_k(\bm{s})$ if a point can be sampled from $\bm{s}^{\circ} \cap \bm{U}(\bm{e}_{\bm{s}})$, where $\bm{U}(\bm{e}_{\bm{s}})$ is the neighborhood space of $\bm{e}_{\bm{s}}$. However, we cannot guarantee that such a point can be found with exact representation of double-precision.
 
-%s
+\begin{theorem}
+  \label{thm:bsp}
+  The BSP is constructed by the neighboring faces around a certain edge $\bm{e}$. Then the inclusion states of all the points on interior of the half plane $\bm{h}$ are the same, if 1) $\bm{e}$ is within $\bm{h}$, and 2) $\bm{e}$ is the boundary of $\bm{h}$.
+\end{theorem}
+\begin{proof}
+  The correctness of the theorem is obvious because the supporting planes of the neighboring faces always cross the edge $\bm{e}$ and extend to infinity.
+\end{proof}
+
+Let $\bm{h}_{\bm{s}}^+$ be the half of the supporting plane of $\bm{s}$ which lies on the interior side of $\bm{e}_{\bm{s}}$ (see Fig. \ref{fig:bsps}). By theorem \ref{thm:bsp}, the label of points on the half plane $\bm{h}_{\bm{s}}^+$ are identical.
+Since $\bm{h}_{\bm{s}}^+ \cap \bm{s} \neq \varnothing$, we can compute $\lambda_k(\bm{s})$ by determining $\lambda_k(\bm{v}_x)$, where the vertex $\bm{v}_x \in \bm{h}_{\bm{s}}^+$. For polygons, we can always find at least one such vertex, which is represented exactly (by planes or vertex coordinates). In addition, we assign each BSP splitting plane a normal vector by the normal of the triangle it contains, from which we can decide the orientation ($same$ or $oppo$) when $\lambda_k(\bm{s})=on$.
 
 
-\vspace{0.5em}
-\noindent\textbf{$\bm{\bm{e}_{\bm{s}}\to \bm{s}}$}~~~~From eq. \ref{eq:porder}, we know that if $\lambda_k(\bm{e}_{\bm{s}}) \neq on$, then $\lambda_k(\bm{e}_{\bm{s}})=\lambda_k(\bm{s})$. Conversely, when $\lambda_k(\bm{e}_{\bm{s}}) = on$, $\lambda_k(\bm{s})$ can be determined using neighborhood information related to $M_k$. The neighborhood of $M_k$ can be either a face or a set of faces from the mesh $M_k$.  We can build a trivial BSP \cite{thibault1987set} using these faces. The BSP can be used to compute $\lambda_k(\bm{s})$ if a point can be sampled from $\bm{s} \cap \bm{U}(\bm{e}_{\bm{s}})$, where $\bm{U}(\bm{e}_{\bm{s}})$ is the neighborhood space of $\bm{e}_{\bm{s}}$. Unfortunately, we cannot guarantee that such a point can be found with precise coordinates.
-
-%
 \vspace{0.5em}
 \begin{wrapfigure}{r}[0in]{0in}
  \includegraphics[width=1.3 in]{vneighbor}
 \end{wrapfigure}
-Our BSP is constructed from a single face, or a set of faces sharing the same edge. This BSP is sufficiently simple that the labels $\lambda_k$ of all of the points on the half plane $\bm{p}_{\bm{s}, sp}^+$ are identical. Here $\bm{p}_{\bm{s}, sp}^+$ is half of the supporting plane of $\bm{s}$ that lies on the positive side of the bounding plane $\bm{p}_{\bm{s}, b}^{\bm{e}_{\bm{s}}}$ (Fig. \ref{fig:bsps}). Since $\bm{p}_{\bm{s}, sp}^+ \cap \bm{s} \neq \varnothing$, we can compute $\lambda_k(\bm{s})$ by determining $\lambda_k(\bm{v}_x, \bm{v}_x \in \bm{p}_{\bm{s}, sp}^+)$. For polygons, at least one corner point lies on $\bm{p}_{\bm{s}, sp}^+$, and the exact coordinates of the corner point are known. That corner point is used as $\bm{v}_x$. In addition, we assign each BSP splitting plane a normal from the normal of the triangle it contains, from which we can decide the orientation ($same$ or $oppo$) when $\lambda_k(\bm{s})=on$.
+\noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$: }If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(\bm{e}) = on$, by checking whether there is neighboring faces from $M_k$ on $\bm{e}$. If not, we need to find where $\bm{v}_{\bm{e}}$ lies on $M_k$.
+Because our tessellated meshes contain connectivity information, we can easily find all neighboring faces of $\bm{v}_{\bm{e}}$.
+After that, the similar BSP-based classification method (as in ${\bm{e}_{\bm{s}}\to \bm{s}}$) can be used to determine the high dimension label $\lambda_k(\bm{e})$. We use the other end point $\bm{v}'_{\bm{e}}$ as the sample point for the BSP classification.
 
-%Our BSP is constructed from a single face, or a set of faces sharing the same edge. This BSP is sufficiently simple that the labels
 
-\noindent\textbf{$\bm{\bm{v}_{\bm{e}}\to e}$}~~~~If $\lambda_k(\bm{v}_{\bm{e}})=on$, we first check whether $\lambda_k(\bm{e}) = on$, by checking whether there is neighborhood information related to $M_k$ on $\bm{e}$. If not, we need to find where $\bm{v}_{\bm{e}}$ lies on $M_k$. This is straightforward because the intersection-free meshes contain geometric connectivity information. We can consider the connectivity information as the vertex version of neighborhood information, and the same BSP-based classification method is used in ${\bm{e}_{\bm{s}}\to \bm{s}}$ can be used to determine the high dimension label $\lambda_k(\bm{e})$. We use the other end point $\bm{v}'_{\bm{e}}$ as the sample point for the BSP classification.
-
-%ve
+\vspace{0.5em}
+\noindent\textbf{$\bm{s}_i\to \bm{s}_j$: } We need to determine which labels change if shared edge contains neighboring faces from other primitives. We can know which labels differ by the owner primitives of these neighboring faces. And the recomputation of these labels is exactly the same as in $\bm{\bm{e}_{\bm{s}}\to \bm{s}}$.
 
 
 \subsection{Acceleration by Caching}
 \label{sec:acc}
-%If the CSG tree is large with hundreds of primitive nodes, computing $\lambda_f(\bm{s}_i)$ from $\boldsymbol{\Lambda}(\bm{s}_i)$ for every face $\bm{s}_i$ can be costly. Thanks to the label space coherence, we can save the computation time by caching the evaluation result during flood-filling.
 
-If the CSG tree is large, with hundreds of primitive nodes, computing $\lambda_f(\bm{s}_i)$ from $\boldsymbol{\Lambda}(\bm{s}_i)$ for every face ($\bm{s}_i$) can be costly. However, using label space coherence, we can reduce the computation time by caching the evaluation results during flood-filling.
 
-%The basic cache strategy is to cache final result, that is, the value of $\lambda_f(\bm{s}_i)$. We know label vector will not change if there is no intersection edge during propagation. That means the final classification $\lambda_f(\bm{s}_i)$ will not change, too. Thus, those faces sharing the same label vector can be classified as a whole.
+If the CSG tree is large, with hundreds of primitive nodes, evaluations of boolean expression by inclusion label vectors of each face can be costly. However, using label space coherence, we can reduce the computation time by caching the evaluation results.
 
-The basic caching strategy is to cache the final result, that is, the value of $\lambda_f(\bm{s}_i)$. We know that the label vector will not change if there is no intersection edge encountered during propagation. Therefore, the final classification $\lambda_f(\bm{s}_i)$ will not change either. Thus, faces which share the same label vector can be classified as a set.
 
-%Also, we can perform intermediate results cache. We noticed that the boolean expression can be simplified if some components of $\bm{\Lambda}(\bm{s}_i)$ is fixed. For example, assume we have a boolean expression $f = M_1\cup (M_2\cap M_3-M_4)$. Given the values of two labels $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap M_3-M_4)$. Using the combination rules we can simplify the expression as $f(\lambda_1=out, \lambda_2=in)=P_3-P_4$. Because for a large CSG, a certain mesh often intersects with only a few other meshes $\Theta= \{M_{n_1}, M_{n_2}, \cdots, M_{n_x}\}$. That means all the faces in this mesh has the same labels against $M_{i} \notin \Theta(M_k)$. Therefore, we can first determine these fixed labels and simplify the boolean function, and then use simplified one to compute the final label for each faces in this mesh.
-
-We can also perform an intermediate results cache. The boolean expression can be simplified if some components of $\bm{\Lambda}(\bm{s}_i)$) are fixed. For example, assume we have a boolean expression $f = M_1\cup (M_2\cap M_3-M_4)$. Given the values of two labels $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap M_3-M_4)$. Using the combination rules, we can simplify the expression to $f(\lambda_1=out, \lambda_2=in)=M_3-M_4$. In a large CSG, a given mesh often intersects with only a few other meshes $\Theta= \{M_{n_1}, M_{n_2}, \cdots, M_{n_x}\}$. Thus, all of the faces in this mesh have the same labels for $M_{i} \notin \Theta(M_k)$. Therefore, if we can determine the fixed labels and simplify the boolean function, then we compute the final label for each face in this mesh.
+The basic caching strategy is to cache the final evaluation results. Faces which share the same label vector can be classified together. We can also perform an intermediate results cache. The boolean expression can be simplified if some components of label vector are known. For example, assume we have a boolean expression $f = M_1\cup (M_2\cap M_3-M_4)$. Given the values of two labels $\lambda_1(\bm{s}_i)=out$, $\lambda_2(\bm{s}_i)=in$, the expression can be rewritten as $f(\lambda_1=out, \lambda_2=in)=out\cup (in\cap M_3-M_4)$. Using the combination rules, we can simplify the expression to $f(\lambda_1=out, \lambda_2=in)=M_3-M_4$.
+In a large CSG, a certain primitive often intersects with only a few other primitives $\Theta= \{M_{n_1}, M_{n_2}, \cdots, M_{n_x}\}$. All of the faces in this primitive have the same labels with respect to primitives not in $\Theta$. Therefore, if we can determine these fixed labels and simplify the boolean function, then we compute the final label in this primitive based on the simplified expression.
 
 
 \iffalse
