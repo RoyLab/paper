@@ -1,4 +1,4 @@
-\documentclass[10pt,journal,compsoc]{IEEEtran}
+\documentclass[10pt,final,compsoc]{IEEEtran}
 
 % Some very useful LaTeX packages include:
 % (uncomment the ones you want to load)
@@ -38,7 +38,7 @@
   \usepackage{cite}
 \fi
 % cite.sty was written by Donald Arseneau
-% V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
+ % V1.6 and later of IEEEtran pre-defines the format of the cite.sty package
 % \cite{} output to follow that of IEEE. Loading the cite package will
 % result in citation numbers being automatically sorted and properly
 % "compressed/ranged". e.g., [1], [9], [2], [7], [5], [6] without using
@@ -333,29 +333,28 @@
 \hyphenation{op-tical net-works semi-conduc-tor}
 
 \newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
-
 \floatname{algorithm}{Algorithm}
 %\usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \newtheorem{theorem}{Theorem}
 
 \begin{document}
-\title{Efficient and Robust Boolean Operations on N Meshes Based on Hybrid Representations}
-\author{%Rui~Wang,~
-        %Xudong~Jiang,~
-        %Hongbo~Fu,~
-        %Ping~Li,~
-        %Bin~Sheng~and
-        %Enhua~Wu
+\title{Efficient and Robust N-Mesh Boolean Operations Using Hybrid Representations}
+\author{
+        Rui~Wang,~
+        Bin~Sheng~
+        Hongbo~Fu,~
+        Ping~Li,~and~
+        Enhua~Wu
 \IEEEcompsocitemizethanks{
 
 \IEEEcompsocthanksitem R. Wang and B. Sheng are with the Department of Computer Science and Engineering, Shanghai Jiao Tong University. Email:\{jhcz,shengbin\}@sjtu.edu.cn
 
-\IEEEcompsocthanksitem X. Jiang is with Autodesk China Research \& Development Center. Email: xudong.jiang@autodesk.com
+%\IEEEcompsocthanksitem X. Jiang is with Autodesk China Research \& Development Center. Email: xudong.jiang@autodesk.com
 
 \IEEEcompsocthanksitem H. Fu is with the School of Creative Media, City University of Hong Kong. Email: hongbofu@cityu.edu.hk
 
-\IEEEcompsocthanksitem P. Li is with the Department of Mathematics and Information Technology, The Hong Kong Institute of Education. Email: pli@ied.edu.hk
+\IEEEcompsocthanksitem P. Li is with the Department of Mathematics and Information Technology, The Hong Kong Institute of Education. Email: pli@eduhk.hk
 
 \IEEEcompsocthanksitem E. Wu is currently a research professor at State Key Lab. of Computer Science, Institute of Software, Chinese Academy of Sciences. Email: ehwu@umac.mo}
 }
@@ -375,7 +374,6 @@
 
 \appendices
 
-
 %\newpage
 \bibliographystyle{IEEEtran}
 \bibliography{IEEEabrv,citation}
@@ -388,8 +386,13 @@ is currently a postgraduate student at the Department of Computer Science and Te
 \end{IEEEbiography}
 
 % if you will not have a photo at all:
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{xudong}}]{Xudong Jiang}
-received his Master degree in Computer Science from Shanghai Jiao Tong University in 2014. He is currently working in Autodesk China Research \& Development Center. His research interest includes computer-aided geometric design and solid modeling.
+% \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{xudong}}]{Xudong Jiang}
+% received his Master degree in Computer Science from Shanghai Jiao Tong University in 2014. He is currently working in Autodesk China Research \& Development Center. His research interest includes computer-aided geometric design and solid modeling.
+% \end{IEEEbiography}
+
+
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{sheng}}]{Bin Sheng}
+received his BS degree in computer science from Huazhong University of Science and Technology in 2004, MS degree in software engineering from University of Macau in 2007, and PhD Degree in computer science from The Chinese University of Hong Kong in 2011. He is currently an associate professor in the Department of Computer Science and Engineering at Shanghai Jiao Tong University. His research interests include virtual reality, computer graphics, and image-based techniques.
 \end{IEEEbiography}
 
 
@@ -397,10 +400,10 @@ received his Master degree in Computer Science from Shanghai Jiao Tong Universit
 is an Associate Professor in the School of Creative Media, City University of Hong Kong. He received the PhD degree in computer science from the Hong Kong University of Science and Technology in 2007 and the BS degree in information sciences from Peking University, China, in 2002. His primary research interests fall in the fields of computer graphics and human computer interaction. He has served as an associate editor of The Visual Computer, Computers \& Graphics, and Computer Graphics Forum.
 \end{IEEEbiography}
 
-
-\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{sheng}}]{Bin Sheng}
-received his BS degree in computer science from Huazhong University of Science and Technology in 2004, MS degree in software engineering from University of Macau in 2007, and PhD Degree in computer science from The Chinese University of Hong Kong in 2011. He is currently an associate professor in the Department of Computer Science and Engineering at Shanghai Jiao Tong University. His research interests include virtual reality, computer graphics, and image-based techniques.
+\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{liping}}]{Li Ping}
+ received his Ph.D. from The Chinese University of Hong Kong. He is currently a Lecturer at The Education University of Hong Kong. His research interests include image/video stylization, learning analytics, big data visualization, and creative media.
 \end{IEEEbiography}
+
 
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{wu}}]{Enhua Wu}
 received the BS degree from Tsinghua University in 1970, and the PhD degree from the University of Manchester (UK) in 1984. He is currently a research professor at the Institute of Software, Chinese Academy of Sciences, and Fellow of China Computer Federation. He has also been teaching at the University of Macau since 1997, where he is currently an Emeritus Professor. His research interests include realistic image synthesis, virtual reality, and scientific visualization. He has served as an associate editor of The Visual Computer, Computer Animation and Virtual Worlds.

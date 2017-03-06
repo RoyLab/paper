@@ -38,7 +38,7 @@ Comparing with applying exact arithmetic, using plane-based geometry \cite{campe
 
 
 \begin{wrapfigure}{r}[0in]{0in}
-\includegraphics[width=1.5 in]{p-reps}
+\includegraphics[width=1.5 in]{boolean-07}
 \end{wrapfigure}
 
 Using P-reps, each face $\bm{s}$ with $n$ edges is represented by a supporting plane $\bm{p}_{s,sp}$ on which the face lies, and a set bounding planes $\{\bm{p}_{s,b}^i \ \vert\  i = 0, 1,...,n-1\}$. Each edge line $\bm{e}_{\bm{s}}^i$ is represented by the intersection $\bm{p}_{s,sp} \cap \bm{p}_{s,b}^i$.
@@ -50,7 +50,7 @@ A point $\bm{v}$ of P-reps can be represented by non-trivial plane triples $(\bm
 
 \subsubsection{Efficient embedding}
 
-Under P-reps, vertex is represented with a much higher precision than under V-reps. A plane is represented by four parameters. Then a vertex takes twelve parameters under P-reps compared with only three parameters under V-reps. This makes geometric computations significantly slower under P-reps. Even though numerical filters can be applied to speed up, pure plane-based methods, such as \cite{sugihara1990solid,banerjee1996topologically}, cannot be as fast as vertex-based methods. On the other hand, a hybrid representation may bring both the efficiency of V-reps and the exactness of P-reps. And plane-based geometric computation should be avoided as much as possible to reduce computation cost.
+Under P-reps, vertex is represented with a much higher precision than under V-reps. A plane is represented by four parameters. Then a vertex takes twelve parameters under P-reps compared with only three parameters under V-reps. This makes geometric computations significantly slower under P-reps. Even though numerical filters can be applied to speed up, pure plane-based methods, such as \cite{sugihara1990solid,banerjee1996topologically}, are significant slower than vertex-based methods. On the other hand, a hybrid representation can bring both the efficiency of V-reps and the exactness of P-reps. And plane-based geometric computation should be avoided as much as possible to reduce computation cost.
 
 BSP-based boolean algorithms are substantially based on planes, therefore are suitable to implement with P-reps \cite{bernstein2009fast,campen2010exact}. However, BSP merging is a pure plane-based algorithm. Also, BSP structure has additional two drawbacks which make it slow: a) BSP algorithms have high time complexity. b) BSP structure destroy geometry connectivity information, thus algorithms benefiting from connectivity require extra effort to reconstruct connectivity. Therefore, as an exact but not efficient representation, BSP should not substitute V-reps in total, but can serve as a compliment of V-reps to help plane-based geometric computation. Also, BSP structure has to be localized to minimize its size.
 
@@ -70,12 +70,12 @@ Many vertex-based algorithms, such as 2D triangulation and face classification, 
 
 \begin{figure}
   \centering
-  \includegraphics[width=3.5in]{twopointoneline}\\
+  \includegraphics[width=3.5in]{boolean-09}\\
   \caption{Geometric configuration of the linear ordering of points. Points $\bm{v}_a$ and $\bm{v}_b$ are both on line $\bm{l}_{ab}$. We convert this problem into the plane ordering of $\bm{p}_a$ and $\bm{p}_b$ along $\bm{l}_{ab}$.}\label{fig:twopointoneline}
 \end{figure}
 
-\noindent Given a line $\bm{l}_{ab}$ with two points on it, $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$, and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$, we need to determine the linear order of the two points along $\bm{l}_{ab}$ (see Fig. \ref{fig:twopointoneline}).
-To solve this problem, we choose one plane that is not parallel with $\bm{l}_{ab}$ from the P-rep of each point, then convert this problem into one of determining the linear order of planes, which can be solved using the method of Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with respect to $\bm{l}_{ab}$ (the dot product between the plane normal and $\bm{l}_{ab}$ must be positive), and unqualified planes need to be flipped.
+\noindent Given a line $\bm{l}$ with two points on it, $\bm{v}_a\colon(\bm{p}_a^0\cap\bm{p}_a^1\cap\bm{p}_a^2)$, and $\bm{v}_b\colon(\bm{p}_b^0\cap\bm{p}_b^1\cap\bm{p}_b^2)$, we need to determine the linear order of the two points along $\bm{l}$ (see Fig. \ref{fig:twopointoneline}).
+To solve this problem, we choose one plane that is not parallel with $\bm{l}$ from the P-rep of each point, then convert this problem into one of determining the linear order of planes, which can be solved using the method of Banerjee et al. \cite{banerjee1996topologically}. The chosen planes should have the same orientation with respect to $\bm{l}$ (the dot product between the plane normal and $\bm{l}$ must be positive), and unqualified planes need to be flipped.
 
 
 \begin{wrapfigure}{r}[0in]{0in}
@@ -120,7 +120,7 @@ We know the sign of $\sin{\theta_{ab}}$ is the same as the sign of $\bm{n}(\bm{p
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=3.5in]{circularorder}
+\includegraphics[width=3.5in]{boolean-08}
 \caption{Geometric configuration of the circular ordering of lines. $\bm{l}_a\colon(\bm{p}_0 \cap \bm{p}_a)$ and $\bm{l}_b\colon(\bm{p}_0 \cap \bm{p}_b)$ are within plane $\bm{p}_0$.}
 %Geometric configuration of the circular ordering of lines. la:
 \label{fig:circularorder}

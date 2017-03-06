@@ -34,11 +34,11 @@ We merge coincidence intersections that have the same end points. Intersections 
 \vspace{0.5em}
 %Intersection refinement is performed locally
 \begin{wrapfigure}{r}[0in]{0in}
-\includegraphics[width=1.6 in]{resolve}
+\includegraphics[width=1.5 in]{resolve}
 %\caption{Plane-based representation of triangle}
 \end{wrapfigure}
 \noindent\textbf{Intersection resolving}~~~~
-Each pair of intersections is tested if they intersect in any location other than end points. The test intersections should be from different primitives, since primitive inputs are free of self-intersecting. When two intersections intersect, at least one of them is split. New vertices may be introduced, whose P-reps are intersections between the common plane and the two $\bm{P}_ext$ of the PBI-reps. Because one intersection may be in contact with more than one other intersection, this splitting is deferred until all of the splitting points are found. The PBI-reps of the split segments inherit that of their father's, except for $\bm{P}_0, \bm{P}_1$, since the split segments have different end points.
+Each pair of intersections is tested if they intersect in any location other than end points. The tested intersections should be from different primitives, since primitive inputs are free of self-intersecting. The three conditions of intersections are illustrated on the right. When two intersections intersect, at least one of them is split. New vertices may be introduced, whose P-reps are intersections between the common plane and the two $\bm{P}_{ext}$ of the PBI-reps of the two intersections. Because one intersection may be in contact with more than one other intersection, this splitting is deferred until all of the splitting points are found. The PBI-reps of the split segments inherit that of their father's, except for $\bm{P}_0, \bm{P}_1$, since the split segments have different end points.
 
 \vspace{0.5em}
 \noindent \textbf{Coincidence elimination (revisited)}~~~~

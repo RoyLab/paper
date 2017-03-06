@@ -17,21 +17,21 @@ In that cases, some neighboring faces should be stored on $\bm{e}_{12}$. The own
 
 
 \begin{algorithmic}[1]
-\State Select a proper seed face $\bm{s}_0$
-\State Compute the seed label vector $\boldsymbol{\Lambda}(\bm{s}_0)$
-\State \Call{propagate} { $\bm{s}_0$ , $\boldsymbol{\Lambda}(\bm{s}_0)$}
+\State Select a proper seed face $\bm{s}_0$;
+\State Compute the seed label vector $\boldsymbol{\Lambda}(\bm{s}_0)$;
+\State \Call{propagate} { $\bm{s}_0$ , $\boldsymbol{\Lambda}(\bm{s}_0)$};
 \State
 \Function{propagate}{ $\bm{s}$ , $\boldsymbol{\Lambda}(\bm{s})$}
-    \State Compute $f(\boldsymbol{\Lambda}(\bm{s}))$
+    \State Compute $f(\boldsymbol{\Lambda}(\bm{s}))$;
     \For {each neighboring face $\bm{s}_{s, i}$}
         \If {$\bm{s}_i$ has been classified}
-            \State continue
+            \State continue;
         \EndIf
         \If {there are PBI-reps ${\bm{\mathcal{I}}}_k$ on $\bm{e}(\bm{s}_{s, i}, s)$}
-            \State compute $\boldsymbol{\Lambda}(\bm{s}_{s, i})$ by $\boldsymbol{\Lambda}(\bm{s})$ and ${\bm{\mathcal{I}}}_k$
-            \State \Call{propagate} { $\bm{s}_{s, i}$ , $\boldsymbol{\Lambda}(\bm{s}_{s, i})$}
+            \State compute $\boldsymbol{\Lambda}(\bm{s}_{s, i})$ by $\boldsymbol{\Lambda}(\bm{s})$ and ${\bm{\mathcal{I}}}_k$;
+            \State \Call{propagate} { $\bm{s}_{s, i}$ , $\boldsymbol{\Lambda}(\bm{s}_{s, i})$};
         \Else
-            \State \Call{propagate} { $\bm{s}_{s, i}$ , $\boldsymbol{\Lambda}(\bm{s})$}
+            \State \Call{propagate} { $\bm{s}_{s, i}$ , $\boldsymbol{\Lambda}(\bm{s})$};
         \EndIf
     \EndFor
 \EndFunction
@@ -42,7 +42,7 @@ In that cases, some neighboring faces should be stored on $\bm{e}_{12}$. The own
 \subsection{Label Computation}
 \label{sec:propagation}
 
-In methods like \cite{feito2013fast,ogayar2015deferred}, the face barycenter is used to compute the inclusion label of the face. This is because the face can be classified as a whole, and all inner points of the face has the same label vector. In methods like \cite{zhou2016mesh}, points inside the cell is used for label computation, and the face labels are decided by the labels of the two sides of the face. However, all these methods require to construct new vertices, whose coordinates require rational numbers to store, or round-off errors may be introduced. Incorrect label computation may occur because of such errors. To avoid this, we use the vertices instead, the exact coordinates of which are known.
+In methods like \cite{feito2013fast,ogayar2015deferred}, the triangle barycenter is used to compute the inclusion label of the face. This is because the face can be classified as a whole, and all inner points of the face has the same label vector. In methods like \cite{zhou2016mesh}, points inside the cell is used for label computation, and the face labels are decided by the labels of the two sides of the face. However, all these methods require to construct new vertices, whose coordinates require rational numbers to store, or round-off errors may be introduced. Incorrect label computation may occur because of such errors. To avoid this, we use the vertices instead, the exact coordinates of which are known.
 
 \begin{wrapfigure}{r}[0in]{0in}
 \includegraphics[width=1.3 in]{propagate}

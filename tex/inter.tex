@@ -6,7 +6,7 @@ In this step, the intersections between faces are determined by triangle-triangl
 
 \subsection{Space Division}
 \begin{wrapfigure}{r}[0in]{0in}
-\includegraphics[width=1.2in]{octreediff}
+\includegraphics[width=1.2in]{boolean-10}
 \end{wrapfigure}
 
 As intersection detection is performed between each pair of faces, space division is necessary to reduce the number of testing pairs. We use an adaptive octree for this purpose. Our implementation is akin to the implementation of Ogayar et al. \cite{ogayar2015deferred}. The intersections between triangle faces and octree nodes are efficiently detected using the separating axis theorem \cite{gottschalk1996obbtree}. Octree leaves are classified into two types. If all faces that intersect a leaf belong to the same mesh, we regard it as a \emph{normal cell}. Otherwise, it is regarded as a \emph{critical cell}, within which the triangle-triangle intersection tests are performed.
@@ -23,8 +23,8 @@ We first make a quick review of M\"{o}ller's vertex-based algorithm. Then we int
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=2.5in]{projection}
-\caption{$Seg_1$ is the intersection between $\bm{p}_{t_2, sp}$ and $t_1$. $Seg_2$ is the intersection between $\bm{p}_{t_1, sp}$ and $t_2$. The intersection between $t_1$ and $t_2$ (yellow line segment) is the overlap of $Seg_1$ and $Seg_2$.}
+\includegraphics[width=3.5in]{boolean-12}
+\caption{$Seg_1$ is the intersection between $\bm{p}_{t_2, sp}$ and $t_1$. $Seg_2$ is the intersection between $\bm{p}_{t_1, sp}$ and $t_2$. The intersection between $t_1$ and $t_2$ (red line segment) is the overlap of $Seg_1$ and $Seg_2$.}
 %Seg1 is the intersection between pt2,sp and t1. Seg2 is the intersection between pt1,sp and t2. The intersection between t1 and t2 (yellow line segment) is the overlap of Seg1 and Seg2.
 \label{fig_projection}
 \end{figure}
@@ -51,8 +51,8 @@ The last component, $\mathcal{N}$, represents the neighborhood faces of $\bm{\ma
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=3in]{pbirep2}
-\caption{The geometry of planes in a PBI-rep. The yellow line segment is the intersection represented by $\bm{\mathcal{I}}$.}
+\includegraphics[width=3in]{boolean-13}
+\caption{The geometry of planes in a PBI-rep. The red line segment ($\bm{\mathcal{I}}$) is the intersection represented by $\bm{\mathcal{I}}$.}
 \label{fig:pbi}
 \end{figure}
 
@@ -77,9 +77,9 @@ The last component $\mathcal{N}=t_2$ in general situation. Sometimes, ${\bm{\mat
 
 To implement M\"{o}ller's algorithm by plane-based geometry, we first convert each triangle to its P-reps: a supporting plane $\bm{p}_{t, sp}$  surrounded by three bounding planes $\{\bm{p}_{t, b}^i|\ i = 0,1,2\}$. The substrates of the intersection algorithms are point-plane orientation \cite{bernstein2009fast} and linear order of points (\S\ref{sec:substrates}), both of which can be implemented by plane-based geometry.
 
-In the first step, the computation of signed distances involves only the vertices coordinates and the supporting planes of triangles. Therefore, if the early rejections occur, the bounding planes are not needed at all. In addition, according to the conversion method of Campen et al.\cite{campen2010exact}, the supporting plane is represented by four double-precision floating-point numbers. The precisions of the first three parameters and the last parameter are $L_a$ and $L_d$ respectively. They hold the relation $L_d = L_a + L + 1$, where $L$ is the precision of the coordinates of input vertices. This means we can compute the signed distance exactly within double-precision. With these two facts, our early rejection is as fast as the vertex-based implementation.
+In the first step, the computation of signed distances involves only the vertices coordinates and the supporting planes of triangles. Therefore, if the early rejections occur, the bounding planes are not needed at all. In addition, according to the conversion method of Campen et al.\cite{campen2010exact}, the supporting plane is represented by four double-precision floating-point numbers. The precisions of the first three parameters and the last parameter are $L_a$ and $L_d$ respectively. They hold the relation $L_d = L_a + L + 1$, where $L$ is the precision of the coordinates of input vertices. This means we can compute the signed distance exactly within double-precision. With these two facts, our early rejection does not involve plane-based computation, thus is very efficient.
 
-If $t_1$ and $t_2$ are not coplanar, $Seg_1$ and $Seg_2$ are computed. The end points are intersections between the supporting plane of one triangle and an edge of the other triangle. By computing the bounding planes, the end points can be implicitly represented by plane triples, $\bm{p}_{t_2, sp} \cap \bm{p}_{t_1, sp} \cap \bm{p}^i_{t_1, b}$, where $\bm{p}^i_{t_1, b}$ is the bounding plane of the related edge.
+If early rejection is not triggered and $t_1$ and $t_2$ are not coplanar, $Seg_1$ and $Seg_2$ are computed. The end points are intersections between the supporting plane of one triangle and an edge of the other triangle. By computing the bounding planes, the end points can be implicitly represented by plane triples, $\bm{p}_{t_2, sp} \cap \bm{p}_{t_1, sp} \cap \bm{p}^i_{t_1, b}$, where $\bm{p}^i_{t_1, b}$ is the bounding plane of the related edge.
 Fig. \ref{fig:isect} shows all of the possible intersection conditions between $t_1$ and $\bm{p}_{t_2, sp}$. The coplanar situation is discussed specifically in \S \ref{sec:degenerate}.
 
 To avoid repetitive vertices in the final result, we perform vertex repetition elimination in this step. Because P-reps are used, the coincidence tests of the vertices are exact.
